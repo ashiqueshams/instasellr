@@ -1,25 +1,87 @@
-import { useState } from "react";
-import { sampleStore } from "@/data/sampleData";
+import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { useStore } from "@/hooks/use-store";
+import { supabase } from "@/integrations/supabase/client";
+import { Loader2 } from "lucide-react";
 
 export default function DashboardSettings() {
   const { toast } = useToast();
+  const { store, loading, setStore } = useStore();
   const [form, setForm] = useState({
-    name: sampleStore.name,
-    bio: sampleStore.bio,
-    avatar_initials: sampleStore.avatar_initials,
-    slug: sampleStore.slug,
-    accent_color: sampleStore.accent_color,
-    x: sampleStore.social_links.x || "",
-    instagram: sampleStore.social_links.instagram || "",
-    youtube: sampleStore.social_links.youtube || "",
-    tiktok: sampleStore.social_links.tiktok || "",
-    linkedin: sampleStore.social_links.linkedin || "",
+    name: "",
+    bio: "",
+    avatar_initials: "",
+    slug: "",
+    accent_color: "#ff4545",
+    x: "",
+    instagram: "",
+    youtube: "",
+    tiktok: "",
+    linkedin: "",
   });
+  const [saving, setSaving] = useState(false);
 
-  const handleSave = () => {
-    toast({ title: "Settings saved!", description: "Your store has been updated." });
+  useEffect(() => {
+    if (!store) return;
+    setForm({
+      name: store.name,
+      bio: store.bio,
+      avatar_initials: store.avatar_initials,
+      slug: store.slug,
+      accent_color: store.accent_color,
+      x: store.social_links?.x || "",
+      instagram: store.social_links?.instagram || "",
+      youtube: store.social_links?.youtube || "",
+      tiktok: store.social_links?.tiktok || "",
+      linkedin: store.social_links?.linkedin || "",
+    });
+  }, [store]);
+
+  const handleSave = async () => {
+    if (!store) return;
+    setSaving(true);
+    const { error } = await supabase
+      .from("stores")
+      .update({
+        name: form.name,
+        bio: form.bio,
+        avatar_initials: form.avatar_initials,
+        slug: form.slug,
+        accent_color: form.accent_color,
+        social_links: {
+          x: form.x || undefined,
+          instagram: form.instagram || undefined,
+          youtube: form.youtube || undefined,
+          tiktok: form.tiktok || undefined,
+          linkedin: form.linkedin || undefined,
+        },
+      })
+      .eq("id", store.id);
+
+    if (error) {
+      toast({ title: "Failed to save", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Settings saved!", description: "Your store has been updated." });
+      setStore({
+        ...store,
+        name: form.name,
+        bio: form.bio,
+        avatar_initials: form.avatar_initials,
+        slug: form.slug,
+        accent_color: form.accent_color,
+        social_links: { x: form.x, instagram: form.instagram, youtube: form.youtube, tiktok: form.tiktok, linkedin: form.linkedin },
+      });
+    }
+    setSaving(false);
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="w-5 h-5 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   const inputClass =
     "h-11 rounded-lg bg-background px-3.5 text-sm font-body border border-border outline-none focus:ring-2 focus:ring-primary/20 transition-shadow placeholder:text-muted-foreground w-full";
@@ -70,8 +132,10 @@ export default function DashboardSettings() {
 
         <button
           onClick={handleSave}
-          className="h-11 w-full rounded-lg bg-primary text-primary-foreground font-heading font-semibold text-sm hover:brightness-110 active:scale-[0.98] transition-all"
+          disabled={saving}
+          className="h-11 w-full rounded-lg bg-primary text-primary-foreground font-heading font-semibold text-sm hover:brightness-110 active:scale-[0.98] transition-all disabled:opacity-50 flex items-center justify-center gap-2"
         >
+          {saving && <Loader2 className="w-4 h-4 animate-spin" />}
           Save Settings
         </button>
       </div>
