@@ -8,6 +8,7 @@ import BundleCard from "@/components/storefront/BundleCard";
 import ProductList from "@/components/storefront/ProductList";
 import ProductDetail from "@/components/storefront/ProductDetail";
 import BundleDetail from "@/components/storefront/BundleDetail";
+import StorefrontLinks from "@/components/storefront/StorefrontLinks";
 
 export default function Storefront() {
   const { slug } = useParams<{ slug: string }>();
@@ -15,6 +16,7 @@ export default function Storefront() {
   const [products, setProducts] = useState<Product[]>([]);
   const [bundles, setBundles] = useState<(Bundle & { products: Product[] })[]>([]);
   const [search, setSearch] = useState("");
+  const [storeLinks, setStoreLinks] = useState<any[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [selectedBundle, setSelectedBundle] = useState<(Bundle & { products: Product[] }) | null>(null);
   const [loading, setLoading] = useState(true);
@@ -109,6 +111,15 @@ export default function Storefront() {
         setBundles(bundlesWithProducts.filter((b) => b.products.length >= 2));
       }
 
+      // Fetch custom links
+      const { data: linksData } = await (supabase
+        .from("store_links" as any)
+        .select("*")
+        .eq("store_id", storeData.id)
+        .eq("is_active", true)
+        .order("position", { ascending: true }) as any);
+      setStoreLinks(linksData || []);
+
       setLoading(false);
     };
     fetchStore();
@@ -196,6 +207,8 @@ export default function Storefront() {
               <BundleCard key={bundle.id} bundle={bundle} products={bundle.products} onBuyBundle={() => setSelectedBundle(bundle)} />
             ))}
 
+            {!search && storeLinks.length > 0 && <StorefrontLinks links={storeLinks} store={store} />}
+
             <ProductList
               products={filteredProducts}
               onSelectProduct={setSelectedProduct}
@@ -243,6 +256,7 @@ export default function Storefront() {
             {!search && bundles.map((bundle) => (
               <BundleCard key={bundle.id} bundle={bundle} products={bundle.products} onBuyBundle={() => setSelectedBundle(bundle)} />
             ))}
+            {!search && storeLinks.length > 0 && <StorefrontLinks links={storeLinks} store={store} />}
             <ProductList
               products={filteredProducts}
               onSelectProduct={setSelectedProduct}
