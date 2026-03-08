@@ -18,7 +18,6 @@ Deno.serve(async (req) => {
 
   // Try to create the bucket (ignore if exists)
   const { error } = await supabase.storage.createBucket("product-files", {
-    public: false,
     fileSizeLimit: 524288000, // 500MB
     allowedMimeTypes: [
       "application/pdf",
