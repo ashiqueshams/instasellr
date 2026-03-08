@@ -50,11 +50,11 @@ export default function BundleCard({ bundle, products, accentColor, onBuyBundle 
                 )}
               </span>
             ))}
-            {products.length > 5 && (
-              <span className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold border-2 bg-gold text-gold-foreground" style={{ borderColor: bundle.color }}>
-                +{products.length - 5}
-              </span>
-            )}
+             {products.length > 5 && (
+               <span className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold border-2 bg-gold text-gold-foreground" style={{ borderColor: accentColor }}>
+                 +{products.length - 5}
+               </span>
+             )}
           </div>
           <div className="flex items-baseline gap-2">
             <span className="font-heading font-bold text-xl" style={{ color: "#fff" }}>
