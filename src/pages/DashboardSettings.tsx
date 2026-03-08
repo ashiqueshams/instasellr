@@ -336,45 +336,39 @@ export default function DashboardSettings() {
         <div className="bg-card rounded-xl p-5 store-shadow space-y-4">
           <p className="font-heading font-semibold text-sm text-foreground">Colors</p>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="text-xs text-muted-foreground font-body mb-1 block">Accent Color</label>
-              <div className="flex items-center gap-2">
-                <input type="color" value={form.accent_color} onChange={(e) => setForm({ ...form, accent_color: e.target.value })} className="w-11 h-11 rounded-lg border border-border cursor-pointer" />
-                <input value={form.accent_color} onChange={(e) => setForm({ ...form, accent_color: e.target.value })} className={inputClass} />
-              </div>
-            </div>
-            <div>
-              <label className="text-xs text-muted-foreground font-body mb-1 block">Background Color</label>
-              <div className="flex items-center gap-2">
-                <input type="color" value={form.background_color || "#f5f4f0"} onChange={(e) => setForm({ ...form, background_color: e.target.value })} className="w-11 h-11 rounded-lg border border-border cursor-pointer" />
-                <input value={form.background_color} placeholder="#f5f4f0" onChange={(e) => setForm({ ...form, background_color: e.target.value })} className={inputClass} />
-              </div>
+          <div>
+            <label className="text-xs text-muted-foreground font-body mb-1 block">Primary Color</label>
+            <p className="text-[11px] text-muted-foreground mb-1.5">Used for buttons, borders, progress bar, etc.</p>
+            <div className="flex items-center gap-2">
+              <input type="color" value={form.accent_color} onChange={(e) => setForm({ ...form, accent_color: e.target.value })} className="w-11 h-11 rounded-lg border border-border cursor-pointer" />
+              <input value={form.accent_color} onChange={(e) => setForm({ ...form, accent_color: e.target.value })} className={inputClass} />
             </div>
           </div>
 
           <div>
-             <label className="text-xs text-muted-foreground font-body mb-1 block">Text Color (optional — for fullpage mode)</label>
-             <div className="flex items-center gap-2">
-               <input type="color" value={form.text_color || "#ffffff"} onChange={(e) => setForm({ ...form, text_color: e.target.value })} className="w-11 h-11 rounded-lg border border-border cursor-pointer" />
-               <input value={form.text_color} placeholder="#ffffff" onChange={(e) => setForm({ ...form, text_color: e.target.value })} className={inputClass} />
-               {form.text_color && (
-                 <button onClick={() => setForm({ ...form, text_color: "" })} className="text-xs text-muted-foreground hover:text-destructive">Clear</button>
-               )}
-             </div>
-           </div>
+            <label className="text-xs text-muted-foreground font-body mb-1 block">Text Color</label>
+            <p className="text-[11px] text-muted-foreground mb-1.5">Used for all texts</p>
+            <div className="flex items-center gap-2">
+              <input type="color" value={form.text_color || "#1a1a1a"} onChange={(e) => setForm({ ...form, text_color: e.target.value })} className="w-11 h-11 rounded-lg border border-border cursor-pointer" />
+              <input value={form.text_color} placeholder="#1a1a1a" onChange={(e) => setForm({ ...form, text_color: e.target.value })} className={inputClass} />
+              {form.text_color && (
+                <button onClick={() => setForm({ ...form, text_color: "" })} className="text-xs text-muted-foreground hover:text-destructive">Clear</button>
+              )}
+            </div>
+          </div>
 
-           <div>
-             <label className="text-xs text-muted-foreground font-body mb-1 block">Social Links Color</label>
-             <div className="flex items-center gap-2">
-               <input type="color" value={form.social_links_color || "#ffffff"} onChange={(e) => setForm({ ...form, social_links_color: e.target.value })} className="w-11 h-11 rounded-lg border border-border cursor-pointer" />
-               <input value={form.social_links_color} placeholder="#ffffff" onChange={(e) => setForm({ ...form, social_links_color: e.target.value })} className={inputClass} />
-               {form.social_links_color && (
-                 <button onClick={() => setForm({ ...form, social_links_color: "" })} className="text-xs text-muted-foreground hover:text-destructive">Clear</button>
-               )}
-             </div>
-           </div>
-         </div>
+          <div>
+            <label className="text-xs text-muted-foreground font-body mb-1 block">Background Color</label>
+            <p className="text-[11px] text-muted-foreground mb-1.5">Used for the background</p>
+            <div className="flex items-center gap-2">
+              <input type="color" value={form.background_color || "#f5f4f0"} onChange={(e) => setForm({ ...form, background_color: e.target.value })} className="w-11 h-11 rounded-lg border border-border cursor-pointer" />
+              <input value={form.background_color} placeholder="#f5f4f0" onChange={(e) => setForm({ ...form, background_color: e.target.value })} className={inputClass} />
+              {form.background_color && (
+                <button onClick={() => setForm({ ...form, background_color: "" })} className="text-xs text-muted-foreground hover:text-destructive">Clear</button>
+              )}
+            </div>
+          </div>
+        </div>
 
         {/* Typography */}
         <div className="bg-card rounded-xl p-5 store-shadow space-y-4">
