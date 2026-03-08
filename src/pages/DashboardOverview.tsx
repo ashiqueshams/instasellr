@@ -48,7 +48,7 @@ export default function DashboardOverview() {
     <div>
       <h1 className="font-heading font-bold text-2xl text-foreground mb-6">Overview</h1>
 
-      <div className="grid grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
         {stats.map((s) => (
           <div key={s.label} className="bg-card rounded-xl p-5 store-shadow">
             <div className="flex items-center gap-3 mb-3">
