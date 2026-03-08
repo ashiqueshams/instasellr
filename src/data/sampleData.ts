@@ -11,6 +11,7 @@ export interface Product {
   file_url: string | null;
   image_url: string | null;
   is_active: boolean;
+  product_type: "digital" | "physical";
   created_at: string;
 }
 
@@ -65,15 +66,27 @@ export interface Store {
    created_at: string;
  }
 
+export interface CartItem {
+  product: Product;
+  quantity: number;
+}
+
 export interface Order {
   id: string;
   store_id: string;
   product_id: string;
   customer_name: string;
   customer_email: string;
+  customer_phone?: string;
+  shipping_address?: string;
+  shipping_city?: string;
+  shipping_state?: string;
+  shipping_zip?: string;
+  shipping_country?: string;
   amount: number;
   status: "pending" | "paid" | "delivered";
   stripe_payment_id: string | null;
+  order_items?: CartItem[];
   created_at: string;
 }
 

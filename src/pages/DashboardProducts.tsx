@@ -26,6 +26,7 @@ interface ProductForm {
   emoji: string;
   color: string;
   category: string;
+  product_type: "digital" | "physical";
 }
 
 const emptyForm: ProductForm = {
@@ -36,6 +37,7 @@ const emptyForm: ProductForm = {
   emoji: "🎨",
   color: "#6C5CE7",
   category: "",
+  product_type: "digital",
 };
 
 export default function DashboardProducts() {
@@ -78,6 +80,7 @@ export default function DashboardProducts() {
           file_url: p.file_url,
           image_url: (p as any).image_url || null,
           is_active: p.is_active ?? true,
+          product_type: (p as any).product_type || "digital",
           created_at: p.created_at,
         })));
       }
@@ -110,6 +113,7 @@ export default function DashboardProducts() {
       emoji: product.emoji,
       color: product.color,
       category: product.category,
+      product_type: product.product_type || "digital",
     });
     setProductImagePreview(product.image_url);
     setUploadedFile(product.file_url ? { name: product.file_url, path: "" } : null);
@@ -207,6 +211,7 @@ export default function DashboardProducts() {
       file_url: uploadedFile ? uploadedFile.name : null,
       image_url: imageUrl,
       is_active: true,
+      product_type: form.product_type,
     };
 
     if (editingId) {
@@ -251,6 +256,7 @@ export default function DashboardProducts() {
           file_url: data.file_url,
           image_url: (data as any).image_url || null,
           is_active: data.is_active ?? true,
+          product_type: (data as any).product_type || "digital",
           created_at: data.created_at,
         } : p));
       }
@@ -294,6 +300,7 @@ export default function DashboardProducts() {
           file_url: data.file_url,
           image_url: (data as any).image_url || null,
           is_active: data.is_active ?? true,
+          product_type: (data as any).product_type || "digital",
           created_at: data.created_at,
         }, ...products]);
       }
@@ -332,6 +339,23 @@ export default function DashboardProducts() {
             {editingId ? "Edit Product" : "New Product"}
           </h3>
           <div className="grid grid-cols-2 gap-3">
+            {/* Product type toggle */}
+            <div className="col-span-2 flex gap-2">
+              <button
+                type="button"
+                onClick={() => setForm({ ...form, product_type: "digital" })}
+                className={`flex-1 h-10 rounded-lg text-sm font-semibold transition-all ${form.product_type === "digital" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"}`}
+              >
+                🖥️ Digital
+              </button>
+              <button
+                type="button"
+                onClick={() => setForm({ ...form, product_type: "physical" })}
+                className={`flex-1 h-10 rounded-lg text-sm font-semibold transition-all ${form.product_type === "physical" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"}`}
+              >
+                📦 Physical
+              </button>
+            </div>
             <input placeholder="Product name *" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className={`col-span-2 ${inputClass}`} />
             <input placeholder="Tagline" value={form.tagline} onChange={(e) => setForm({ ...form, tagline: e.target.value })} className={`col-span-2 ${inputClass}`} />
             <textarea placeholder="Description" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="col-span-2 rounded-lg bg-background px-3.5 py-3 text-sm border border-border outline-none focus:ring-2 focus:ring-primary/20 placeholder:text-muted-foreground resize-none h-24" />
