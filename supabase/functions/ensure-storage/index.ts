@@ -1,5 +1,3 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
@@ -12,30 +10,46 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-
-    // Use the Storage REST API directly
-    const res = await fetch(`${supabaseUrl}/storage/v1/bucket`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${serviceKey}`,
-        apikey: serviceKey,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        id: "product-files",
-        name: "product-files",
-      }),
-    });
-
-    const body = await res.text();
-
-    if (!res.ok && !body.includes("already exists")) {
-      return new Response(JSON.stringify({ error: body }), {
+    const dbUrl = Deno.env.get("SUPABASE_DB_URL");
+    if (!dbUrl) {
+      return new Response(JSON.stringify({ error: "No DB URL" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
+    }
+
+    // Use postgres module to add the missing column and create bucket
+    const { Pool } = await import("https://deno.land/x/postgres@v0.17.0/mod.ts");
+    const pool = new Pool(dbUrl, 1);
+    const conn = await pool.connect();
+
+    try {
+      // Add missing public column
+      await conn.queryObject(`ALTER TABLE storage.buckets ADD COLUMN IF NOT EXISTS public boolean DEFAULT false`);
+      await conn.queryObject(`ALTER TABLE storage.buckets ADD COLUMN IF NOT EXISTS avif_autodetection boolean DEFAULT false`);
+      await conn.queryObject(`ALTER TABLE storage.buckets ADD COLUMN IF NOT EXISTS file_size_limit bigint DEFAULT NULL`);
+      await conn.queryObject(`ALTER TABLE storage.buckets ADD COLUMN IF NOT EXISTS allowed_mime_types text[] DEFAULT NULL`);
+
+      // Create bucket
+      await conn.queryObject(`INSERT INTO storage.buckets (id, name, public) VALUES ('product-files', 'product-files', false) ON CONFLICT (id) DO NOTHING`);
+
+      // Create RLS policies on storage.objects
+      await conn.queryObject(`
+        DO $$ BEGIN
+          IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Authenticated upload product files' AND tablename = 'objects') THEN
+            CREATE POLICY "Authenticated upload product files" ON storage.objects FOR INSERT TO authenticated WITH CHECK (bucket_id = 'product-files');
+          END IF;
+          IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Authenticated delete product files' AND tablename = 'objects') THEN
+            CREATE POLICY "Authenticated delete product files" ON storage.objects FOR DELETE TO authenticated USING (bucket_id = 'product-files');
+          END IF;
+          IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Authenticated read product files' AND tablename = 'objects') THEN
+            CREATE POLICY "Authenticated read product files" ON storage.objects FOR SELECT TO authenticated USING (bucket_id = 'product-files');
+          END IF;
+        END $$;
+      `);
+    } finally {
+      conn.release();
+      await pool.end();
     }
 
     return new Response(JSON.stringify({ success: true }), {
