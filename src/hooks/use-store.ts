@@ -16,6 +16,11 @@ interface StoreData {
   banner_url: string | null;
   theme: string;
   background_color: string | null;
+  banner_mode: string;
+  card_style: string;
+  social_position: string;
+  footer_image_url: string | null;
+  text_color: string | null;
   social_links: Record<string, string>;
 }
 
