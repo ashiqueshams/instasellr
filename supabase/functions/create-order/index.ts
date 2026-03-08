@@ -12,7 +12,10 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { product_id, store_id, customer_name, customer_email, amount } = await req.json();
+    const {
+      product_id, store_id, customer_name, customer_email, amount,
+      customer_phone, shipping_address, shipping_city, shipping_state, shipping_zip, shipping_country, quantity
+    } = await req.json();
 
     if (!product_id || !store_id || !customer_name || !customer_email || !amount) {
       return new Response(JSON.stringify({ error: "Missing required fields" }), {
@@ -36,11 +39,18 @@ Deno.serve(async (req) => {
         store_id,
         customer_name,
         customer_email,
+        customer_phone: customer_phone || null,
+        shipping_address: shipping_address || null,
+        shipping_city: shipping_city || null,
+        shipping_state: shipping_state || null,
+        shipping_zip: shipping_zip || null,
+        shipping_country: shipping_country || null,
         amount,
         status: "paid",
         download_token,
         download_expires_at,
         download_count: 0,
+        order_items: quantity ? [{ quantity }] : [],
       })
       .select("id")
       .single();
@@ -55,7 +65,7 @@ Deno.serve(async (req) => {
     // Get product and store info for email
     const { data: product } = await supabase
       .from("products")
-      .select("name, file_url")
+      .select("name, file_url, product_type")
       .eq("id", product_id)
       .single();
 
@@ -65,23 +75,26 @@ Deno.serve(async (req) => {
       .eq("id", store_id)
       .single();
 
-    // Build download URL
+    // Build download URL (only for digital products)
     const projectId = Deno.env.get("SUPABASE_URL")!.match(/https:\/\/(.+?)\.supabase\.co/)?.[1];
     const downloadUrl = `https://${projectId}.supabase.co/functions/v1/download?orderId=${order.id}&token=${download_token}`;
 
     // Send email via Resend
     const resendKey = Deno.env.get("RESEND_API_KEY");
     if (resendKey && product) {
+      const isDigital = product.product_type === "digital";
+
       const emailHtml = `
         <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 520px; margin: 0 auto; padding: 40px 20px;">
-          <h1 style="font-size: 22px; font-weight: 700; color: #1a1a1a; margin-bottom: 8px;">Your purchase is ready! 🎉</h1>
+          <h1 style="font-size: 22px; font-weight: 700; color: #1a1a1a; margin-bottom: 8px;">Your order is confirmed! 🎉</h1>
           <p style="color: #666; font-size: 14px; margin-bottom: 24px;">Thank you for purchasing from <strong>${store?.name || "our store"}</strong>.</p>
           <div style="background: #f8f9fa; border-radius: 12px; padding: 20px; margin-bottom: 24px;">
             <p style="font-size: 16px; font-weight: 600; color: #1a1a1a; margin: 0 0 4px;">${product.name}</p>
             <p style="color: #666; font-size: 14px; margin: 0;">Amount paid: $${amount}</p>
+            ${!isDigital && shipping_address ? `<p style="color: #666; font-size: 14px; margin: 8px 0 0;">Ships to: ${shipping_address}, ${shipping_city || ""} ${shipping_state || ""} ${shipping_zip || ""}, ${shipping_country || ""}</p>` : ""}
           </div>
-          <a href="${downloadUrl}" style="display: inline-block; background: #1a1a1a; color: #fff; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px;">Download Your File</a>
-          <p style="color: #999; font-size: 12px; margin-top: 24px;">This link expires in 48 hours and allows up to 10 downloads.</p>
+          ${isDigital ? `<a href="${downloadUrl}" style="display: inline-block; background: #1a1a1a; color: #fff; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px;">Download Your File</a>
+          <p style="color: #999; font-size: 12px; margin-top: 24px;">This link expires in 48 hours and allows up to 10 downloads.</p>` : `<p style="color: #666; font-size: 14px;">Your order will be shipped soon. We'll notify you with tracking details.</p>`}
         </div>
       `;
 
@@ -94,7 +107,7 @@ Deno.serve(async (req) => {
         body: JSON.stringify({
           from: "onboarding@resend.dev",
           to: [customer_email],
-          subject: `Your purchase is ready — ${product.name}`,
+          subject: `Your order is confirmed — ${product.name}`,
           html: emailHtml,
         }),
       });

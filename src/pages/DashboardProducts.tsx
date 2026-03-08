@@ -26,6 +26,7 @@ interface ProductForm {
   emoji: string;
   color: string;
   category: string;
+  product_type: "digital" | "physical";
 }
 
 const emptyForm: ProductForm = {
@@ -36,6 +37,7 @@ const emptyForm: ProductForm = {
   emoji: "🎨",
   color: "#6C5CE7",
   category: "",
+  product_type: "digital",
 };
 
 export default function DashboardProducts() {
@@ -111,6 +113,7 @@ export default function DashboardProducts() {
       emoji: product.emoji,
       color: product.color,
       category: product.category,
+      product_type: product.product_type || "digital",
     });
     setProductImagePreview(product.image_url);
     setUploadedFile(product.file_url ? { name: product.file_url, path: "" } : null);
@@ -208,6 +211,7 @@ export default function DashboardProducts() {
       file_url: uploadedFile ? uploadedFile.name : null,
       image_url: imageUrl,
       is_active: true,
+      product_type: form.product_type,
     };
 
     if (editingId) {
