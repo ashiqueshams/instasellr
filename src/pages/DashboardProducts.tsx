@@ -30,6 +30,7 @@ export default function DashboardProducts() {
     category: "",
   });
   const [uploadedFile, setUploadedFile] = useState<{ name: string; path: string } | null>(null);
+  const [uploadedFileData, setUploadedFileData] = useState<{ base64: string; type: string; size: number } | null>(null);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -50,37 +51,32 @@ export default function DashboardProducts() {
     setUploading(true);
     setUploadProgress(0);
 
-    // Simulate progress since supabase JS doesn't support upload progress natively
-    const progressInterval = setInterval(() => {
-      setUploadProgress((prev) => Math.min(prev + 10, 90));
-    }, 200);
-
-    const filePath = `store-1/temp-${Date.now()}/${file.name}`;
-
-    const { error } = await supabase.storage
-      .from("product-files")
-      .upload(filePath, file, { upsert: true });
-
-    clearInterval(progressInterval);
-
-    if (error) {
+    // Read file as base64
+    const reader = new FileReader();
+    reader.onprogress = (event) => {
+      if (event.lengthComputable) {
+        setUploadProgress(Math.round((event.loaded / event.total) * 90));
+      }
+    };
+    reader.onload = () => {
+      const base64 = (reader.result as string).split(",")[1];
+      setUploadProgress(100);
+      setUploadedFile({ name: file.name, path: "" });
+      setUploadedFileData({ base64, type: file.type, size: file.size });
+      setUploading(false);
+      toast({ title: "File ready!" });
+    };
+    reader.onerror = () => {
       setUploading(false);
       setUploadProgress(0);
-      toast({ title: "Upload failed", description: error.message, variant: "destructive" });
-      return;
-    }
-
-    setUploadProgress(100);
-    setUploadedFile({ name: file.name, path: filePath });
-    setUploading(false);
-    toast({ title: "File uploaded!" });
+      toast({ title: "Failed to read file", variant: "destructive" });
+    };
+    reader.readAsDataURL(file);
   };
 
-  const handleRemoveFile = async () => {
-    if (uploadedFile) {
-      await supabase.storage.from("product-files").remove([uploadedFile.path]);
-    }
+  const handleRemoveFile = () => {
     setUploadedFile(null);
+    setUploadedFileData(null);
     setUploadProgress(0);
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
@@ -103,7 +99,7 @@ export default function DashboardProducts() {
         emoji: form.emoji,
         color: form.color,
         category: form.category || null,
-        file_url: uploadedFile?.path || null,
+        file_url: uploadedFile ? uploadedFile.name : null,
         is_active: true,
       })
       .select()
@@ -114,24 +110,25 @@ export default function DashboardProducts() {
       return;
     }
 
-    if (data) {
-      // If we uploaded to a temp path, move to the real product path
-      if (uploadedFile) {
-        const newPath = `store-1/${data.id}/${uploadedFile.name}`;
-        // Copy to new path
-        const { error: copyError } = await supabase.storage
-          .from("product-files")
-          .copy(uploadedFile.path, newPath);
+    if (data && uploadedFile && uploadedFileData) {
+      // Store file in product_files table
+      const { error: fileError } = await supabase
+        .from("product_files")
+        .insert({
+          product_id: data.id,
+          store_id: data.store_id,
+          file_name: uploadedFile.name,
+          file_type: uploadedFileData.type,
+          file_size: uploadedFileData.size,
+          file_data: uploadedFileData.base64,
+        });
 
-        if (!copyError) {
-          // Delete old file
-          await supabase.storage.from("product-files").remove([uploadedFile.path]);
-          // Update product with correct path
-          await supabase.from("products").update({ file_url: newPath }).eq("id", data.id);
-          data.file_url = newPath;
-        }
+      if (fileError) {
+        toast({ title: "File save failed", description: fileError.message, variant: "destructive" });
       }
+    }
 
+    if (data) {
       setProducts([...products, {
         id: data.id,
         store_id: data.store_id,
@@ -150,17 +147,15 @@ export default function DashboardProducts() {
 
     setForm({ name: "", tagline: "", description: "", price: "", emoji: "🎨", color: "#6C5CE7", category: "" });
     setUploadedFile(null);
+    setUploadedFileData(null);
     setUploadProgress(0);
     setShowForm(false);
     toast({ title: "Product added!" });
   };
 
   const handleDelete = async (id: string) => {
-    // Delete file from storage if exists
-    const product = products.find((p) => p.id === id);
-    if (product?.file_url) {
-      await supabase.storage.from("product-files").remove([product.file_url]);
-    }
+    // Delete file from product_files table
+    await supabase.from("product_files").delete().eq("product_id", id);
     await supabase.from("products").delete().eq("id", id);
     setProducts(products.filter((p) => p.id !== id));
     toast({ title: "Product deleted" });

@@ -40,7 +40,7 @@ Deno.serve(async (req) => {
   // Fetch order with product info
   const { data: order, error } = await supabase
     .from("orders")
-    .select("*, products(file_url, name)")
+    .select("*, products(name)")
     .eq("id", orderId)
     .single();
 
@@ -48,39 +48,32 @@ Deno.serve(async (req) => {
     return errorPage("Order Not Found", "We couldn't find this order. Please check your link.");
   }
 
-  // Verify token
   if (order.download_token !== token) {
     return errorPage("Invalid Token", "This download link is not valid.");
   }
 
-  // Verify status
   if (order.status !== "paid") {
     return errorPage("Payment Required", "This order has not been paid yet.");
   }
 
-  // Check expiry
   if (order.download_expires_at && new Date(order.download_expires_at) < new Date()) {
     return errorPage("Link Expired", "This download link has expired. It was valid for 48 hours after purchase.");
   }
 
-  // Check download count
   if ((order.download_count ?? 0) >= 3) {
     return errorPage("Download Limit Reached", "You've reached the maximum of 3 downloads for this order.");
   }
 
-  // Get file URL
-  const fileUrl = (order as any).products?.file_url;
-  if (!fileUrl) {
+  // Get file from product_files table
+  const { data: fileRow, error: fileError } = await supabase
+    .from("product_files")
+    .select("file_name, file_type, file_data")
+    .eq("product_id", order.product_id)
+    .limit(1)
+    .single();
+
+  if (fileError || !fileRow) {
     return errorPage("No File Available", "The product file is not available for download.");
-  }
-
-  // Generate signed URL
-  const { data: signedData, error: signedError } = await supabase.storage
-    .from("product-files")
-    .createSignedUrl(fileUrl, 60);
-
-  if (signedError || !signedData?.signedUrl) {
-    return errorPage("Download Error", "We couldn't generate your download link. Please try again.");
   }
 
   // Increment download count
@@ -89,9 +82,19 @@ Deno.serve(async (req) => {
     .update({ download_count: (order.download_count ?? 0) + 1 })
     .eq("id", orderId);
 
-  // Redirect to signed URL
-  return new Response(null, {
-    status: 302,
-    headers: { ...corsHeaders, Location: signedData.signedUrl },
+  // Decode base64 file_data to binary
+  const binaryString = atob(fileRow.file_data);
+  const bytes = new Uint8Array(binaryString.length);
+  for (let i = 0; i < binaryString.length; i++) {
+    bytes[i] = binaryString.charCodeAt(i);
+  }
+
+  return new Response(bytes, {
+    status: 200,
+    headers: {
+      ...corsHeaders,
+      "Content-Type": fileRow.file_type || "application/octet-stream",
+      "Content-Disposition": `attachment; filename="${fileRow.file_name}"`,
+    },
   });
 });
