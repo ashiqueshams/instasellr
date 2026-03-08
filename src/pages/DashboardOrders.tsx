@@ -139,6 +139,7 @@ export default function DashboardOrders() {
             )}
           </tbody>
         </table>
+        </div>
       </div>
     </div>
   );
