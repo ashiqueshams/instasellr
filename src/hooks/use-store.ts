@@ -3,25 +3,26 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/components/AuthGuard";
 
 interface StoreData {
-  id: string;
-  slug: string;
-  name: string;
-  bio: string;
-  avatar_initials: string;
-  accent_color: string;
-  font_heading: string;
-  font_body: string;
-  layout: string;
-  logo_url: string | null;
-  banner_url: string | null;
-  theme: string;
-  background_color: string | null;
-  banner_mode: string;
-  card_style: string;
-  social_position: string;
-  footer_image_url: string | null;
-  text_color: string | null;
-  social_links: Record<string, string>;
+   id: string;
+   slug: string;
+   name: string;
+   bio: string;
+   avatar_initials: string;
+   accent_color: string;
+   font_heading: string;
+   font_body: string;
+   layout: string;
+   logo_url: string | null;
+   banner_url: string | null;
+   theme: string;
+   background_color: string | null;
+   banner_mode: string;
+   card_style: string;
+   social_position: string;
+   footer_image_url: string | null;
+   text_color: string | null;
+   social_links_color: string | null;
+   social_links: Record<string, string>;
 }
 
 export function useStore() {
@@ -77,29 +78,30 @@ export function useStore() {
           .select()
           .single();
 
-        if (newStore) {
-          setStore({
-            id: newStore.id,
-            slug: newStore.slug,
-            name: newStore.name,
-            bio: newStore.bio || "",
-            avatar_initials: newStore.avatar_initials || "",
-            accent_color: newStore.accent_color || "#ff4545",
-            font_heading: newStore.font_heading || "Syne",
-            font_body: newStore.font_body || "Manrope",
-            layout: newStore.layout || "list",
-            logo_url: newStore.logo_url || null,
-            banner_url: newStore.banner_url || null,
-            theme: newStore.theme || "light",
-            background_color: newStore.background_color || null,
-            banner_mode: (newStore as any).banner_mode || "strip",
-            card_style: (newStore as any).card_style || "card",
-            social_position: (newStore as any).social_position || "header",
-            footer_image_url: (newStore as any).footer_image_url || null,
-            text_color: (newStore as any).text_color || null,
-            social_links: (newStore.social_links as Record<string, string>) || {},
-          });
-        }
+         if (newStore) {
+           setStore({
+             id: newStore.id,
+             slug: newStore.slug,
+             name: newStore.name,
+             bio: newStore.bio || "",
+             avatar_initials: newStore.avatar_initials || "",
+             accent_color: newStore.accent_color || "#ff4545",
+             font_heading: newStore.font_heading || "Syne",
+             font_body: newStore.font_body || "Manrope",
+             layout: newStore.layout || "list",
+             logo_url: newStore.logo_url || null,
+             banner_url: newStore.banner_url || null,
+             theme: newStore.theme || "light",
+             background_color: newStore.background_color || null,
+             banner_mode: (newStore as any).banner_mode || "strip",
+             card_style: (newStore as any).card_style || "card",
+             social_position: (newStore as any).social_position || "below_products",
+             footer_image_url: (newStore as any).footer_image_url || null,
+             text_color: (newStore as any).text_color || null,
+             social_links_color: (newStore as any).social_links_color || null,
+             social_links: (newStore.social_links as Record<string, string>) || {},
+           });
+         }
       }
       setLoading(false);
     };
