@@ -99,7 +99,7 @@ export default function DashboardProducts() {
         emoji: form.emoji,
         color: form.color,
         category: form.category || null,
-        file_url: uploadedFile?.path || null,
+        file_url: uploadedFile ? uploadedFile.name : null,
         is_active: true,
       })
       .select()
@@ -110,24 +110,25 @@ export default function DashboardProducts() {
       return;
     }
 
-    if (data) {
-      // If we uploaded to a temp path, move to the real product path
-      if (uploadedFile) {
-        const newPath = `store-1/${data.id}/${uploadedFile.name}`;
-        // Copy to new path
-        const { error: copyError } = await supabase.storage
-          .from("product-files")
-          .copy(uploadedFile.path, newPath);
+    if (data && uploadedFile && uploadedFileData) {
+      // Store file in product_files table
+      const { error: fileError } = await supabase
+        .from("product_files")
+        .insert({
+          product_id: data.id,
+          store_id: data.store_id,
+          file_name: uploadedFile.name,
+          file_type: uploadedFileData.type,
+          file_size: uploadedFileData.size,
+          file_data: uploadedFileData.base64,
+        });
 
-        if (!copyError) {
-          // Delete old file
-          await supabase.storage.from("product-files").remove([uploadedFile.path]);
-          // Update product with correct path
-          await supabase.from("products").update({ file_url: newPath }).eq("id", data.id);
-          data.file_url = newPath;
-        }
+      if (fileError) {
+        toast({ title: "File save failed", description: fileError.message, variant: "destructive" });
       }
+    }
 
+    if (data) {
       setProducts([...products, {
         id: data.id,
         store_id: data.store_id,
@@ -146,6 +147,7 @@ export default function DashboardProducts() {
 
     setForm({ name: "", tagline: "", description: "", price: "", emoji: "🎨", color: "#6C5CE7", category: "" });
     setUploadedFile(null);
+    setUploadedFileData(null);
     setUploadProgress(0);
     setShowForm(false);
     toast({ title: "Product added!" });
