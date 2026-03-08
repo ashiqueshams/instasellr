@@ -11,33 +11,41 @@ Deno.serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  const supabase = createClient(
-    Deno.env.get("SUPABASE_URL")!,
-    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-  );
+  try {
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
-  // Try to create the bucket (ignore if exists)
-  const { error } = await supabase.storage.createBucket("product-files", {
-    fileSizeLimit: 524288000, // 500MB
-    allowedMimeTypes: [
-      "application/pdf",
-      "application/zip",
-      "application/x-zip-compressed",
-      "image/png",
-      "image/jpeg",
-      "video/mp4",
-    ],
-  });
+    // Use the Storage REST API directly
+    const res = await fetch(`${supabaseUrl}/storage/v1/bucket`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${serviceKey}`,
+        apikey: serviceKey,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        id: "product-files",
+        name: "product-files",
+      }),
+    });
 
-  if (error && !error.message.includes("already exists")) {
-    return new Response(JSON.stringify({ error: error.message }), {
+    const body = await res.text();
+
+    if (!res.ok && !body.includes("already exists")) {
+      return new Response(JSON.stringify({ error: body }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    return new Response(JSON.stringify({ success: true }), {
+      status: 200,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  } catch (err) {
+    return new Response(JSON.stringify({ error: String(err) }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
-
-  return new Response(JSON.stringify({ success: true }), {
-    status: 200,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
-  });
 });
