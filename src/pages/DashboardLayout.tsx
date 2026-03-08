@@ -47,6 +47,15 @@ export default function DashboardLayout() {
             </NavLink>
           ))}
         </nav>
+        <div className="p-3 border-t border-border">
+          <button
+            onClick={handleLogout}
+            className="flex items-center gap-2.5 px-3 h-10 rounded-lg text-sm font-body font-medium text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors w-full"
+          >
+            <LogOut className="w-4 h-4" />
+            Sign Out
+          </button>
+        </div>
       </aside>
 
       {/* Main */}
