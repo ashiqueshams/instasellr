@@ -82,11 +82,25 @@ Deno.serve(async (req) => {
     .update({ download_count: (order.download_count ?? 0) + 1 })
     .eq("id", orderId);
 
-  // Decode base64 file_data to binary
-  const binaryString = atob(fileRow.file_data);
-  const bytes = new Uint8Array(binaryString.length);
-  for (let i = 0; i < binaryString.length; i++) {
-    bytes[i] = binaryString.charCodeAt(i);
+  // file_data is bytea, returned as hex string like \x4142...
+  let bytes: Uint8Array;
+  const raw = fileRow.file_data;
+  if (typeof raw === "string" && raw.startsWith("\\x")) {
+    // Hex-encoded bytea
+    const hex = raw.slice(2);
+    bytes = new Uint8Array(hex.length / 2);
+    for (let i = 0; i < hex.length; i += 2) {
+      bytes[i / 2] = parseInt(hex.substring(i, i + 2), 16);
+    }
+  } else if (typeof raw === "string") {
+    // Try base64
+    const binaryString = atob(raw);
+    bytes = new Uint8Array(binaryString.length);
+    for (let i = 0; i < binaryString.length; i++) {
+      bytes[i] = binaryString.charCodeAt(i);
+    }
+  } else {
+    bytes = new Uint8Array(raw);
   }
 
   return new Response(bytes, {
