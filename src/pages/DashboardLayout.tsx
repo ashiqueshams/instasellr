@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { sampleProducts, sampleOrders, sampleStore, Product } from "@/data/sampleData";
-import { Plus, Trash2, Package, ShoppingCart, DollarSign, Link2, ExternalLink, Copy, LayoutDashboard, Settings, X } from "lucide-react";
+import { Plus, Trash2, Package, ShoppingCart, DollarSign, Link2, ExternalLink, Copy, LayoutDashboard, Settings, X, LogOut } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { NavLink, useLocation, Outlet } from "react-router-dom";
+import { NavLink, useLocation, Outlet, useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 
 const navItems = [
   { label: "Overview", icon: LayoutDashboard, path: "/dashboard" },
@@ -13,7 +14,12 @@ const navItems = [
 
 export default function DashboardLayout() {
   const location = useLocation();
+  const navigate = useNavigate();
 
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    navigate("/auth");
+  };
   return (
     <div className="min-h-screen bg-background flex">
       {/* Sidebar */}
@@ -41,6 +47,15 @@ export default function DashboardLayout() {
             </NavLink>
           ))}
         </nav>
+        <div className="p-3 border-t border-border">
+          <button
+            onClick={handleLogout}
+            className="flex items-center gap-2.5 px-3 h-10 rounded-lg text-sm font-body font-medium text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors w-full"
+          >
+            <LogOut className="w-4 h-4" />
+            Sign Out
+          </button>
+        </div>
       </aside>
 
       {/* Main */}

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Send, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useStore } from "@/hooks/use-store";
 
 interface OrderWithProduct {
   id: string;
@@ -19,12 +20,15 @@ export default function DashboardOrders() {
   const [loading, setLoading] = useState(true);
   const [resending, setResending] = useState<string | null>(null);
   const { toast } = useToast();
+  const { store } = useStore();
 
   useEffect(() => {
+    if (!store) return;
     const fetchOrders = async () => {
       const { data, error } = await supabase
         .from("orders")
         .select("id, customer_name, customer_email, amount, status, created_at, download_count, products(name)")
+        .eq("store_id", store.id)
         .order("created_at", { ascending: false });
 
       if (!error && data) {
@@ -44,7 +48,7 @@ export default function DashboardOrders() {
       setLoading(false);
     };
     fetchOrders();
-  }, []);
+  }, [store]);
 
   const handleResend = async (orderId: string) => {
     setResending(orderId);

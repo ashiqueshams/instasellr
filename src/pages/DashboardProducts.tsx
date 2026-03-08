@@ -3,6 +3,7 @@ import { Product } from "@/data/sampleData";
 import { Plus, Trash2, X, Upload, FileIcon, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useStore } from "@/hooks/use-store";
 
 const EMOJI_OPTIONS = ["🎨", "✨", "📝", "📦", "🎯", "💎", "🚀", "🔥", "📚", "🎵", "📸", "🛠️"];
 const COLOR_OPTIONS = ["#6C5CE7", "#00B894", "#E17055", "#0984E3", "#FDCB6E", "#E84393", "#636E72", "#2D3436"];
@@ -18,14 +19,17 @@ const MAX_SIZE = 500 * 1024 * 1024;
 
 export default function DashboardProducts() {
   const { toast } = useToast();
+  const { store } = useStore();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!store) return;
     const fetchProducts = async () => {
       const { data, error } = await supabase
         .from("products")
         .select("*")
+        .eq("store_id", store.id)
         .order("created_at", { ascending: false });
       if (data) {
         setProducts(data.map((p) => ({
@@ -49,7 +53,7 @@ export default function DashboardProducts() {
       setLoading(false);
     };
     fetchProducts();
-  }, []);
+  }, [store]);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({
     name: "",
@@ -122,7 +126,7 @@ export default function DashboardProducts() {
     const { data, error } = await supabase
       .from("products")
       .insert({
-        store_id: "store-1",
+        store_id: store!.id,
         name: form.name,
         tagline: form.tagline || null,
         description: form.description || null,
