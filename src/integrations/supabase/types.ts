@@ -20,6 +20,9 @@ export type Database = {
           created_at: string
           customer_email: string
           customer_name: string
+          download_count: number | null
+          download_expires_at: string | null
+          download_token: string | null
           id: string
           product_id: string
           status: string
@@ -31,6 +34,9 @@ export type Database = {
           created_at?: string
           customer_email: string
           customer_name: string
+          download_count?: number | null
+          download_expires_at?: string | null
+          download_token?: string | null
           id?: string
           product_id: string
           status?: string
@@ -42,6 +48,9 @@ export type Database = {
           created_at?: string
           customer_email?: string
           customer_name?: string
+          download_count?: number | null
+          download_expires_at?: string | null
+          download_token?: string | null
           id?: string
           product_id?: string
           status?: string
