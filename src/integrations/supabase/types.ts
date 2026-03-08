@@ -74,6 +74,39 @@ export type Database = {
           },
         ]
       }
+      product_files: {
+        Row: {
+          created_at: string | null
+          file_data: string
+          file_name: string
+          file_size: number
+          file_type: string
+          id: string
+          product_id: string
+          store_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          file_data: string
+          file_name: string
+          file_size: number
+          file_type: string
+          id?: string
+          product_id: string
+          store_id: string
+        }
+        Update: {
+          created_at?: string | null
+          file_data?: string
+          file_name?: string
+          file_size?: number
+          file_type?: string
+          id?: string
+          product_id?: string
+          store_id?: string
+        }
+        Relationships: []
+      }
       products: {
         Row: {
           category: string | null
