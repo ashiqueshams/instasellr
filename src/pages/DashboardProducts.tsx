@@ -154,11 +154,8 @@ export default function DashboardProducts() {
   };
 
   const handleDelete = async (id: string) => {
-    // Delete file from storage if exists
-    const product = products.find((p) => p.id === id);
-    if (product?.file_url) {
-      await supabase.storage.from("product-files").remove([product.file_url]);
-    }
+    // Delete file from product_files table
+    await supabase.from("product_files").delete().eq("product_id", id);
     await supabase.from("products").delete().eq("id", id);
     setProducts(products.filter((p) => p.id !== id));
     toast({ title: "Product deleted" });
