@@ -1,17 +1,18 @@
 import { useState, useRef, useEffect } from "react";
 import { ArrowLeft, Check, Loader2 } from "lucide-react";
-import { Product, Store } from "@/data/sampleData";
+import { Product, Bundle, Store } from "@/data/sampleData";
 import { useToast } from "@/hooks/use-toast";
 
 interface BundleDetailProps {
+  bundle: Bundle;
   products: Product[];
   store: Store;
   onBack: () => void;
 }
 
-export default function BundleDetail({ products, store, onBack }: BundleDetailProps) {
+export default function BundleDetail({ bundle, products, store, onBack }: BundleDetailProps) {
   const totalPrice = products.reduce((sum, p) => sum + p.price, 0);
-  const bundlePrice = Math.round(totalPrice * 0.7);
+  const bundlePrice = Math.round(totalPrice * (1 - bundle.discount_percent / 100));
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
@@ -78,7 +79,7 @@ export default function BundleDetail({ products, store, onBack }: BundleDetailPr
       {/* Hero */}
       <div
         className="rounded-xl p-6 text-center mb-6 relative overflow-hidden"
-        style={{ background: "linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%)" }}
+        style={{ background: `linear-gradient(135deg, ${bundle.color} 0%, ${bundle.color}dd 100%)` }}
       >
         <div className="absolute inset-0 animate-shimmer pointer-events-none" />
         <div className="relative z-10">
@@ -86,16 +87,20 @@ export default function BundleDetail({ products, store, onBack }: BundleDetailPr
             {products.map((p) => (
               <span
                 key={p.id}
-                className="w-10 h-10 rounded-full flex items-center justify-center text-lg"
+                className="w-10 h-10 rounded-full flex items-center justify-center text-lg overflow-hidden"
                 style={{ backgroundColor: p.color }}
               >
-                {p.emoji}
+                {p.image_url ? (
+                  <img src={p.image_url} alt={p.name} className="w-full h-full object-cover" />
+                ) : (
+                  p.emoji
+                )}
               </span>
             ))}
           </div>
-          <h2 className="font-heading font-bold text-xl text-gold">Complete Bundle</h2>
+          <h2 className="font-heading font-bold text-xl text-gold">{bundle.name}</h2>
           <p className="text-sm mt-1" style={{ color: "rgba(255,255,255,0.6)" }}>
-            All {products.length} products at 30% off
+            All {products.length} products at {bundle.discount_percent}% off
           </p>
           <div className="flex items-baseline justify-center gap-2 mt-3">
             <span className="font-heading font-bold text-3xl" style={{ color: "#fff" }}>
@@ -114,12 +119,13 @@ export default function BundleDetail({ products, store, onBack }: BundleDetailPr
         <div className="flex flex-col gap-2.5">
           {products.map((p) => (
             <div key={p.id} className="flex items-center gap-3 bg-card rounded-xl p-3.5 store-shadow">
-              <span
-                className="w-10 h-10 rounded-lg flex items-center justify-center text-lg shrink-0"
-                style={{ backgroundColor: p.color + "20" }}
-              >
-                {p.emoji}
-              </span>
+              {p.image_url ? (
+                <img src={p.image_url} alt={p.name} className="w-10 h-10 rounded-lg object-cover shrink-0" />
+              ) : (
+                <span className="w-10 h-10 rounded-lg flex items-center justify-center text-lg shrink-0" style={{ backgroundColor: p.color + "20" }}>
+                  {p.emoji}
+                </span>
+              )}
               <div className="flex-1 min-w-0">
                 <p className="font-heading font-semibold text-sm text-foreground">{p.name}</p>
                 <p className="text-xs text-muted-foreground truncate">{p.tagline}</p>
@@ -139,14 +145,14 @@ export default function BundleDetail({ products, store, onBack }: BundleDetailPr
             placeholder="Your name"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="h-11 rounded-lg bg-background px-3.5 text-sm font-body border border-border outline-none focus:ring-2 focus:ring-primary/20 transition-shadow placeholder:text-muted-foreground"
+            className="h-11 rounded-lg bg-background px-3.5 text-[16px] sm:text-sm font-body border border-border outline-none focus:ring-2 focus:ring-primary/20 transition-shadow placeholder:text-muted-foreground"
           />
           <input
             type="email"
             placeholder="Your email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="h-11 rounded-lg bg-background px-3.5 text-sm font-body border border-border outline-none focus:ring-2 focus:ring-primary/20 transition-shadow placeholder:text-muted-foreground"
+            className="h-11 rounded-lg bg-background px-3.5 text-[16px] sm:text-sm font-body border border-border outline-none focus:ring-2 focus:ring-primary/20 transition-shadow placeholder:text-muted-foreground"
           />
           <button
             onClick={handleBuy}
@@ -171,9 +177,9 @@ export default function BundleDetail({ products, store, onBack }: BundleDetailPr
           <div className="max-w-[480px] mx-auto px-4 pb-4">
             <div className="bg-card rounded-xl p-3.5 store-shadow border border-border flex items-center justify-between gap-3">
               <div className="flex items-center gap-2.5 min-w-0">
-                <span className="text-lg">🔥</span>
+                <span className="text-lg">{bundle.emoji}</span>
                 <div className="min-w-0">
-                  <p className="font-heading font-semibold text-sm text-foreground">Complete Bundle</p>
+                  <p className="font-heading font-semibold text-sm text-foreground">{bundle.name}</p>
                   <p className="font-heading font-bold text-sm text-gold">${bundlePrice}</p>
                 </div>
               </div>

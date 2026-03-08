@@ -35,12 +35,23 @@ const socialIcons: Record<string, React.ReactNode> = {
 export default function StoreHeader({ store }: StoreHeaderProps) {
   return (
     <div className="flex flex-col items-center text-center animate-fadeUp">
+      {/* Banner */}
+      {store.banner_url && (
+        <div className="w-full h-28 rounded-xl overflow-hidden mb-4 -mt-2">
+          <img src={store.banner_url} alt="Store banner" className="w-full h-full object-cover" />
+        </div>
+      )}
+
       {/* Avatar */}
       <div
-        className="w-20 h-20 rounded-full flex items-center justify-center font-heading font-bold text-2xl text-primary-foreground relative"
+        className="w-20 h-20 rounded-full flex items-center justify-center font-heading font-bold text-2xl text-primary-foreground relative overflow-hidden"
         style={{ backgroundColor: store.accent_color }}
       >
-        {store.avatar_initials}
+        {store.logo_url ? (
+          <img src={store.logo_url} alt={store.name} className="w-full h-full object-cover" />
+        ) : (
+          store.avatar_initials
+        )}
         {/* Verified badge */}
         <div className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-card flex items-center justify-center store-shadow">
           <svg viewBox="0 0 24 24" className="w-5 h-5 text-blue-500 fill-current">
@@ -50,7 +61,7 @@ export default function StoreHeader({ store }: StoreHeaderProps) {
       </div>
 
       {/* Name & bio */}
-      <h1 className="font-heading font-bold text-xl mt-4 text-foreground">{store.name}</h1>
+      <h1 className="font-heading font-bold text-xl mt-4 text-foreground" style={{ fontFamily: `'${store.font_heading}', sans-serif` }}>{store.name}</h1>
       <p className="text-muted-foreground text-sm mt-1.5 max-w-[280px] leading-relaxed">{store.bio}</p>
 
       {/* Social icons */}
