@@ -9,6 +9,8 @@ import DashboardOverview from "./pages/DashboardOverview";
 import DashboardProducts from "./pages/DashboardProducts";
 import DashboardOrders from "./pages/DashboardOrders";
 import DashboardSettings from "./pages/DashboardSettings";
+import Auth from "./pages/Auth";
+import AuthGuard from "./components/AuthGuard";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -21,8 +23,16 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Navigate to="/store/jane-doe-digital" replace />} />
+          <Route path="/auth" element={<Auth />} />
           <Route path="/store/:slug" element={<Storefront />} />
-          <Route path="/dashboard" element={<DashboardLayout />}>
+          <Route
+            path="/dashboard"
+            element={
+              <AuthGuard>
+                <DashboardLayout />
+              </AuthGuard>
+            }
+          >
             <Route index element={<DashboardOverview />} />
             <Route path="products" element={<DashboardProducts />} />
             <Route path="orders" element={<DashboardOrders />} />

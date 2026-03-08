@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { sampleProducts, sampleOrders, sampleStore, Product } from "@/data/sampleData";
-import { Plus, Trash2, Package, ShoppingCart, DollarSign, Link2, ExternalLink, Copy, LayoutDashboard, Settings, X } from "lucide-react";
+import { Plus, Trash2, Package, ShoppingCart, DollarSign, Link2, ExternalLink, Copy, LayoutDashboard, Settings, X, LogOut } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { NavLink, useLocation, Outlet } from "react-router-dom";
+import { NavLink, useLocation, Outlet, useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 
 const navItems = [
   { label: "Overview", icon: LayoutDashboard, path: "/dashboard" },
