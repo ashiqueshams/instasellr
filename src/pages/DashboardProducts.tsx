@@ -391,6 +391,7 @@ export default function DashboardProducts() {
             ))}
           </tbody>
         </table>
+        </div>
         {products.length === 0 && !loading && (
           <div className="py-12 text-center text-muted-foreground text-sm">No products yet. Add your first one!</div>
         )}
