@@ -1,5 +1,5 @@
-import { useState, useRef } from "react";
-import { sampleProducts, Product } from "@/data/sampleData";
+import { useState, useRef, useEffect } from "react";
+import { Product } from "@/data/sampleData";
 import { Plus, Trash2, X, Upload, FileIcon, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -14,11 +14,42 @@ const ACCEPTED_TYPES = [
   "image/jpeg",
   "video/mp4",
 ];
-const MAX_SIZE = 500 * 1024 * 1024; // 500MB
+const MAX_SIZE = 500 * 1024 * 1024;
 
 export default function DashboardProducts() {
   const { toast } = useToast();
-  const [products, setProducts] = useState<Product[]>(sampleProducts);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchProducts = async () => {
+      const { data, error } = await supabase
+        .from("products")
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (data) {
+        setProducts(data.map((p) => ({
+          id: p.id,
+          store_id: p.store_id,
+          name: p.name,
+          tagline: p.tagline || "",
+          description: p.description || "",
+          price: p.price,
+          emoji: p.emoji || "🎨",
+          color: p.color || "#6C5CE7",
+          category: p.category || "",
+          file_url: p.file_url,
+          is_active: p.is_active ?? true,
+          created_at: p.created_at,
+        })));
+      }
+      if (error) {
+        toast({ title: "Failed to load products", description: error.message, variant: "destructive" });
+      }
+      setLoading(false);
+    };
+    fetchProducts();
+  }, []);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({
     name: "",
@@ -355,8 +386,13 @@ export default function DashboardProducts() {
             ))}
           </tbody>
         </table>
-        {products.length === 0 && (
+        {products.length === 0 && !loading && (
           <div className="py-12 text-center text-muted-foreground text-sm">No products yet. Add your first one!</div>
+        )}
+        {loading && (
+          <div className="py-12 text-center text-muted-foreground text-sm flex items-center justify-center gap-2">
+            <Loader2 className="w-4 h-4 animate-spin" /> Loading products...
+          </div>
         )}
       </div>
     </div>
