@@ -269,17 +269,22 @@ export type Database = {
           accent_color: string | null
           avatar_initials: string | null
           background_color: string | null
+          banner_mode: string | null
           banner_url: string | null
           bio: string | null
+          card_style: string | null
           created_at: string
           font_body: string | null
           font_heading: string | null
+          footer_image_url: string | null
           id: string
           layout: string | null
           logo_url: string | null
           name: string
           slug: string
           social_links: Json | null
+          social_position: string | null
+          text_color: string | null
           theme: string | null
           user_id: string | null
         }
@@ -287,17 +292,22 @@ export type Database = {
           accent_color?: string | null
           avatar_initials?: string | null
           background_color?: string | null
+          banner_mode?: string | null
           banner_url?: string | null
           bio?: string | null
+          card_style?: string | null
           created_at?: string
           font_body?: string | null
           font_heading?: string | null
+          footer_image_url?: string | null
           id?: string
           layout?: string | null
           logo_url?: string | null
           name: string
           slug: string
           social_links?: Json | null
+          social_position?: string | null
+          text_color?: string | null
           theme?: string | null
           user_id?: string | null
         }
@@ -305,17 +315,22 @@ export type Database = {
           accent_color?: string | null
           avatar_initials?: string | null
           background_color?: string | null
+          banner_mode?: string | null
           banner_url?: string | null
           bio?: string | null
+          card_style?: string | null
           created_at?: string
           font_body?: string | null
           font_heading?: string | null
+          footer_image_url?: string | null
           id?: string
           layout?: string | null
           logo_url?: string | null
           name?: string
           slug?: string
           social_links?: Json | null
+          social_position?: string | null
+          text_color?: string | null
           theme?: string | null
           user_id?: string | null
         }
