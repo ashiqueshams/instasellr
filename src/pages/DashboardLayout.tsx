@@ -14,7 +14,12 @@ const navItems = [
 
 export default function DashboardLayout() {
   const location = useLocation();
+  const navigate = useNavigate();
 
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    navigate("/auth");
+  };
   return (
     <div className="min-h-screen bg-background flex">
       {/* Sidebar */}
