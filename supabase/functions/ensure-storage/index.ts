@@ -18,48 +18,30 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Connect as superuser by replacing the user in the connection string
+    const superDbUrl = dbUrl.replace(/\/\/[^:]+:/, "//supabase_admin:");
+    
     const { Pool } = await import("https://deno.land/x/postgres@v0.17.0/mod.ts");
     const pool = new Pool(dbUrl, 1);
     const conn = await pool.connect();
 
     try {
-      // Switch to the storage admin role
-      await conn.queryObject(`SET ROLE supabase_storage_admin`);
-      
-      // Add missing columns
-      await conn.queryObject(`ALTER TABLE storage.buckets ADD COLUMN IF NOT EXISTS public boolean DEFAULT false`);
-      await conn.queryObject(`ALTER TABLE storage.buckets ADD COLUMN IF NOT EXISTS avif_autodetection boolean DEFAULT false`);
-      await conn.queryObject(`ALTER TABLE storage.buckets ADD COLUMN IF NOT EXISTS file_size_limit bigint DEFAULT NULL`);
-      await conn.queryObject(`ALTER TABLE storage.buckets ADD COLUMN IF NOT EXISTS allowed_mime_types text[] DEFAULT NULL`);
+      // Check current user and available roles
+      const userResult = await conn.queryObject(`SELECT current_user, session_user`);
+      const rolesResult = await conn.queryObject(`SELECT rolname FROM pg_roles WHERE pg_has_role(current_user, oid, 'member') ORDER BY rolname`);
 
-      // Create bucket
-      await conn.queryObject(`INSERT INTO storage.buckets (id, name, public) VALUES ('product-files', 'product-files', false) ON CONFLICT (id) DO NOTHING`);
-
-      // Reset role and create RLS policies
-      await conn.queryObject(`RESET ROLE`);
-      
-      await conn.queryObject(`
-        DO $$ BEGIN
-          IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Authenticated upload product files' AND tablename = 'objects' AND schemaname = 'storage') THEN
-            CREATE POLICY "Authenticated upload product files" ON storage.objects FOR INSERT TO authenticated WITH CHECK (bucket_id = 'product-files');
-          END IF;
-          IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Authenticated delete product files' AND tablename = 'objects' AND schemaname = 'storage') THEN
-            CREATE POLICY "Authenticated delete product files" ON storage.objects FOR DELETE TO authenticated USING (bucket_id = 'product-files');
-          END IF;
-          IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Authenticated read product files' AND tablename = 'objects' AND schemaname = 'storage') THEN
-            CREATE POLICY "Authenticated read product files" ON storage.objects FOR SELECT TO authenticated USING (bucket_id = 'product-files');
-          END IF;
-        END $$;
-      `);
+      return new Response(JSON.stringify({ 
+        success: false, 
+        current: userResult.rows,
+        available_roles: rolesResult.rows 
+      }), {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     } finally {
       conn.release();
       await pool.end();
     }
-
-    return new Response(JSON.stringify({ success: true }), {
-      status: 200,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
   } catch (err) {
     return new Response(JSON.stringify({ error: String(err) }), {
       status: 500,
