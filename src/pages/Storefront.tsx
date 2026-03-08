@@ -13,6 +13,7 @@ import StorefrontLinks from "@/components/storefront/StorefrontLinks";
 import CartDrawer from "@/components/storefront/CartDrawer";
 import CartButton from "@/components/storefront/CartButton";
 import CheckoutPage from "@/components/storefront/CheckoutPage";
+import CategoryGrid from "@/components/storefront/CategoryGrid";
 
 export default function Storefront() {
   const { slug } = useParams<{ slug: string }>();
@@ -23,6 +24,7 @@ export default function Storefront() {
   const [storeLinks, setStoreLinks] = useState<any[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [selectedBundle, setSelectedBundle] = useState<(Bundle & { products: Product[] }) | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [showCheckout, setShowCheckout] = useState(false);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
@@ -130,15 +132,20 @@ export default function Storefront() {
     fetchStore();
   }, [slug]);
 
-  const filteredProducts = useMemo(
-    () =>
-      products.filter(
+  const filteredProducts = useMemo(() => {
+    let result = products;
+    if (search) {
+      result = result.filter(
         (p) =>
           p.name.toLowerCase().includes(search.toLowerCase()) ||
           p.tagline.toLowerCase().includes(search.toLowerCase())
-      ),
-    [products, search]
-  );
+      );
+    }
+    if (selectedCategory) {
+      result = result.filter((p) => (p.category?.trim() || "Other") === selectedCategory);
+    }
+    return result;
+  }, [products, search, selectedCategory]);
 
   if (loading) {
     return (
@@ -173,6 +180,8 @@ export default function Storefront() {
         setSelectedProduct={setSelectedProduct}
         selectedBundle={selectedBundle}
         setSelectedBundle={setSelectedBundle}
+        selectedCategory={selectedCategory}
+        setSelectedCategory={setSelectedCategory}
         showCheckout={showCheckout}
         setShowCheckout={setShowCheckout}
       />
@@ -192,6 +201,8 @@ interface StorefrontContentProps {
   setSelectedProduct: (p: Product | null) => void;
   selectedBundle: (Bundle & { products: Product[] }) | null;
   setSelectedBundle: (b: (Bundle & { products: Product[] }) | null) => void;
+  selectedCategory: string | null;
+  setSelectedCategory: (c: string | null) => void;
   showCheckout: boolean;
   setShowCheckout: (v: boolean) => void;
 }
@@ -199,6 +210,7 @@ interface StorefrontContentProps {
 function StorefrontContent({
   store, products, filteredProducts, bundles, storeLinks, search, setSearch,
   selectedProduct, setSelectedProduct, selectedBundle, setSelectedBundle,
+  selectedCategory, setSelectedCategory,
   showCheckout, setShowCheckout,
 }: StorefrontContentProps) {
   const isFullpage = store.banner_mode === "fullpage" && store.banner_url;
@@ -212,10 +224,41 @@ function StorefrontContent({
     <div className="flex flex-col gap-5" style={{ fontFamily: `'${store.font_body}', sans-serif` }}>
       <StoreHeader store={store} />
       <SearchBar value={search} onChange={setSearch} />
+
+      {/* Bundles */}
       {!search && bundles.map((bundle) => (
         <BundleCard key={bundle.id} bundle={bundle} products={bundle.products} accentColor={store.accent_color} onBuyBundle={() => setSelectedBundle(bundle)} />
       ))}
+
+      {/* Custom links */}
       {!search && storeLinks.length > 0 && <StorefrontLinks links={storeLinks} store={store} />}
+
+      {/* Category grid */}
+      {!search && (
+        <CategoryGrid
+          products={products}
+          store={store}
+          onSelectCategory={(cat) => setSelectedCategory(cat || null)}
+          selectedCategory={selectedCategory}
+        />
+      )}
+
+      {/* Active category label */}
+      {selectedCategory && (
+        <div className="flex items-center gap-2 animate-fadeUp" style={{ opacity: 0, animationFillMode: "forwards" }}>
+          <h3 className="font-heading font-semibold text-sm" style={{ color: store.text_color || undefined }}>
+            {selectedCategory}
+          </h3>
+          <button
+            onClick={() => setSelectedCategory(null)}
+            className="text-[11px] px-2.5 py-1 rounded-full bg-muted text-muted-foreground hover:bg-muted/80 transition-colors"
+          >
+            Clear
+          </button>
+        </div>
+      )}
+
+      {/* Products */}
       <ProductList
         products={filteredProducts}
         onSelectProduct={setSelectedProduct}
