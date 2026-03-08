@@ -65,7 +65,7 @@ export default function DashboardOverview() {
       {store && (
         <div className="bg-card rounded-xl p-5 store-shadow">
           <p className="text-sm text-muted-foreground mb-2">Your store URL</p>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 min-w-0">
             <code className="flex-1 text-sm bg-background rounded-lg px-3 py-2 text-foreground font-body truncate">{storeUrl}</code>
             <button
               onClick={() => {
