@@ -14,7 +14,146 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      orders: {
+        Row: {
+          amount: number
+          created_at: string
+          customer_email: string
+          customer_name: string
+          id: string
+          product_id: string
+          status: string
+          store_id: string
+          stripe_payment_id: string | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          customer_email: string
+          customer_name: string
+          id?: string
+          product_id: string
+          status?: string
+          store_id: string
+          stripe_payment_id?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          customer_email?: string
+          customer_name?: string
+          id?: string
+          product_id?: string
+          status?: string
+          store_id?: string
+          stripe_payment_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orders_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      products: {
+        Row: {
+          category: string | null
+          color: string | null
+          created_at: string
+          description: string | null
+          emoji: string | null
+          file_url: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          price: number
+          store_id: string
+          tagline: string | null
+        }
+        Insert: {
+          category?: string | null
+          color?: string | null
+          created_at?: string
+          description?: string | null
+          emoji?: string | null
+          file_url?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          price?: number
+          store_id: string
+          tagline?: string | null
+        }
+        Update: {
+          category?: string | null
+          color?: string | null
+          created_at?: string
+          description?: string | null
+          emoji?: string | null
+          file_url?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          price?: number
+          store_id?: string
+          tagline?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "products_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stores: {
+        Row: {
+          accent_color: string | null
+          avatar_initials: string | null
+          bio: string | null
+          created_at: string
+          id: string
+          name: string
+          slug: string
+          social_links: Json | null
+          user_id: string | null
+        }
+        Insert: {
+          accent_color?: string | null
+          avatar_initials?: string | null
+          bio?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          slug: string
+          social_links?: Json | null
+          user_id?: string | null
+        }
+        Update: {
+          accent_color?: string | null
+          avatar_initials?: string | null
+          bio?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          slug?: string
+          social_links?: Json | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
