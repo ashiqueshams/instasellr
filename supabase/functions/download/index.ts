@@ -60,8 +60,8 @@ Deno.serve(async (req) => {
     return errorPage("Link Expired", "This download link has expired. It was valid for 48 hours after purchase.");
   }
 
-  if ((order.download_count ?? 0) >= 3) {
-    return errorPage("Download Limit Reached", "You've reached the maximum of 3 downloads for this order.");
+  if ((order.download_count ?? 0) >= 10) {
+    return errorPage("Download Limit Reached", "You've reached the maximum of 10 downloads for this order.");
   }
 
   // Get file from product_files table
