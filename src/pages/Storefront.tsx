@@ -35,29 +35,30 @@ export default function Storefront() {
         return;
       }
 
-      const storeObj: Store = {
-        id: storeData.id,
-        slug: storeData.slug,
-        name: storeData.name,
-        bio: storeData.bio || "",
-        avatar_initials: storeData.avatar_initials || "",
-        accent_color: storeData.accent_color || "#ff4545",
-        font_heading: storeData.font_heading || "Syne",
-        font_body: storeData.font_body || "Manrope",
-        layout: storeData.layout || "list",
-        logo_url: storeData.logo_url || null,
-        banner_url: storeData.banner_url || null,
-        theme: storeData.theme || "light",
-        background_color: storeData.background_color || null,
-        banner_mode: (storeData as any).banner_mode || "strip",
-        card_style: (storeData as any).card_style || "card",
-        social_position: (storeData as any).social_position || "header",
-        footer_image_url: (storeData as any).footer_image_url || null,
-        text_color: (storeData as any).text_color || null,
-        social_links: (storeData.social_links as Store["social_links"]) || {},
-        created_at: storeData.created_at,
-        user_id: storeData.user_id || "",
-      };
+       const storeObj: Store = {
+         id: storeData.id,
+         slug: storeData.slug,
+         name: storeData.name,
+         bio: storeData.bio || "",
+         avatar_initials: storeData.avatar_initials || "",
+         accent_color: storeData.accent_color || "#ff4545",
+         font_heading: storeData.font_heading || "Syne",
+         font_body: storeData.font_body || "Manrope",
+         layout: storeData.layout || "list",
+         logo_url: storeData.logo_url || null,
+         banner_url: storeData.banner_url || null,
+         theme: storeData.theme || "light",
+         background_color: storeData.background_color || null,
+         banner_mode: (storeData as any).banner_mode || "strip",
+         card_style: (storeData as any).card_style || "card",
+         social_position: (storeData as any).social_position || "below_products",
+         footer_image_url: (storeData as any).footer_image_url || null,
+         text_color: (storeData as any).text_color || null,
+         social_links_color: (storeData as any).social_links_color || null,
+         social_links: (storeData.social_links as Store["social_links"]) || {},
+         created_at: storeData.created_at,
+         user_id: storeData.user_id || "",
+       };
       setStore(storeObj);
 
       const { data: productsData } = await supabase
