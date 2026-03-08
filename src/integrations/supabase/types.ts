@@ -14,6 +14,86 @@ export type Database = {
   }
   public: {
     Tables: {
+      bundle_items: {
+        Row: {
+          bundle_id: string
+          created_at: string
+          id: string
+          product_id: string
+        }
+        Insert: {
+          bundle_id: string
+          created_at?: string
+          id?: string
+          product_id: string
+        }
+        Update: {
+          bundle_id?: string
+          created_at?: string
+          id?: string
+          product_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bundle_items_bundle_id_fkey"
+            columns: ["bundle_id"]
+            isOneToOne: false
+            referencedRelation: "bundles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bundle_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bundles: {
+        Row: {
+          color: string | null
+          created_at: string
+          description: string | null
+          discount_percent: number | null
+          emoji: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          store_id: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          description?: string | null
+          discount_percent?: number | null
+          emoji?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          store_id: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          description?: string | null
+          discount_percent?: number | null
+          emoji?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          store_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bundles_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       orders: {
         Row: {
           amount: number
@@ -116,6 +196,7 @@ export type Database = {
           emoji: string | null
           file_url: string | null
           id: string
+          image_url: string | null
           is_active: boolean | null
           name: string
           price: number
@@ -130,6 +211,7 @@ export type Database = {
           emoji?: string | null
           file_url?: string | null
           id?: string
+          image_url?: string | null
           is_active?: boolean | null
           name: string
           price?: number
@@ -144,6 +226,7 @@ export type Database = {
           emoji?: string | null
           file_url?: string | null
           id?: string
+          image_url?: string | null
           is_active?: boolean | null
           name?: string
           price?: number
@@ -185,34 +268,55 @@ export type Database = {
         Row: {
           accent_color: string | null
           avatar_initials: string | null
+          background_color: string | null
+          banner_url: string | null
           bio: string | null
           created_at: string
+          font_body: string | null
+          font_heading: string | null
           id: string
+          layout: string | null
+          logo_url: string | null
           name: string
           slug: string
           social_links: Json | null
+          theme: string | null
           user_id: string | null
         }
         Insert: {
           accent_color?: string | null
           avatar_initials?: string | null
+          background_color?: string | null
+          banner_url?: string | null
           bio?: string | null
           created_at?: string
+          font_body?: string | null
+          font_heading?: string | null
           id?: string
+          layout?: string | null
+          logo_url?: string | null
           name: string
           slug: string
           social_links?: Json | null
+          theme?: string | null
           user_id?: string | null
         }
         Update: {
           accent_color?: string | null
           avatar_initials?: string | null
+          background_color?: string | null
+          banner_url?: string | null
           bio?: string | null
           created_at?: string
+          font_body?: string | null
+          font_heading?: string | null
           id?: string
+          layout?: string | null
+          logo_url?: string | null
           name?: string
           slug?: string
           social_links?: Json | null
+          theme?: string | null
           user_id?: string | null
         }
         Relationships: []
