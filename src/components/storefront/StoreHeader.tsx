@@ -33,7 +33,7 @@ const socialIcons: Record<string, React.ReactNode> = {
 };
 
 export function SocialIcons({ store, className = "" }: { store: Store; className?: string }) {
-   const socialColor = (store as any).social_links_color || store.text_color || undefined;
+   const socialColor = store.accent_color;
    return (
      <div className={`flex gap-2.5 ${className}`}>
        {Object.entries(store.social_links).map(([key, url]) => {

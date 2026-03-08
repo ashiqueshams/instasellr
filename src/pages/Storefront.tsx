@@ -54,10 +54,9 @@ export default function Storefront() {
          banner_mode: (storeData as any).banner_mode || "strip",
          card_style: (storeData as any).card_style || "card",
          social_position: (storeData as any).social_position || "below_products",
-         footer_image_url: (storeData as any).footer_image_url || null,
-         text_color: (storeData as any).text_color || null,
-         social_links_color: (storeData as any).social_links_color || null,
-         social_links: (storeData.social_links as Store["social_links"]) || {},
+          footer_image_url: (storeData as any).footer_image_url || null,
+          text_color: (storeData as any).text_color || null,
+          social_links: (storeData.social_links as Store["social_links"]) || {},
          created_at: storeData.created_at,
          user_id: storeData.user_id || "",
        };
