@@ -8,3 +8,6 @@ verify_jwt = false
 
 [functions.resend-order-email]
 verify_jwt = false
+
+[functions.ensure-storage]
+verify_jwt = false
