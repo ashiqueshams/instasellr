@@ -203,7 +203,7 @@ export default function Storefront() {
             <SearchBar value={search} onChange={setSearch} />
 
             {!search && bundles.map((bundle) => (
-              <BundleCard key={bundle.id} bundle={bundle} products={bundle.products} onBuyBundle={() => setSelectedBundle(bundle)} />
+              <BundleCard key={bundle.id} bundle={bundle} products={bundle.products} accentColor={store.accent_color} onBuyBundle={() => setSelectedBundle(bundle)} />
             ))}
 
             {!search && storeLinks.length > 0 && <StorefrontLinks links={storeLinks} store={store} />}
@@ -253,7 +253,7 @@ export default function Storefront() {
             <StoreHeader store={store} />
             <SearchBar value={search} onChange={setSearch} />
             {!search && bundles.map((bundle) => (
-              <BundleCard key={bundle.id} bundle={bundle} products={bundle.products} onBuyBundle={() => setSelectedBundle(bundle)} />
+              <BundleCard key={bundle.id} bundle={bundle} products={bundle.products} accentColor={store.accent_color} onBuyBundle={() => setSelectedBundle(bundle)} />
             ))}
             {!search && storeLinks.length > 0 && <StorefrontLinks links={storeLinks} store={store} />}
             <ProductList
