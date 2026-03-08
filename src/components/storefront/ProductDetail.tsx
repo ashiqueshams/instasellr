@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { ArrowLeft, Check, Loader2 } from "lucide-react";
 import { Product, Store } from "@/data/sampleData";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 interface ProductDetailProps {
   product: Product;
@@ -45,10 +46,23 @@ export default function ProductDetail({ product, store, onBack }: ProductDetailP
     }
 
     setLoading(true);
-    // Simulate purchase
-    await new Promise((r) => setTimeout(r, 1500));
+    try {
+      const { data, error } = await supabase.functions.invoke("create-order", {
+        body: {
+          product_id: product.id,
+          store_id: product.store_id,
+          customer_name: name,
+          customer_email: email,
+          amount: product.price,
+        },
+      });
+
+      if (error) throw error;
+      setPurchased(true);
+    } catch (err: any) {
+      toast({ title: "Purchase failed", description: err.message || "Please try again.", variant: "destructive" });
+    }
     setLoading(false);
-    setPurchased(true);
   };
 
   if (purchased) {

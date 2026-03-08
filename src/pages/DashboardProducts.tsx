@@ -1,10 +1,20 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { sampleProducts, Product } from "@/data/sampleData";
-import { Plus, Trash2, X } from "lucide-react";
+import { Plus, Trash2, X, Upload, FileIcon, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 const EMOJI_OPTIONS = ["🎨", "✨", "📝", "📦", "🎯", "💎", "🚀", "🔥", "📚", "🎵", "📸", "🛠️"];
 const COLOR_OPTIONS = ["#6C5CE7", "#00B894", "#E17055", "#0984E3", "#FDCB6E", "#E84393", "#636E72", "#2D3436"];
+const ACCEPTED_TYPES = [
+  "application/pdf",
+  "application/zip",
+  "application/x-zip-compressed",
+  "image/png",
+  "image/jpeg",
+  "video/mp4",
+];
+const MAX_SIZE = 500 * 1024 * 1024; // 500MB
 
 export default function DashboardProducts() {
   const { toast } = useToast();
@@ -19,33 +29,139 @@ export default function DashboardProducts() {
     color: "#6C5CE7",
     category: "",
   });
+  const [uploadedFile, setUploadedFile] = useState<{ name: string; path: string } | null>(null);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleAdd = () => {
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!ACCEPTED_TYPES.includes(file.type)) {
+      toast({ title: "Invalid file type", description: "Supported: PDF, ZIP, PNG, JPEG, MP4", variant: "destructive" });
+      return;
+    }
+    if (file.size > MAX_SIZE) {
+      toast({ title: "File too large", description: "Max file size is 500MB", variant: "destructive" });
+      return;
+    }
+
+    setUploading(true);
+    setUploadProgress(0);
+
+    // Simulate progress since supabase JS doesn't support upload progress natively
+    const progressInterval = setInterval(() => {
+      setUploadProgress((prev) => Math.min(prev + 10, 90));
+    }, 200);
+
+    const filePath = `store-1/temp-${Date.now()}/${file.name}`;
+
+    const { error } = await supabase.storage
+      .from("product-files")
+      .upload(filePath, file, { upsert: true });
+
+    clearInterval(progressInterval);
+
+    if (error) {
+      setUploading(false);
+      setUploadProgress(0);
+      toast({ title: "Upload failed", description: error.message, variant: "destructive" });
+      return;
+    }
+
+    setUploadProgress(100);
+    setUploadedFile({ name: file.name, path: filePath });
+    setUploading(false);
+    toast({ title: "File uploaded!" });
+  };
+
+  const handleRemoveFile = async () => {
+    if (uploadedFile) {
+      await supabase.storage.from("product-files").remove([uploadedFile.path]);
+    }
+    setUploadedFile(null);
+    setUploadProgress(0);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const handleAdd = async () => {
     if (!form.name || !form.price) {
       toast({ title: "Missing fields", description: "Name and price are required.", variant: "destructive" });
       return;
     }
-    const newProduct: Product = {
-      id: `prod-${Date.now()}`,
-      store_id: "store-1",
-      name: form.name,
-      tagline: form.tagline,
-      description: form.description,
-      price: parseFloat(form.price),
-      emoji: form.emoji,
-      color: form.color,
-      category: form.category,
-      file_url: null,
-      is_active: true,
-      created_at: new Date().toISOString(),
-    };
-    setProducts([...products, newProduct]);
+
+    // Insert product into Supabase
+    const { data, error } = await supabase
+      .from("products")
+      .insert({
+        store_id: "store-1",
+        name: form.name,
+        tagline: form.tagline || null,
+        description: form.description || null,
+        price: parseFloat(form.price),
+        emoji: form.emoji,
+        color: form.color,
+        category: form.category || null,
+        file_url: uploadedFile?.path || null,
+        is_active: true,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      toast({ title: "Error creating product", description: error.message, variant: "destructive" });
+      return;
+    }
+
+    if (data) {
+      // If we uploaded to a temp path, move to the real product path
+      if (uploadedFile) {
+        const newPath = `store-1/${data.id}/${uploadedFile.name}`;
+        // Copy to new path
+        const { error: copyError } = await supabase.storage
+          .from("product-files")
+          .copy(uploadedFile.path, newPath);
+
+        if (!copyError) {
+          // Delete old file
+          await supabase.storage.from("product-files").remove([uploadedFile.path]);
+          // Update product with correct path
+          await supabase.from("products").update({ file_url: newPath }).eq("id", data.id);
+          data.file_url = newPath;
+        }
+      }
+
+      setProducts([...products, {
+        id: data.id,
+        store_id: data.store_id,
+        name: data.name,
+        tagline: data.tagline || "",
+        description: data.description || "",
+        price: data.price,
+        emoji: data.emoji || "🎨",
+        color: data.color || "#6C5CE7",
+        category: data.category || "",
+        file_url: data.file_url,
+        is_active: data.is_active ?? true,
+        created_at: data.created_at,
+      }]);
+    }
+
     setForm({ name: "", tagline: "", description: "", price: "", emoji: "🎨", color: "#6C5CE7", category: "" });
+    setUploadedFile(null);
+    setUploadProgress(0);
     setShowForm(false);
     toast({ title: "Product added!" });
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
+    // Delete file from storage if exists
+    const product = products.find((p) => p.id === id);
+    if (product?.file_url) {
+      await supabase.storage.from("product-files").remove([product.file_url]);
+    }
+    await supabase.from("products").delete().eq("id", id);
     setProducts(products.filter((p) => p.id !== id));
     toast({ title: "Product deleted" });
   };
@@ -100,6 +216,53 @@ export default function DashboardProducts() {
               className="h-11 rounded-lg bg-background px-3.5 text-sm border border-border outline-none focus:ring-2 focus:ring-primary/20 placeholder:text-muted-foreground"
             />
 
+            {/* File upload */}
+            <div className="col-span-2">
+              <p className="text-xs text-muted-foreground mb-1.5">Digital File (PDF, ZIP, PNG, MP4 — max 500MB)</p>
+              {uploading ? (
+                <div className="border border-border rounded-lg p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Loader2 className="w-4 h-4 animate-spin text-primary" />
+                    <span className="text-sm text-muted-foreground">Uploading...</span>
+                  </div>
+                  <div className="w-full bg-muted rounded-full h-2">
+                    <div
+                      className="bg-primary h-2 rounded-full transition-all duration-300"
+                      style={{ width: `${uploadProgress}%` }}
+                    />
+                  </div>
+                </div>
+              ) : uploadedFile ? (
+                <div className="border border-border rounded-lg p-3 flex items-center justify-between">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <FileIcon className="w-4 h-4 text-primary shrink-0" />
+                    <span className="text-sm text-foreground truncate">{uploadedFile.name}</span>
+                  </div>
+                  <button
+                    onClick={handleRemoveFile}
+                    className="w-7 h-7 rounded-md flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors shrink-0"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  className="w-full border-2 border-dashed border-border rounded-lg p-4 flex flex-col items-center gap-1.5 hover:border-primary/40 hover:bg-primary/5 transition-colors"
+                >
+                  <Upload className="w-5 h-5 text-muted-foreground" />
+                  <span className="text-sm text-muted-foreground">Click to upload</span>
+                </button>
+              )}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".pdf,.zip,.png,.jpg,.jpeg,.mp4"
+                onChange={handleFileSelect}
+                className="hidden"
+              />
+            </div>
+
             {/* Emoji picker */}
             <div>
               <p className="text-xs text-muted-foreground mb-1.5">Emoji</p>
@@ -153,6 +316,7 @@ export default function DashboardProducts() {
               <th className="text-left text-xs text-muted-foreground font-body font-medium px-5 py-3">Product</th>
               <th className="text-left text-xs text-muted-foreground font-body font-medium px-5 py-3">Category</th>
               <th className="text-left text-xs text-muted-foreground font-body font-medium px-5 py-3">Price</th>
+              <th className="text-left text-xs text-muted-foreground font-body font-medium px-5 py-3">File</th>
               <th className="text-right text-xs text-muted-foreground font-body font-medium px-5 py-3">Actions</th>
             </tr>
           </thead>
@@ -175,6 +339,15 @@ export default function DashboardProducts() {
                 </td>
                 <td className="px-5 py-3.5 text-sm text-muted-foreground">{product.category || "—"}</td>
                 <td className="px-5 py-3.5 font-heading font-semibold text-sm text-foreground">${product.price}</td>
+                <td className="px-5 py-3.5">
+                  {product.file_url ? (
+                    <span className="inline-flex items-center gap-1 text-xs font-medium text-primary">
+                      <FileIcon className="w-3 h-3" /> Uploaded
+                    </span>
+                  ) : (
+                    <span className="text-xs text-muted-foreground">—</span>
+                  )}
+                </td>
                 <td className="px-5 py-3.5 text-right">
                   <button
                     onClick={() => handleDelete(product.id)}
