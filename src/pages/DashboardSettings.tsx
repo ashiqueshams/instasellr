@@ -71,9 +71,8 @@ export default function DashboardSettings() {
      banner_mode: "strip",
      card_style: "card",
      social_position: "below_products",
-     text_color: "",
-     social_links_color: "",
-     x: "",
+      text_color: "",
+      x: "",
      instagram: "",
      youtube: "",
      tiktok: "",
@@ -106,9 +105,8 @@ export default function DashboardSettings() {
        banner_mode: store.banner_mode || "strip",
        card_style: store.card_style || "card",
        social_position: store.social_position || "below_products",
-       text_color: store.text_color || "",
-       social_links_color: (store as any).social_links_color || "",
-       x: store.social_links?.x || "",
+        text_color: store.text_color || "",
+        x: store.social_links?.x || "",
        instagram: store.social_links?.instagram || "",
        youtube: store.social_links?.youtube || "",
        tiktok: store.social_links?.tiktok || "",
@@ -180,13 +178,12 @@ export default function DashboardSettings() {
 
     // Update new fields separately (may not be in types yet)
      await (supabase.from("stores").update({
-       banner_mode: form.banner_mode,
-       card_style: form.card_style,
-       social_position: form.social_position,
-       footer_image_url: footerUrl,
-       text_color: form.text_color || null,
-       social_links_color: form.social_links_color || null,
-     } as any).eq("id", store.id) as any);
+        banner_mode: form.banner_mode,
+        card_style: form.card_style,
+        social_position: form.social_position,
+        footer_image_url: footerUrl,
+        text_color: form.text_color || null,
+      } as any).eq("id", store.id) as any);
 
     if (error) {
       toast({ title: "Failed to save", description: error.message, variant: "destructive" });
@@ -210,9 +207,8 @@ export default function DashboardSettings() {
          card_style: form.card_style,
          social_position: form.social_position,
          footer_image_url: footerUrl,
-         text_color: form.text_color || null,
-         social_links_color: form.social_links_color || null,
-         social_links: { x: form.x, instagram: form.instagram, youtube: form.youtube, tiktok: form.tiktok, linkedin: form.linkedin },
+          text_color: form.text_color || null,
+          social_links: { x: form.x, instagram: form.instagram, youtube: form.youtube, tiktok: form.tiktok, linkedin: form.linkedin },
        });
       setLogoFile(null);
       setBannerFile(null);
@@ -357,18 +353,19 @@ export default function DashboardSettings() {
             </div>
           </div>
 
-          <div>
-            <label className="text-xs text-muted-foreground font-body mb-1 block">Background Color</label>
-            <p className="text-[11px] text-muted-foreground mb-1.5">Used for the background</p>
-            <div className="flex items-center gap-2">
-              <input type="color" value={form.background_color || "#f5f4f0"} onChange={(e) => setForm({ ...form, background_color: e.target.value })} className="w-11 h-11 rounded-lg border border-border cursor-pointer" />
-              <input value={form.background_color} placeholder="#f5f4f0" onChange={(e) => setForm({ ...form, background_color: e.target.value })} className={inputClass} />
-              {form.background_color && (
-                <button onClick={() => setForm({ ...form, background_color: "" })} className="text-xs text-muted-foreground hover:text-destructive">Clear</button>
-              )}
-            </div>
-          </div>
-        </div>
+           <div>
+             <label className="text-xs text-muted-foreground font-body mb-1 block">Background Color</label>
+             <p className="text-[11px] text-muted-foreground mb-1.5">Used for the background</p>
+             <div className="flex items-center gap-2">
+               <input type="color" value={form.background_color || "#f5f4f0"} onChange={(e) => setForm({ ...form, background_color: e.target.value })} className="w-11 h-11 rounded-lg border border-border cursor-pointer" />
+               <input value={form.background_color} placeholder="#f5f4f0" onChange={(e) => setForm({ ...form, background_color: e.target.value })} className={inputClass} />
+               {form.background_color && (
+                 <button onClick={() => setForm({ ...form, background_color: "" })} className="text-xs text-muted-foreground hover:text-destructive">Clear</button>
+               )}
+             </div>
+           </div>
+           <p className="text-[11px] text-muted-foreground">Primary color is also used for bundle cards and social links.</p>
+         </div>
 
         {/* Typography */}
         <div className="bg-card rounded-xl p-5 store-shadow space-y-4">
