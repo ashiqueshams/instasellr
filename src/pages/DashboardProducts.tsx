@@ -78,6 +78,7 @@ export default function DashboardProducts() {
           file_url: p.file_url,
           image_url: (p as any).image_url || null,
           is_active: p.is_active ?? true,
+          product_type: (p as any).product_type || "digital",
           created_at: p.created_at,
         })));
       }
@@ -251,6 +252,7 @@ export default function DashboardProducts() {
           file_url: data.file_url,
           image_url: (data as any).image_url || null,
           is_active: data.is_active ?? true,
+          product_type: (data as any).product_type || "digital",
           created_at: data.created_at,
         } : p));
       }
@@ -294,6 +296,7 @@ export default function DashboardProducts() {
           file_url: data.file_url,
           image_url: (data as any).image_url || null,
           is_active: data.is_active ?? true,
+          product_type: (data as any).product_type || "digital",
           created_at: data.created_at,
         }, ...products]);
       }
