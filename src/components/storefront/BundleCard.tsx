@@ -1,12 +1,13 @@
-import { Product, Bundle } from "@/data/sampleData";
+import { Product, Bundle, Store } from "@/data/sampleData";
 
 interface BundleCardProps {
   bundle: Bundle;
   products: Product[];
+  accentColor: string;
   onBuyBundle: () => void;
 }
 
-export default function BundleCard({ bundle, products, onBuyBundle }: BundleCardProps) {
+export default function BundleCard({ bundle, products, accentColor, onBuyBundle }: BundleCardProps) {
   const totalPrice = products.reduce((sum, p) => sum + p.price, 0);
   const bundlePrice = Math.round(totalPrice * (1 - bundle.discount_percent / 100));
   const savings = totalPrice - bundlePrice;
@@ -15,7 +16,7 @@ export default function BundleCard({ bundle, products, onBuyBundle }: BundleCard
     <div
       className="relative rounded-xl p-5 overflow-hidden animate-fadeUp"
       style={{
-        background: `linear-gradient(135deg, ${bundle.color} 0%, ${bundle.color}dd 100%)`,
+        background: `linear-gradient(135deg, ${accentColor} 0%, ${accentColor}dd 100%)`,
         animationDelay: "0.15s",
         opacity: 0,
         animationFillMode: "forwards",
@@ -40,7 +41,7 @@ export default function BundleCard({ bundle, products, onBuyBundle }: BundleCard
               <span
                 key={p.id}
                 className="w-8 h-8 rounded-full flex items-center justify-center text-sm border-2"
-                style={{ backgroundColor: p.color, borderColor: bundle.color }}
+                style={{ backgroundColor: p.color, borderColor: accentColor }}
               >
                 {p.image_url ? (
                   <img src={p.image_url} alt={p.name} className="w-full h-full rounded-full object-cover" />
