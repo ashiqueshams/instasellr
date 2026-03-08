@@ -49,6 +49,11 @@ export interface Store {
   banner_url: string | null;
   theme: string;
   background_color: string | null;
+  banner_mode: string;
+  card_style: string;
+  social_position: string;
+  footer_image_url: string | null;
+  text_color: string | null;
   social_links: {
     x?: string;
     instagram?: string;
@@ -86,6 +91,11 @@ export const sampleStore: Store = {
   banner_url: null,
   theme: "light",
   background_color: null,
+  banner_mode: "strip",
+  card_style: "card",
+  social_position: "header",
+  footer_image_url: null,
+  text_color: null,
   social_links: {
     x: "https://x.com/janedoe",
     instagram: "https://instagram.com/janedoe",

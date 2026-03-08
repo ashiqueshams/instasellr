@@ -2,8 +2,8 @@ import { useState, useEffect, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useStore } from "@/hooks/use-store";
 import { supabase } from "@/integrations/supabase/client";
-import { uploadImage, deleteImage } from "@/lib/imageUpload";
-import { Loader2, Upload, X, ImageIcon } from "lucide-react";
+import { uploadImage } from "@/lib/imageUpload";
+import { Loader2, X, ImageIcon, Upload } from "lucide-react";
 
 const FONT_OPTIONS = [
   { label: "Syne", value: "Syne" },
@@ -29,13 +29,29 @@ const BODY_FONT_OPTIONS = [
 ];
 
 const LAYOUT_OPTIONS = [
-  { label: "List", value: "list", desc: "Vertical list cards" },
-  { label: "Grid", value: "grid", desc: "2-column grid" },
+  { label: "List", value: "list" },
+  { label: "Grid", value: "grid" },
 ];
 
 const THEME_OPTIONS = [
   { label: "Light", value: "light" },
   { label: "Dark", value: "dark" },
+];
+
+const BANNER_MODE_OPTIONS = [
+  { label: "Strip", value: "strip", desc: "Small banner at the top" },
+  { label: "Full Page", value: "fullpage", desc: "Banner covers the entire background" },
+];
+
+const CARD_STYLE_OPTIONS = [
+  { label: "Card", value: "card", desc: "Classic card with shadow" },
+  { label: "Pill", value: "pill", desc: "Rounded pill buttons" },
+  { label: "Outlined", value: "outlined", desc: "Border-only boxes" },
+];
+
+const SOCIAL_POSITION_OPTIONS = [
+  { label: "Below Avatar", value: "header" },
+  { label: "Below Products", value: "below_products" },
 ];
 
 export default function DashboardSettings() {
@@ -52,6 +68,10 @@ export default function DashboardSettings() {
     layout: "list",
     theme: "light",
     background_color: "",
+    banner_mode: "strip",
+    card_style: "card",
+    social_position: "header",
+    text_color: "",
     x: "",
     instagram: "",
     youtube: "",
@@ -63,8 +83,11 @@ export default function DashboardSettings() {
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [bannerFile, setBannerFile] = useState<File | null>(null);
   const [bannerPreview, setBannerPreview] = useState<string | null>(null);
+  const [footerFile, setFooterFile] = useState<File | null>(null);
+  const [footerPreview, setFooterPreview] = useState<string | null>(null);
   const logoInputRef = useRef<HTMLInputElement>(null);
   const bannerInputRef = useRef<HTMLInputElement>(null);
+  const footerInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!store) return;
@@ -74,19 +97,24 @@ export default function DashboardSettings() {
       avatar_initials: store.avatar_initials,
       slug: store.slug,
       accent_color: store.accent_color,
-      font_heading: (store as any).font_heading || "Syne",
-      font_body: (store as any).font_body || "Manrope",
-      layout: (store as any).layout || "list",
-      theme: (store as any).theme || "light",
-      background_color: (store as any).background_color || "",
+      font_heading: store.font_heading || "Syne",
+      font_body: store.font_body || "Manrope",
+      layout: store.layout || "list",
+      theme: store.theme || "light",
+      background_color: store.background_color || "",
+      banner_mode: store.banner_mode || "strip",
+      card_style: store.card_style || "card",
+      social_position: store.social_position || "header",
+      text_color: store.text_color || "",
       x: store.social_links?.x || "",
       instagram: store.social_links?.instagram || "",
       youtube: store.social_links?.youtube || "",
       tiktok: store.social_links?.tiktok || "",
       linkedin: store.social_links?.linkedin || "",
     });
-    setLogoPreview((store as any).logo_url || null);
-    setBannerPreview((store as any).banner_url || null);
+    setLogoPreview(store.logo_url || null);
+    setBannerPreview(store.banner_url || null);
+    setFooterPreview(store.footer_image_url || null);
   }, [store]);
 
   const handleImageFile = (file: File, setter: (f: File) => void, previewSetter: (s: string) => void) => {
@@ -108,6 +136,7 @@ export default function DashboardSettings() {
 
     let logoUrl = logoPreview;
     let bannerUrl = bannerPreview;
+    let footerUrl = footerPreview;
 
     if (logoFile) {
       const url = await uploadImage(logoFile, `logos/${store.id}`);
@@ -116,6 +145,10 @@ export default function DashboardSettings() {
     if (bannerFile) {
       const url = await uploadImage(bannerFile, `banners/${store.id}`);
       if (url) bannerUrl = url;
+    }
+    if (footerFile) {
+      const url = await uploadImage(footerFile, `footers/${store.id}`);
+      if (url) footerUrl = url;
     }
 
     const { error } = await supabase
@@ -143,6 +176,15 @@ export default function DashboardSettings() {
       } as any)
       .eq("id", store.id);
 
+    // Update new fields separately (may not be in types yet)
+    await (supabase.from("stores").update({
+      banner_mode: form.banner_mode,
+      card_style: form.card_style,
+      social_position: form.social_position,
+      footer_image_url: footerUrl,
+      text_color: form.text_color || null,
+    } as any).eq("id", store.id) as any);
+
     if (error) {
       toast({ title: "Failed to save", description: error.message, variant: "destructive" });
     } else {
@@ -161,10 +203,16 @@ export default function DashboardSettings() {
         banner_url: bannerUrl,
         theme: form.theme,
         background_color: form.background_color || null,
+        banner_mode: form.banner_mode,
+        card_style: form.card_style,
+        social_position: form.social_position,
+        footer_image_url: footerUrl,
+        text_color: form.text_color || null,
         social_links: { x: form.x, instagram: form.instagram, youtube: form.youtube, tiktok: form.tiktok, linkedin: form.linkedin },
       });
       setLogoFile(null);
       setBannerFile(null);
+      setFooterFile(null);
     }
     setSaving(false);
   };
@@ -182,6 +230,42 @@ export default function DashboardSettings() {
 
   const selectClass =
     "h-11 rounded-lg bg-background px-3 text-[16px] sm:text-sm font-body border border-border outline-none focus:ring-2 focus:ring-primary/20 transition-shadow w-full appearance-none cursor-pointer";
+
+  const ToggleGroup = ({ options, value, onChange, columns = 2 }: { options: { label: string; value: string; desc?: string }[]; value: string; onChange: (v: string) => void; columns?: number }) => (
+    <div className={`grid gap-2`} style={{ gridTemplateColumns: `repeat(${columns}, 1fr)` }}>
+      {options.map((o) => (
+        <button
+          key={o.value}
+          onClick={() => onChange(o.value)}
+          className={`h-10 rounded-lg text-sm font-body font-medium transition-all ${value === o.value ? "bg-primary text-primary-foreground" : "bg-background border border-border text-muted-foreground hover:text-foreground"}`}
+          title={o.desc}
+        >
+          {o.label}
+        </button>
+      ))}
+    </div>
+  );
+
+  const ImageUpload = ({ preview, onRemove, onUpload, inputRef, label, shape = "rect" }: any) => (
+    <div>
+      <label className="text-xs text-muted-foreground font-body mb-1.5 block">{label}</label>
+      {preview ? (
+        <div className="border border-border rounded-lg p-3">
+          <div className="relative">
+            <img src={preview} alt={label} className={`${shape === "circle" ? "w-12 h-12 rounded-full" : "w-full h-24 rounded-lg"} object-cover`} />
+            <button onClick={onRemove} className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-black/50 flex items-center justify-center text-white hover:bg-black/70 transition-colors">
+              <X className="w-3 h-3" />
+            </button>
+          </div>
+        </div>
+      ) : (
+        <button onClick={() => inputRef.current?.click()} className="w-full border-2 border-dashed border-border rounded-lg p-4 flex flex-col items-center gap-1.5 hover:border-primary/40 hover:bg-primary/5 transition-colors">
+          <Upload className="w-5 h-5 text-muted-foreground" />
+          <span className="text-sm text-muted-foreground">Upload image (max 5MB)</span>
+        </button>
+      )}
+    </div>
+  );
 
   return (
     <div className="max-w-xl">
@@ -211,9 +295,42 @@ export default function DashboardSettings() {
           </div>
         </div>
 
-        {/* Appearance */}
+        {/* Storefront Style */}
         <div className="bg-card rounded-xl p-5 store-shadow space-y-4">
-          <p className="font-heading font-semibold text-sm text-foreground">Appearance</p>
+          <p className="font-heading font-semibold text-sm text-foreground">Storefront Style</p>
+
+          <div>
+            <label className="text-xs text-muted-foreground font-body mb-1.5 block">Banner Mode</label>
+            <ToggleGroup options={BANNER_MODE_OPTIONS} value={form.banner_mode} onChange={(v) => setForm({ ...form, banner_mode: v })} />
+            <p className="text-xs text-muted-foreground mt-1.5">
+              {form.banner_mode === "fullpage" ? "Your banner image becomes the full-page background — great for immersive storefronts." : "Banner shows as a small strip at the top of your store."}
+            </p>
+          </div>
+
+          <div>
+            <label className="text-xs text-muted-foreground font-body mb-1.5 block">Product Card Style</label>
+            <ToggleGroup options={CARD_STYLE_OPTIONS} value={form.card_style} onChange={(v) => setForm({ ...form, card_style: v })} columns={3} />
+          </div>
+
+          <div>
+            <label className="text-xs text-muted-foreground font-body mb-1.5 block">Social Icons Position</label>
+            <ToggleGroup options={SOCIAL_POSITION_OPTIONS} value={form.social_position} onChange={(v) => setForm({ ...form, social_position: v })} />
+          </div>
+
+          <div>
+            <label className="text-xs text-muted-foreground font-body mb-1.5 block">Product Layout</label>
+            <ToggleGroup options={LAYOUT_OPTIONS} value={form.layout} onChange={(v) => setForm({ ...form, layout: v })} />
+          </div>
+
+          <div>
+            <label className="text-xs text-muted-foreground font-body mb-1.5 block">Theme</label>
+            <ToggleGroup options={THEME_OPTIONS} value={form.theme} onChange={(v) => setForm({ ...form, theme: v })} />
+          </div>
+        </div>
+
+        {/* Colors */}
+        <div className="bg-card rounded-xl p-5 store-shadow space-y-4">
+          <p className="font-heading font-semibold text-sm text-foreground">Colors</p>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
@@ -232,6 +349,21 @@ export default function DashboardSettings() {
             </div>
           </div>
 
+          <div>
+            <label className="text-xs text-muted-foreground font-body mb-1 block">Text Color (optional — for fullpage mode)</label>
+            <div className="flex items-center gap-2">
+              <input type="color" value={form.text_color || "#ffffff"} onChange={(e) => setForm({ ...form, text_color: e.target.value })} className="w-11 h-11 rounded-lg border border-border cursor-pointer" />
+              <input value={form.text_color} placeholder="#ffffff" onChange={(e) => setForm({ ...form, text_color: e.target.value })} className={inputClass} />
+              {form.text_color && (
+                <button onClick={() => setForm({ ...form, text_color: "" })} className="text-xs text-muted-foreground hover:text-destructive">Clear</button>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Typography */}
+        <div className="bg-card rounded-xl p-5 store-shadow space-y-4">
+          <p className="font-heading font-semibold text-sm text-foreground">Typography</p>
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="text-xs text-muted-foreground font-body mb-1 block">Heading Font</label>
@@ -246,75 +378,39 @@ export default function DashboardSettings() {
               </select>
             </div>
           </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="text-xs text-muted-foreground font-body mb-1 block">Layout</label>
-              <div className="flex gap-2">
-                {LAYOUT_OPTIONS.map((l) => (
-                  <button key={l.value} onClick={() => setForm({ ...form, layout: l.value })} className={`flex-1 h-10 rounded-lg text-sm font-body font-medium transition-all ${form.layout === l.value ? "bg-primary text-primary-foreground" : "bg-background border border-border text-muted-foreground hover:text-foreground"}`}>
-                    {l.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div>
-              <label className="text-xs text-muted-foreground font-body mb-1 block">Theme</label>
-              <div className="flex gap-2">
-                {THEME_OPTIONS.map((t) => (
-                  <button key={t.value} onClick={() => setForm({ ...form, theme: t.value })} className={`flex-1 h-10 rounded-lg text-sm font-body font-medium transition-all ${form.theme === t.value ? "bg-primary text-primary-foreground" : "bg-background border border-border text-muted-foreground hover:text-foreground"}`}>
-                    {t.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
         </div>
 
-        {/* Logo & Banner */}
+        {/* Images */}
         <div className="bg-card rounded-xl p-5 store-shadow space-y-4">
-          <p className="font-heading font-semibold text-sm text-foreground">Logo & Banner</p>
+          <p className="font-heading font-semibold text-sm text-foreground">Images</p>
 
-          <div>
-            <label className="text-xs text-muted-foreground font-body mb-1.5 block">Logo (replaces initials avatar)</label>
-            {logoPreview ? (
-              <div className="border border-border rounded-lg p-3 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <img src={logoPreview} alt="Logo" className="w-12 h-12 rounded-full object-cover" />
-                  <span className="text-sm text-foreground">Logo uploaded</span>
-                </div>
-                <button onClick={() => { setLogoPreview(null); setLogoFile(null); }} className="w-7 h-7 rounded-md flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors">
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            ) : (
-              <button onClick={() => logoInputRef.current?.click()} className="w-full border-2 border-dashed border-border rounded-lg p-4 flex flex-col items-center gap-1.5 hover:border-primary/40 hover:bg-primary/5 transition-colors">
-                <ImageIcon className="w-5 h-5 text-muted-foreground" />
-                <span className="text-sm text-muted-foreground">Upload logo (max 5MB)</span>
-              </button>
-            )}
-            <input ref={logoInputRef} type="file" accept="image/*" onChange={(e) => e.target.files?.[0] && handleImageFile(e.target.files[0], setLogoFile, setLogoPreview)} className="hidden" />
-          </div>
+          <ImageUpload
+            preview={logoPreview}
+            onRemove={() => { setLogoPreview(null); setLogoFile(null); }}
+            onUpload={(f: File) => handleImageFile(f, setLogoFile, setLogoPreview)}
+            inputRef={logoInputRef}
+            label="Logo (replaces initials avatar)"
+            shape="circle"
+          />
+          <input ref={logoInputRef} type="file" accept="image/*" onChange={(e) => e.target.files?.[0] && handleImageFile(e.target.files[0], setLogoFile, setLogoPreview)} className="hidden" />
 
-          <div>
-            <label className="text-xs text-muted-foreground font-body mb-1.5 block">Banner Image</label>
-            {bannerPreview ? (
-              <div className="border border-border rounded-lg p-3">
-                <div className="relative">
-                  <img src={bannerPreview} alt="Banner" className="w-full h-24 rounded-lg object-cover" />
-                  <button onClick={() => { setBannerPreview(null); setBannerFile(null); }} className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-black/50 flex items-center justify-center text-white hover:bg-black/70 transition-colors">
-                    <X className="w-3 h-3" />
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <button onClick={() => bannerInputRef.current?.click()} className="w-full border-2 border-dashed border-border rounded-lg p-4 flex flex-col items-center gap-1.5 hover:border-primary/40 hover:bg-primary/5 transition-colors">
-                <Upload className="w-5 h-5 text-muted-foreground" />
-                <span className="text-sm text-muted-foreground">Upload banner (max 5MB)</span>
-              </button>
-            )}
-            <input ref={bannerInputRef} type="file" accept="image/*" onChange={(e) => e.target.files?.[0] && handleImageFile(e.target.files[0], setBannerFile, setBannerPreview)} className="hidden" />
-          </div>
+          <ImageUpload
+            preview={bannerPreview}
+            onRemove={() => { setBannerPreview(null); setBannerFile(null); }}
+            onUpload={(f: File) => handleImageFile(f, setBannerFile, setBannerPreview)}
+            inputRef={bannerInputRef}
+            label={form.banner_mode === "fullpage" ? "Banner (used as full page background)" : "Banner (header strip)"}
+          />
+          <input ref={bannerInputRef} type="file" accept="image/*" onChange={(e) => e.target.files?.[0] && handleImageFile(e.target.files[0], setBannerFile, setBannerPreview)} className="hidden" />
+
+          <ImageUpload
+            preview={footerPreview}
+            onRemove={() => { setFooterPreview(null); setFooterFile(null); }}
+            onUpload={(f: File) => handleImageFile(f, setFooterFile, setFooterPreview)}
+            inputRef={footerInputRef}
+            label="Footer Image (shown at the bottom of your store)"
+          />
+          <input ref={footerInputRef} type="file" accept="image/*" onChange={(e) => e.target.files?.[0] && handleImageFile(e.target.files[0], setFooterFile, setFooterPreview)} className="hidden" />
         </div>
 
         {/* Social Links */}
