@@ -339,6 +339,23 @@ export default function DashboardProducts() {
             {editingId ? "Edit Product" : "New Product"}
           </h3>
           <div className="grid grid-cols-2 gap-3">
+            {/* Product type toggle */}
+            <div className="col-span-2 flex gap-2">
+              <button
+                type="button"
+                onClick={() => setForm({ ...form, product_type: "digital" })}
+                className={`flex-1 h-10 rounded-lg text-sm font-semibold transition-all ${form.product_type === "digital" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"}`}
+              >
+                🖥️ Digital
+              </button>
+              <button
+                type="button"
+                onClick={() => setForm({ ...form, product_type: "physical" })}
+                className={`flex-1 h-10 rounded-lg text-sm font-semibold transition-all ${form.product_type === "physical" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"}`}
+              >
+                📦 Physical
+              </button>
+            </div>
             <input placeholder="Product name *" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className={`col-span-2 ${inputClass}`} />
             <input placeholder="Tagline" value={form.tagline} onChange={(e) => setForm({ ...form, tagline: e.target.value })} className={`col-span-2 ${inputClass}`} />
             <textarea placeholder="Description" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="col-span-2 rounded-lg bg-background px-3.5 py-3 text-sm border border-border outline-none focus:ring-2 focus:ring-primary/20 placeholder:text-muted-foreground resize-none h-24" />
