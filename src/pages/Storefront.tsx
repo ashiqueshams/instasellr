@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from "react";
 import { Product, Bundle, Store } from "@/data/sampleData";
 import { supabase } from "@/integrations/supabase/client";
 import { useParams } from "react-router-dom";
-import StoreHeader from "@/components/storefront/StoreHeader";
+import StoreHeader, { SocialIcons } from "@/components/storefront/StoreHeader";
 import SearchBar from "@/components/storefront/SearchBar";
 import BundleCard from "@/components/storefront/BundleCard";
 import ProductList from "@/components/storefront/ProductList";
@@ -78,7 +78,7 @@ export default function Storefront() {
         color: p.color || "#6C5CE7",
         category: p.category || "",
         file_url: p.file_url,
-        image_url: (p as any).image_url || null,
+        image_url: p.image_url || null,
         is_active: p.is_active ?? true,
         created_at: p.created_at,
       }));
@@ -142,7 +142,9 @@ export default function Storefront() {
     );
   }
 
-  const storeStyle = {
+  const isFullpage = store.banner_mode === "fullpage" && store.banner_url;
+
+  const storeStyle: React.CSSProperties = {
     fontFamily: `'${store.font_body}', sans-serif`,
     backgroundColor: store.background_color || undefined,
   };
@@ -157,6 +159,68 @@ export default function Storefront() {
             store={store}
             onBack={() => setSelectedBundle(null)}
           />
+        </div>
+      </div>
+    );
+  }
+
+  // Fullpage banner mode
+  if (isFullpage && !selectedProduct) {
+    return (
+      <div
+        className="min-h-screen relative"
+        style={{
+          fontFamily: `'${store.font_body}', sans-serif`,
+        }}
+      >
+        {/* Background image */}
+        <div
+          className="fixed inset-0 bg-cover bg-center"
+          style={{ backgroundImage: `url(${store.banner_url})` }}
+        />
+        {/* Overlay */}
+        <div
+          className="fixed inset-0"
+          style={{ backgroundColor: store.background_color ? `${store.background_color}99` : "rgba(0,0,0,0.25)" }}
+        />
+
+        {/* Content */}
+        <div className="relative z-10 max-w-[480px] mx-auto px-5 py-12 pb-24">
+          <div className="flex flex-col gap-6">
+            <StoreHeader store={store} />
+
+            <SearchBar value={search} onChange={setSearch} />
+
+            {!search && bundles.map((bundle) => (
+              <BundleCard key={bundle.id} bundle={bundle} products={bundle.products} onBuyBundle={() => setSelectedBundle(bundle)} />
+            ))}
+
+            <ProductList
+              products={filteredProducts}
+              onSelectProduct={setSelectedProduct}
+              layout={store.layout}
+              cardStyle={store.card_style}
+              store={store}
+            />
+
+            {/* Social icons (below products) */}
+            {store.social_position === "below_products" && (
+              <div className="flex justify-center">
+                <SocialIcons store={store} />
+              </div>
+            )}
+
+            {products.length === 0 && (
+              <p className="text-center text-sm py-8" style={{ color: store.text_color ? `${store.text_color}99` : undefined }}>No products available yet.</p>
+            )}
+
+            {/* Footer image */}
+            {store.footer_image_url && (
+              <div className="w-full rounded-2xl overflow-hidden mt-4">
+                <img src={store.footer_image_url} alt="Footer" className="w-full h-48 object-cover" />
+              </div>
+            )}
+          </div>
         </div>
       </div>
     );
@@ -178,9 +242,30 @@ export default function Storefront() {
             {!search && bundles.map((bundle) => (
               <BundleCard key={bundle.id} bundle={bundle} products={bundle.products} onBuyBundle={() => setSelectedBundle(bundle)} />
             ))}
-            <ProductList products={filteredProducts} onSelectProduct={setSelectedProduct} layout={store.layout} />
+            <ProductList
+              products={filteredProducts}
+              onSelectProduct={setSelectedProduct}
+              layout={store.layout}
+              cardStyle={store.card_style}
+              store={store}
+            />
+
+            {/* Social icons (below products) */}
+            {store.social_position === "below_products" && (
+              <div className="flex justify-center">
+                <SocialIcons store={store} />
+              </div>
+            )}
+
             {products.length === 0 && (
               <p className="text-center text-muted-foreground text-sm py-8">No products available yet.</p>
+            )}
+
+            {/* Footer image */}
+            {store.footer_image_url && (
+              <div className="w-full rounded-2xl overflow-hidden mt-4">
+                <img src={store.footer_image_url} alt="Footer" className="w-full h-48 object-cover" />
+              </div>
             )}
           </div>
         )}
