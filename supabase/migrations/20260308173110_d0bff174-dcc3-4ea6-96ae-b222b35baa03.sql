@@ -1,0 +1,1 @@
+UPDATE orders SET download_count = 0 WHERE store_id = '0044bd73-2a27-44ee-8eb3-af4e48740aa0'

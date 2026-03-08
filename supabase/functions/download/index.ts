@@ -82,18 +82,28 @@ Deno.serve(async (req) => {
     .update({ download_count: (order.download_count ?? 0) + 1 })
     .eq("id", orderId);
 
-  // file_data is bytea, returned as hex string like \x4142...
+  // file_data is bytea column. The client stores base64 strings into it,
+  // so Postgres stores the raw bytes of that base64 text.
+  // Supabase returns bytea as hex-encoded string like \x4142...
+  // We need: hex → ASCII (base64 string) → decode base64 → actual file bytes
   let bytes: Uint8Array;
   const raw = fileRow.file_data;
   if (typeof raw === "string" && raw.startsWith("\\x")) {
-    // Hex-encoded bytea
+    // Hex-encoded bytea → decode to ASCII string first
     const hex = raw.slice(2);
-    bytes = new Uint8Array(hex.length / 2);
+    const asciiBytes = new Uint8Array(hex.length / 2);
     for (let i = 0; i < hex.length; i += 2) {
-      bytes[i / 2] = parseInt(hex.substring(i, i + 2), 16);
+      asciiBytes[i / 2] = parseInt(hex.substring(i, i + 2), 16);
+    }
+    // asciiBytes is the base64 string as bytes, convert to string then decode
+    const base64String = new TextDecoder().decode(asciiBytes);
+    const binaryString = atob(base64String);
+    bytes = new Uint8Array(binaryString.length);
+    for (let i = 0; i < binaryString.length; i++) {
+      bytes[i] = binaryString.charCodeAt(i);
     }
   } else if (typeof raw === "string") {
-    // Try base64
+    // Already a base64 string
     const binaryString = atob(raw);
     bytes = new Uint8Array(binaryString.length);
     for (let i = 0; i < binaryString.length; i++) {
