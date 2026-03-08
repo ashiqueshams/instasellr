@@ -5,12 +5,14 @@ import SearchBar from "@/components/storefront/SearchBar";
 import BundleCard from "@/components/storefront/BundleCard";
 import ProductList from "@/components/storefront/ProductList";
 import ProductDetail from "@/components/storefront/ProductDetail";
+import BundleDetail from "@/components/storefront/BundleDetail";
 
 export default function Storefront() {
   const store = sampleStore;
   const products = sampleProducts;
   const [search, setSearch] = useState("");
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [showBundle, setShowBundle] = useState(false);
 
   const filteredProducts = useMemo(
     () =>
@@ -22,6 +24,16 @@ export default function Storefront() {
       ),
     [products, search]
   );
+
+  if (showBundle) {
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="max-w-[480px] mx-auto px-5 py-8 pb-24">
+          <BundleDetail products={products} store={store} onBack={() => setShowBundle(false)} />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -36,7 +48,7 @@ export default function Storefront() {
           <div className="flex flex-col gap-5">
             <StoreHeader store={store} />
             <SearchBar value={search} onChange={setSearch} />
-            {!search && <BundleCard products={products} onBuyBundle={() => {}} />}
+            {!search && <BundleCard products={products} onBuyBundle={() => setShowBundle(true)} />}
             <ProductList products={filteredProducts} onSelectProduct={setSelectedProduct} />
           </div>
         )}
