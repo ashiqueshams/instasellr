@@ -32,11 +32,40 @@ const socialIcons: Record<string, React.ReactNode> = {
   ),
 };
 
+export function SocialIcons({ store, className = "" }: { store: Store; className?: string }) {
+  const textColor = store.text_color || undefined;
+  return (
+    <div className={`flex gap-2.5 ${className}`}>
+      {Object.entries(store.social_links).map(([key, url]) => {
+        if (!url) return null;
+        return (
+          <a
+            key={key}
+            href={url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-10 h-10 rounded-full flex items-center justify-center transition-colors duration-200"
+            style={{
+              backgroundColor: store.banner_mode === "fullpage" ? "rgba(255,255,255,0.15)" : undefined,
+              color: textColor,
+            }}
+          >
+            {socialIcons[key]}
+          </a>
+        );
+      })}
+    </div>
+  );
+}
+
 export default function StoreHeader({ store }: StoreHeaderProps) {
+  const isFullpage = store.banner_mode === "fullpage";
+  const textColor = store.text_color || undefined;
+
   return (
     <div className="flex flex-col items-center text-center animate-fadeUp">
-      {/* Banner */}
-      {store.banner_url && (
+      {/* Banner (strip mode only) */}
+      {!isFullpage && store.banner_url && (
         <div className="w-full h-28 rounded-xl overflow-hidden mb-4 -mt-2">
           <img src={store.banner_url} alt="Store banner" className="w-full h-full object-cover" />
         </div>
@@ -50,37 +79,28 @@ export default function StoreHeader({ store }: StoreHeaderProps) {
         {store.logo_url ? (
           <img src={store.logo_url} alt={store.name} className="w-full h-full object-cover" />
         ) : (
-          store.avatar_initials
+          <span style={{ color: store.text_color ? "#fff" : undefined }}>{store.avatar_initials}</span>
         )}
-        {/* Verified badge */}
-        <div className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-card flex items-center justify-center store-shadow">
-          <svg viewBox="0 0 24 24" className="w-5 h-5 text-blue-500 fill-current">
-            <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z" />
-          </svg>
-        </div>
       </div>
 
       {/* Name & bio */}
-      <h1 className="font-heading font-bold text-xl mt-4 text-foreground" style={{ fontFamily: `'${store.font_heading}', sans-serif` }}>{store.name}</h1>
-      <p className="text-muted-foreground text-sm mt-1.5 max-w-[280px] leading-relaxed">{store.bio}</p>
+      <h1
+        className="font-heading font-bold text-xl mt-4"
+        style={{ fontFamily: `'${store.font_heading}', sans-serif`, color: textColor || undefined }}
+      >
+        {store.name}
+      </h1>
+      <p
+        className="text-sm mt-1.5 max-w-[280px] leading-relaxed"
+        style={{ color: textColor ? `${textColor}cc` : undefined }}
+      >
+        {store.bio}
+      </p>
 
-      {/* Social icons */}
-      <div className="flex gap-2.5 mt-4">
-        {Object.entries(store.social_links).map(([key, url]) => {
-          if (!url) return null;
-          return (
-            <a
-              key={key}
-              href={url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="w-10 h-10 rounded-full bg-card store-shadow flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors duration-200"
-            >
-              {socialIcons[key]}
-            </a>
-          );
-        })}
-      </div>
+      {/* Social icons (header position only) */}
+      {store.social_position === "header" && (
+        <SocialIcons store={store} className="mt-4" />
+      )}
     </div>
   );
 }
