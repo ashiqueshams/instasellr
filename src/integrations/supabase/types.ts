@@ -100,11 +100,18 @@ export type Database = {
           created_at: string
           customer_email: string
           customer_name: string
+          customer_phone: string | null
           download_count: number | null
           download_expires_at: string | null
           download_token: string | null
           id: string
+          order_items: Json | null
           product_id: string
+          shipping_address: string | null
+          shipping_city: string | null
+          shipping_country: string | null
+          shipping_state: string | null
+          shipping_zip: string | null
           status: string
           store_id: string
           stripe_payment_id: string | null
@@ -114,11 +121,18 @@ export type Database = {
           created_at?: string
           customer_email: string
           customer_name: string
+          customer_phone?: string | null
           download_count?: number | null
           download_expires_at?: string | null
           download_token?: string | null
           id?: string
+          order_items?: Json | null
           product_id: string
+          shipping_address?: string | null
+          shipping_city?: string | null
+          shipping_country?: string | null
+          shipping_state?: string | null
+          shipping_zip?: string | null
           status?: string
           store_id: string
           stripe_payment_id?: string | null
@@ -128,11 +142,18 @@ export type Database = {
           created_at?: string
           customer_email?: string
           customer_name?: string
+          customer_phone?: string | null
           download_count?: number | null
           download_expires_at?: string | null
           download_token?: string | null
           id?: string
+          order_items?: Json | null
           product_id?: string
+          shipping_address?: string | null
+          shipping_city?: string | null
+          shipping_country?: string | null
+          shipping_state?: string | null
+          shipping_zip?: string | null
           status?: string
           store_id?: string
           stripe_payment_id?: string | null
@@ -200,6 +221,7 @@ export type Database = {
           is_active: boolean | null
           name: string
           price: number
+          product_type: string
           store_id: string
           tagline: string | null
         }
@@ -215,6 +237,7 @@ export type Database = {
           is_active?: boolean | null
           name: string
           price?: number
+          product_type?: string
           store_id: string
           tagline?: string | null
         }
@@ -230,6 +253,7 @@ export type Database = {
           is_active?: boolean | null
           name?: string
           price?: number
+          product_type?: string
           store_id?: string
           tagline?: string | null
         }
