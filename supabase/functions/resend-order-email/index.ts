@@ -54,7 +54,7 @@ Deno.serve(async (req) => {
           <p style="color: #666; font-size: 14px; margin: 0;">Amount: $${order.amount}</p>
         </div>
         <a href="${downloadUrl}" style="display: inline-block; background: #1a1a1a; color: #fff; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px;">Download Your File</a>
-        <p style="color: #999; font-size: 12px; margin-top: 24px;">This link expires 48 hours after your original purchase and allows up to 3 downloads.</p>
+        <p style="color: #999; font-size: 12px; margin-top: 24px;">This link expires 48 hours after your original purchase and allows up to 10 downloads.</p>
       </div>
     `;
 
