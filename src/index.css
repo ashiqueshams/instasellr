@@ -80,6 +80,15 @@
   h1, h2, h3, h4, h5, h6 {
     @apply font-heading;
   }
+  /* Prevent iOS zoom on input focus */
+  input, select, textarea {
+    font-size: 16px;
+  }
+  @screen sm {
+    input, select, textarea {
+      font-size: inherit;
+    }
+  }
 }
 
 @layer utilities {

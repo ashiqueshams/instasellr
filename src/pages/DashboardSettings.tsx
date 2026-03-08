@@ -1,8 +1,42 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useStore } from "@/hooks/use-store";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2 } from "lucide-react";
+import { uploadImage, deleteImage } from "@/lib/imageUpload";
+import { Loader2, Upload, X, ImageIcon } from "lucide-react";
+
+const FONT_OPTIONS = [
+  { label: "Syne", value: "Syne" },
+  { label: "Inter", value: "Inter" },
+  { label: "Space Grotesk", value: "Space Grotesk" },
+  { label: "DM Sans", value: "DM Sans" },
+  { label: "Playfair Display", value: "Playfair Display" },
+  { label: "Outfit", value: "Outfit" },
+  { label: "Plus Jakarta Sans", value: "Plus Jakarta Sans" },
+  { label: "Bebas Neue", value: "Bebas Neue" },
+  { label: "Poppins", value: "Poppins" },
+  { label: "Manrope", value: "Manrope" },
+];
+
+const BODY_FONT_OPTIONS = [
+  { label: "Manrope", value: "Manrope" },
+  { label: "Inter", value: "Inter" },
+  { label: "DM Sans", value: "DM Sans" },
+  { label: "Outfit", value: "Outfit" },
+  { label: "Plus Jakarta Sans", value: "Plus Jakarta Sans" },
+  { label: "Poppins", value: "Poppins" },
+  { label: "Space Grotesk", value: "Space Grotesk" },
+];
+
+const LAYOUT_OPTIONS = [
+  { label: "List", value: "list", desc: "Vertical list cards" },
+  { label: "Grid", value: "grid", desc: "2-column grid" },
+];
+
+const THEME_OPTIONS = [
+  { label: "Light", value: "light" },
+  { label: "Dark", value: "dark" },
+];
 
 export default function DashboardSettings() {
   const { toast } = useToast();
@@ -13,6 +47,11 @@ export default function DashboardSettings() {
     avatar_initials: "",
     slug: "",
     accent_color: "#ff4545",
+    font_heading: "Syne",
+    font_body: "Manrope",
+    layout: "list",
+    theme: "light",
+    background_color: "",
     x: "",
     instagram: "",
     youtube: "",
@@ -20,6 +59,12 @@ export default function DashboardSettings() {
     linkedin: "",
   });
   const [saving, setSaving] = useState(false);
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [bannerFile, setBannerFile] = useState<File | null>(null);
+  const [bannerPreview, setBannerPreview] = useState<string | null>(null);
+  const logoInputRef = useRef<HTMLInputElement>(null);
+  const bannerInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!store) return;
@@ -29,17 +74,50 @@ export default function DashboardSettings() {
       avatar_initials: store.avatar_initials,
       slug: store.slug,
       accent_color: store.accent_color,
+      font_heading: (store as any).font_heading || "Syne",
+      font_body: (store as any).font_body || "Manrope",
+      layout: (store as any).layout || "list",
+      theme: (store as any).theme || "light",
+      background_color: (store as any).background_color || "",
       x: store.social_links?.x || "",
       instagram: store.social_links?.instagram || "",
       youtube: store.social_links?.youtube || "",
       tiktok: store.social_links?.tiktok || "",
       linkedin: store.social_links?.linkedin || "",
     });
+    setLogoPreview((store as any).logo_url || null);
+    setBannerPreview((store as any).banner_url || null);
   }, [store]);
+
+  const handleImageFile = (file: File, setter: (f: File) => void, previewSetter: (s: string) => void) => {
+    if (!file.type.startsWith("image/")) {
+      toast({ title: "Invalid file type", variant: "destructive" });
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast({ title: "Image too large", description: "Max 5MB", variant: "destructive" });
+      return;
+    }
+    setter(file);
+    previewSetter(URL.createObjectURL(file));
+  };
 
   const handleSave = async () => {
     if (!store) return;
     setSaving(true);
+
+    let logoUrl = logoPreview;
+    let bannerUrl = bannerPreview;
+
+    if (logoFile) {
+      const url = await uploadImage(logoFile, `logos/${store.id}`);
+      if (url) logoUrl = url;
+    }
+    if (bannerFile) {
+      const url = await uploadImage(bannerFile, `banners/${store.id}`);
+      if (url) bannerUrl = url;
+    }
+
     const { error } = await supabase
       .from("stores")
       .update({
@@ -48,6 +126,13 @@ export default function DashboardSettings() {
         avatar_initials: form.avatar_initials,
         slug: form.slug,
         accent_color: form.accent_color,
+        font_heading: form.font_heading,
+        font_body: form.font_body,
+        layout: form.layout,
+        logo_url: logoUrl,
+        banner_url: bannerUrl,
+        theme: form.theme,
+        background_color: form.background_color || null,
         social_links: {
           x: form.x || undefined,
           instagram: form.instagram || undefined,
@@ -55,7 +140,7 @@ export default function DashboardSettings() {
           tiktok: form.tiktok || undefined,
           linkedin: form.linkedin || undefined,
         },
-      })
+      } as any)
       .eq("id", store.id);
 
     if (error) {
@@ -69,8 +154,17 @@ export default function DashboardSettings() {
         avatar_initials: form.avatar_initials,
         slug: form.slug,
         accent_color: form.accent_color,
+        font_heading: form.font_heading,
+        font_body: form.font_body,
+        layout: form.layout,
+        logo_url: logoUrl,
+        banner_url: bannerUrl,
+        theme: form.theme,
+        background_color: form.background_color || null,
         social_links: { x: form.x, instagram: form.instagram, youtube: form.youtube, tiktok: form.tiktok, linkedin: form.linkedin },
       });
+      setLogoFile(null);
+      setBannerFile(null);
     }
     setSaving(false);
   };
@@ -84,52 +178,157 @@ export default function DashboardSettings() {
   }
 
   const inputClass =
-    "h-11 rounded-lg bg-background px-3.5 text-sm font-body border border-border outline-none focus:ring-2 focus:ring-primary/20 transition-shadow placeholder:text-muted-foreground w-full";
+    "h-11 rounded-lg bg-background px-3.5 text-[16px] sm:text-sm font-body border border-border outline-none focus:ring-2 focus:ring-primary/20 transition-shadow placeholder:text-muted-foreground w-full";
+
+  const selectClass =
+    "h-11 rounded-lg bg-background px-3 text-[16px] sm:text-sm font-body border border-border outline-none focus:ring-2 focus:ring-primary/20 transition-shadow w-full appearance-none cursor-pointer";
 
   return (
     <div className="max-w-xl">
       <h1 className="font-heading font-bold text-2xl text-foreground mb-6">Settings</h1>
 
-      <div className="bg-card rounded-xl p-5 store-shadow space-y-4">
-        <div>
-          <label className="text-xs text-muted-foreground font-body mb-1 block">Store Name</label>
-          <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className={inputClass} />
-        </div>
-        <div>
-          <label className="text-xs text-muted-foreground font-body mb-1 block">Bio</label>
-          <textarea
-            value={form.bio}
-            onChange={(e) => setForm({ ...form, bio: e.target.value })}
-            className="rounded-lg bg-background px-3.5 py-3 text-sm font-body border border-border outline-none focus:ring-2 focus:ring-primary/20 transition-shadow placeholder:text-muted-foreground w-full resize-none h-20"
-          />
-        </div>
-        <div className="grid grid-cols-2 gap-3">
+      <div className="space-y-6">
+        {/* Basic Info */}
+        <div className="bg-card rounded-xl p-5 store-shadow space-y-4">
+          <p className="font-heading font-semibold text-sm text-foreground">Basic Info</p>
           <div>
-            <label className="text-xs text-muted-foreground font-body mb-1 block">Avatar Initials</label>
-            <input value={form.avatar_initials} maxLength={2} onChange={(e) => setForm({ ...form, avatar_initials: e.target.value })} className={inputClass} />
+            <label className="text-xs text-muted-foreground font-body mb-1 block">Store Name</label>
+            <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className={inputClass} />
           </div>
           <div>
-            <label className="text-xs text-muted-foreground font-body mb-1 block">Accent Color</label>
-            <div className="flex items-center gap-2">
-              <input type="color" value={form.accent_color} onChange={(e) => setForm({ ...form, accent_color: e.target.value })} className="w-11 h-11 rounded-lg border border-border cursor-pointer" />
-              <input value={form.accent_color} onChange={(e) => setForm({ ...form, accent_color: e.target.value })} className={inputClass} />
+            <label className="text-xs text-muted-foreground font-body mb-1 block">Bio</label>
+            <textarea value={form.bio} onChange={(e) => setForm({ ...form, bio: e.target.value })} className="rounded-lg bg-background px-3.5 py-3 text-[16px] sm:text-sm font-body border border-border outline-none focus:ring-2 focus:ring-primary/20 transition-shadow placeholder:text-muted-foreground w-full resize-none h-20" />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs text-muted-foreground font-body mb-1 block">Avatar Initials</label>
+              <input value={form.avatar_initials} maxLength={2} onChange={(e) => setForm({ ...form, avatar_initials: e.target.value })} className={inputClass} />
+            </div>
+            <div>
+              <label className="text-xs text-muted-foreground font-body mb-1 block">Store URL Slug</label>
+              <input value={form.slug} onChange={(e) => setForm({ ...form, slug: e.target.value })} className={inputClass} />
             </div>
           </div>
         </div>
-        <div>
-          <label className="text-xs text-muted-foreground font-body mb-1 block">Store URL Slug</label>
-          <input value={form.slug} onChange={(e) => setForm({ ...form, slug: e.target.value })} className={inputClass} />
+
+        {/* Appearance */}
+        <div className="bg-card rounded-xl p-5 store-shadow space-y-4">
+          <p className="font-heading font-semibold text-sm text-foreground">Appearance</p>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs text-muted-foreground font-body mb-1 block">Accent Color</label>
+              <div className="flex items-center gap-2">
+                <input type="color" value={form.accent_color} onChange={(e) => setForm({ ...form, accent_color: e.target.value })} className="w-11 h-11 rounded-lg border border-border cursor-pointer" />
+                <input value={form.accent_color} onChange={(e) => setForm({ ...form, accent_color: e.target.value })} className={inputClass} />
+              </div>
+            </div>
+            <div>
+              <label className="text-xs text-muted-foreground font-body mb-1 block">Background Color</label>
+              <div className="flex items-center gap-2">
+                <input type="color" value={form.background_color || "#f5f4f0"} onChange={(e) => setForm({ ...form, background_color: e.target.value })} className="w-11 h-11 rounded-lg border border-border cursor-pointer" />
+                <input value={form.background_color} placeholder="#f5f4f0" onChange={(e) => setForm({ ...form, background_color: e.target.value })} className={inputClass} />
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs text-muted-foreground font-body mb-1 block">Heading Font</label>
+              <select value={form.font_heading} onChange={(e) => setForm({ ...form, font_heading: e.target.value })} className={selectClass} style={{ fontFamily: form.font_heading }}>
+                {FONT_OPTIONS.map((f) => <option key={f.value} value={f.value} style={{ fontFamily: f.value }}>{f.label}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="text-xs text-muted-foreground font-body mb-1 block">Body Font</label>
+              <select value={form.font_body} onChange={(e) => setForm({ ...form, font_body: e.target.value })} className={selectClass} style={{ fontFamily: form.font_body }}>
+                {BODY_FONT_OPTIONS.map((f) => <option key={f.value} value={f.value} style={{ fontFamily: f.value }}>{f.label}</option>)}
+              </select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs text-muted-foreground font-body mb-1 block">Layout</label>
+              <div className="flex gap-2">
+                {LAYOUT_OPTIONS.map((l) => (
+                  <button key={l.value} onClick={() => setForm({ ...form, layout: l.value })} className={`flex-1 h-10 rounded-lg text-sm font-body font-medium transition-all ${form.layout === l.value ? "bg-primary text-primary-foreground" : "bg-background border border-border text-muted-foreground hover:text-foreground"}`}>
+                    {l.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div>
+              <label className="text-xs text-muted-foreground font-body mb-1 block">Theme</label>
+              <div className="flex gap-2">
+                {THEME_OPTIONS.map((t) => (
+                  <button key={t.value} onClick={() => setForm({ ...form, theme: t.value })} className={`flex-1 h-10 rounded-lg text-sm font-body font-medium transition-all ${form.theme === t.value ? "bg-primary text-primary-foreground" : "bg-background border border-border text-muted-foreground hover:text-foreground"}`}>
+                    {t.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
 
-        <hr className="border-border" />
-        <p className="font-heading font-semibold text-sm text-foreground">Social Links</p>
-        {(["x", "instagram", "youtube", "tiktok", "linkedin"] as const).map((key) => (
-          <div key={key}>
-            <label className="text-xs text-muted-foreground font-body mb-1 block capitalize">{key === "x" ? "X (Twitter)" : key}</label>
-            <input value={form[key]} onChange={(e) => setForm({ ...form, [key]: e.target.value })} placeholder={`https://${key}.com/...`} className={inputClass} />
-          </div>
-        ))}
+        {/* Logo & Banner */}
+        <div className="bg-card rounded-xl p-5 store-shadow space-y-4">
+          <p className="font-heading font-semibold text-sm text-foreground">Logo & Banner</p>
 
+          <div>
+            <label className="text-xs text-muted-foreground font-body mb-1.5 block">Logo (replaces initials avatar)</label>
+            {logoPreview ? (
+              <div className="border border-border rounded-lg p-3 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <img src={logoPreview} alt="Logo" className="w-12 h-12 rounded-full object-cover" />
+                  <span className="text-sm text-foreground">Logo uploaded</span>
+                </div>
+                <button onClick={() => { setLogoPreview(null); setLogoFile(null); }} className="w-7 h-7 rounded-md flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors">
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            ) : (
+              <button onClick={() => logoInputRef.current?.click()} className="w-full border-2 border-dashed border-border rounded-lg p-4 flex flex-col items-center gap-1.5 hover:border-primary/40 hover:bg-primary/5 transition-colors">
+                <ImageIcon className="w-5 h-5 text-muted-foreground" />
+                <span className="text-sm text-muted-foreground">Upload logo (max 5MB)</span>
+              </button>
+            )}
+            <input ref={logoInputRef} type="file" accept="image/*" onChange={(e) => e.target.files?.[0] && handleImageFile(e.target.files[0], setLogoFile, setLogoPreview)} className="hidden" />
+          </div>
+
+          <div>
+            <label className="text-xs text-muted-foreground font-body mb-1.5 block">Banner Image</label>
+            {bannerPreview ? (
+              <div className="border border-border rounded-lg p-3">
+                <div className="relative">
+                  <img src={bannerPreview} alt="Banner" className="w-full h-24 rounded-lg object-cover" />
+                  <button onClick={() => { setBannerPreview(null); setBannerFile(null); }} className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-black/50 flex items-center justify-center text-white hover:bg-black/70 transition-colors">
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button onClick={() => bannerInputRef.current?.click()} className="w-full border-2 border-dashed border-border rounded-lg p-4 flex flex-col items-center gap-1.5 hover:border-primary/40 hover:bg-primary/5 transition-colors">
+                <Upload className="w-5 h-5 text-muted-foreground" />
+                <span className="text-sm text-muted-foreground">Upload banner (max 5MB)</span>
+              </button>
+            )}
+            <input ref={bannerInputRef} type="file" accept="image/*" onChange={(e) => e.target.files?.[0] && handleImageFile(e.target.files[0], setBannerFile, setBannerPreview)} className="hidden" />
+          </div>
+        </div>
+
+        {/* Social Links */}
+        <div className="bg-card rounded-xl p-5 store-shadow space-y-4">
+          <p className="font-heading font-semibold text-sm text-foreground">Social Links</p>
+          {(["x", "instagram", "youtube", "tiktok", "linkedin"] as const).map((key) => (
+            <div key={key}>
+              <label className="text-xs text-muted-foreground font-body mb-1 block capitalize">{key === "x" ? "X (Twitter)" : key}</label>
+              <input value={form[key]} onChange={(e) => setForm({ ...form, [key]: e.target.value })} placeholder={`https://${key}.com/...`} className={inputClass} />
+            </div>
+          ))}
+        </div>
+
+        {/* Save */}
         <button
           onClick={handleSave}
           disabled={saving}

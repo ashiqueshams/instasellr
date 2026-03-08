@@ -7,6 +7,7 @@ import Storefront from "./pages/Storefront";
 import DashboardLayout from "./pages/DashboardLayout";
 import DashboardOverview from "./pages/DashboardOverview";
 import DashboardProducts from "./pages/DashboardProducts";
+import DashboardBundles from "./pages/DashboardBundles";
 import DashboardOrders from "./pages/DashboardOrders";
 import DashboardSettings from "./pages/DashboardSettings";
 import Auth from "./pages/Auth";
@@ -35,6 +36,7 @@ const App = () => (
           >
             <Route index element={<DashboardOverview />} />
             <Route path="products" element={<DashboardProducts />} />
+            <Route path="bundles" element={<DashboardBundles />} />
             <Route path="orders" element={<DashboardOrders />} />
             <Route path="settings" element={<DashboardSettings />} />
           </Route>

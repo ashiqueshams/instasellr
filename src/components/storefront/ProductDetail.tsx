@@ -87,7 +87,6 @@ export default function ProductDetail({ product, store, onBack }: ProductDetailP
 
   return (
     <div className="animate-slideInRight">
-      {/* Back button */}
       <button
         onClick={onBack}
         className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-4"
@@ -101,8 +100,12 @@ export default function ProductDetail({ product, store, onBack }: ProductDetailP
         className="rounded-xl p-6 text-center mb-6"
         style={{ backgroundColor: product.color + "15" }}
       >
-        <span className="text-5xl block mb-3">{product.emoji}</span>
-        <h2 className="font-heading font-bold text-xl text-foreground">{product.name}</h2>
+        {product.image_url ? (
+          <img src={product.image_url} alt={product.name} className="w-24 h-24 rounded-xl object-cover mx-auto mb-3" />
+        ) : (
+          <span className="text-5xl block mb-3">{product.emoji}</span>
+        )}
+        <h2 className="font-heading font-bold text-xl text-foreground" style={{ fontFamily: `'${store.font_heading}', sans-serif` }}>{product.name}</h2>
         <p className="text-muted-foreground text-sm mt-1">{product.tagline}</p>
         <p className="font-heading font-bold text-2xl mt-3" style={{ color: store.accent_color }}>
           ${product.price}
@@ -142,14 +145,14 @@ export default function ProductDetail({ product, store, onBack }: ProductDetailP
             placeholder="Your name"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="h-11 rounded-lg bg-background px-3.5 text-sm font-body border border-border outline-none focus:ring-2 focus:ring-primary/20 transition-shadow placeholder:text-muted-foreground"
+            className="h-11 rounded-lg bg-background px-3.5 text-[16px] sm:text-sm font-body border border-border outline-none focus:ring-2 focus:ring-primary/20 transition-shadow placeholder:text-muted-foreground"
           />
           <input
             type="email"
             placeholder="Your email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="h-11 rounded-lg bg-background px-3.5 text-sm font-body border border-border outline-none focus:ring-2 focus:ring-primary/20 transition-shadow placeholder:text-muted-foreground"
+            className="h-11 rounded-lg bg-background px-3.5 text-[16px] sm:text-sm font-body border border-border outline-none focus:ring-2 focus:ring-primary/20 transition-shadow placeholder:text-muted-foreground"
           />
           <button
             onClick={handleBuy}
@@ -174,7 +177,11 @@ export default function ProductDetail({ product, store, onBack }: ProductDetailP
           <div className="max-w-[480px] mx-auto px-4 pb-4">
             <div className="bg-card rounded-xl p-3.5 store-shadow border border-border flex items-center justify-between gap-3">
               <div className="flex items-center gap-2.5 min-w-0">
-                <span className="text-lg">{product.emoji}</span>
+                {product.image_url ? (
+                  <img src={product.image_url} alt={product.name} className="w-8 h-8 rounded-lg object-cover" />
+                ) : (
+                  <span className="text-lg">{product.emoji}</span>
+                )}
                 <div className="min-w-0">
                   <p className="font-heading font-semibold text-sm text-foreground truncate">{product.name}</p>
                   <p className="font-heading font-bold text-sm" style={{ color: store.accent_color }}>
