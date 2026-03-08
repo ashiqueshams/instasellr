@@ -340,7 +340,8 @@ export default function DashboardProducts() {
 
       {/* Products table */}
       <div className="bg-card rounded-xl store-shadow overflow-hidden">
-        <table className="w-full">
+        <div className="overflow-x-auto">
+        <table className="w-full min-w-[540px]">
           <thead>
             <tr className="border-b border-border">
               <th className="text-left text-xs text-muted-foreground font-body font-medium px-5 py-3">Product</th>
@@ -390,6 +391,7 @@ export default function DashboardProducts() {
             ))}
           </tbody>
         </table>
+        </div>
         {products.length === 0 && !loading && (
           <div className="py-12 text-center text-muted-foreground text-sm">No products yet. Add your first one!</div>
         )}

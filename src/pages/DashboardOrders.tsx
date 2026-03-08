@@ -68,7 +68,8 @@ export default function DashboardOrders() {
     <div>
       <h1 className="font-heading font-bold text-2xl text-foreground mb-6">Orders</h1>
       <div className="bg-card rounded-xl store-shadow overflow-hidden">
-        <table className="w-full">
+        <div className="overflow-x-auto">
+        <table className="w-full min-w-[640px]">
           <thead>
             <tr className="border-b border-border">
               <th className="text-left text-xs text-muted-foreground font-body font-medium px-5 py-3">Customer</th>
@@ -138,6 +139,7 @@ export default function DashboardOrders() {
             )}
           </tbody>
         </table>
+        </div>
       </div>
     </div>
   );
