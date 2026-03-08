@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { Send, Loader2 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 interface OrderWithProduct {
   id: string;
@@ -9,17 +11,20 @@ interface OrderWithProduct {
   status: string;
   created_at: string;
   product_name: string;
+  download_count: number | null;
 }
 
 export default function DashboardOrders() {
   const [orders, setOrders] = useState<OrderWithProduct[]>([]);
   const [loading, setLoading] = useState(true);
+  const [resending, setResending] = useState<string | null>(null);
+  const { toast } = useToast();
 
   useEffect(() => {
     const fetchOrders = async () => {
       const { data, error } = await supabase
         .from("orders")
-        .select("id, customer_name, customer_email, amount, status, created_at, products(name)")
+        .select("id, customer_name, customer_email, amount, status, created_at, download_count, products(name)")
         .order("created_at", { ascending: false });
 
       if (!error && data) {
@@ -32,6 +37,7 @@ export default function DashboardOrders() {
             status: o.status,
             created_at: o.created_at,
             product_name: o.products?.name ?? "—",
+            download_count: o.download_count,
           }))
         );
       }
@@ -39,6 +45,20 @@ export default function DashboardOrders() {
     };
     fetchOrders();
   }, []);
+
+  const handleResend = async (orderId: string) => {
+    setResending(orderId);
+    try {
+      const { error } = await supabase.functions.invoke("resend-order-email", {
+        body: { order_id: orderId },
+      });
+      if (error) throw error;
+      toast({ title: "Email sent!", description: "Download link resent to customer." });
+    } catch (err: any) {
+      toast({ title: "Failed to resend", description: err.message, variant: "destructive" });
+    }
+    setResending(null);
+  };
 
   return (
     <div>
@@ -51,17 +71,19 @@ export default function DashboardOrders() {
               <th className="text-left text-xs text-muted-foreground font-body font-medium px-5 py-3">Product</th>
               <th className="text-left text-xs text-muted-foreground font-body font-medium px-5 py-3">Amount</th>
               <th className="text-left text-xs text-muted-foreground font-body font-medium px-5 py-3">Status</th>
+              <th className="text-left text-xs text-muted-foreground font-body font-medium px-5 py-3">Downloads</th>
               <th className="text-left text-xs text-muted-foreground font-body font-medium px-5 py-3">Date</th>
+              <th className="text-right text-xs text-muted-foreground font-body font-medium px-5 py-3">Actions</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={5} className="px-5 py-12 text-center text-sm text-muted-foreground">Loading orders…</td>
+                <td colSpan={7} className="px-5 py-12 text-center text-sm text-muted-foreground">Loading orders…</td>
               </tr>
             ) : orders.length === 0 ? (
               <tr>
-                <td colSpan={5} className="px-5 py-12 text-center text-sm text-muted-foreground">No orders yet.</td>
+                <td colSpan={7} className="px-5 py-12 text-center text-sm text-muted-foreground">No orders yet.</td>
               </tr>
             ) : (
               orders.map((order) => (
@@ -86,7 +108,26 @@ export default function DashboardOrders() {
                     </span>
                   </td>
                   <td className="px-5 py-3.5 text-sm text-muted-foreground">
+                    {order.download_count ?? 0} / 3
+                  </td>
+                  <td className="px-5 py-3.5 text-sm text-muted-foreground">
                     {new Date(order.created_at).toLocaleDateString()}
+                  </td>
+                  <td className="px-5 py-3.5 text-right">
+                    {order.status === "paid" && (
+                      <button
+                        onClick={() => handleResend(order.id)}
+                        disabled={resending === order.id}
+                        className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-semibold text-primary bg-primary/10 hover:bg-primary/20 transition-colors disabled:opacity-50"
+                      >
+                        {resending === order.id ? (
+                          <Loader2 className="w-3 h-3 animate-spin" />
+                        ) : (
+                          <Send className="w-3 h-3" />
+                        )}
+                        Resend
+                      </button>
+                    )}
                   </td>
                 </tr>
               ))
