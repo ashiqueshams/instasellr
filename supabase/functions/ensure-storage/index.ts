@@ -18,13 +18,15 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Use postgres module to add the missing column and create bucket
     const { Pool } = await import("https://deno.land/x/postgres@v0.17.0/mod.ts");
     const pool = new Pool(dbUrl, 1);
     const conn = await pool.connect();
 
     try {
-      // Add missing public column
+      // Switch to the storage admin role
+      await conn.queryObject(`SET ROLE supabase_storage_admin`);
+      
+      // Add missing columns
       await conn.queryObject(`ALTER TABLE storage.buckets ADD COLUMN IF NOT EXISTS public boolean DEFAULT false`);
       await conn.queryObject(`ALTER TABLE storage.buckets ADD COLUMN IF NOT EXISTS avif_autodetection boolean DEFAULT false`);
       await conn.queryObject(`ALTER TABLE storage.buckets ADD COLUMN IF NOT EXISTS file_size_limit bigint DEFAULT NULL`);
@@ -33,16 +35,18 @@ Deno.serve(async (req) => {
       // Create bucket
       await conn.queryObject(`INSERT INTO storage.buckets (id, name, public) VALUES ('product-files', 'product-files', false) ON CONFLICT (id) DO NOTHING`);
 
-      // Create RLS policies on storage.objects
+      // Reset role and create RLS policies
+      await conn.queryObject(`RESET ROLE`);
+      
       await conn.queryObject(`
         DO $$ BEGIN
-          IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Authenticated upload product files' AND tablename = 'objects') THEN
+          IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Authenticated upload product files' AND tablename = 'objects' AND schemaname = 'storage') THEN
             CREATE POLICY "Authenticated upload product files" ON storage.objects FOR INSERT TO authenticated WITH CHECK (bucket_id = 'product-files');
           END IF;
-          IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Authenticated delete product files' AND tablename = 'objects') THEN
+          IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Authenticated delete product files' AND tablename = 'objects' AND schemaname = 'storage') THEN
             CREATE POLICY "Authenticated delete product files" ON storage.objects FOR DELETE TO authenticated USING (bucket_id = 'product-files');
           END IF;
-          IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Authenticated read product files' AND tablename = 'objects') THEN
+          IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Authenticated read product files' AND tablename = 'objects' AND schemaname = 'storage') THEN
             CREATE POLICY "Authenticated read product files" ON storage.objects FOR SELECT TO authenticated USING (bucket_id = 'product-files');
           END IF;
         END $$;
