@@ -1,8 +1,7 @@
 import { useState, useRef, useEffect } from "react";
-import { ArrowLeft, Check, Loader2 } from "lucide-react";
+import { ArrowLeft, Check, Minus, Plus, ShoppingBag } from "lucide-react";
 import { Product, Store } from "@/data/sampleData";
-import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
+import { useCart } from "@/contexts/CartContext";
 
 interface ProductDetailProps {
   product: Product;
@@ -11,79 +10,27 @@ interface ProductDetailProps {
 }
 
 export default function ProductDetail({ product, store, onBack }: ProductDetailProps) {
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [purchased, setPurchased] = useState(false);
+  const { addToCart, items, updateQuantity } = useCart();
   const [showStickyBar, setShowStickyBar] = useState(false);
-  const formRef = useRef<HTMLDivElement>(null);
-  const { toast } = useToast();
+  const ctaRef = useRef<HTMLDivElement>(null);
 
-  const included = [
-    "Instant digital download",
-    "Lifetime access & updates",
-    "Commercial license included",
-    "Premium support via email",
-  ];
+  const cartItem = items.find((i) => i.product.id === product.id);
+  const quantity = cartItem?.quantity || 0;
+
+  const included = product.product_type === "digital"
+    ? ["Instant digital download", "Lifetime access & updates", "Commercial license included", "Premium support via email"]
+    : ["Quality guaranteed", "Secure packaging", "Fast shipping", "Easy returns"];
 
   useEffect(() => {
     const observer = new IntersectionObserver(
       ([entry]) => setShowStickyBar(!entry.isIntersecting),
       { threshold: 0.1 }
     );
-    if (formRef.current) observer.observe(formRef.current);
+    if (ctaRef.current) observer.observe(ctaRef.current);
     return () => observer.disconnect();
   }, []);
 
-  const handleBuy = async () => {
-    if (!name.trim()) {
-      toast({ title: "Name required", description: "Please enter your name.", variant: "destructive" });
-      return;
-    }
-    if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      toast({ title: "Valid email required", description: "Please enter a valid email.", variant: "destructive" });
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const { data, error } = await supabase.functions.invoke("create-order", {
-        body: {
-          product_id: product.id,
-          store_id: product.store_id,
-          customer_name: name,
-          customer_email: email,
-          amount: product.price,
-        },
-      });
-
-      if (error) throw error;
-      setPurchased(true);
-    } catch (err: any) {
-      toast({ title: "Purchase failed", description: err.message || "Please try again.", variant: "destructive" });
-    }
-    setLoading(false);
-  };
-
-  if (purchased) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] text-center animate-popIn">
-        <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mb-4">
-          <Check className="w-8 h-8 text-green-600" />
-        </div>
-        <h2 className="font-heading font-bold text-xl text-foreground">Purchase Successful!</h2>
-        <p className="text-muted-foreground text-sm mt-2 max-w-[260px]">
-          A download link has been sent to <span className="font-semibold text-foreground">{email}</span>
-        </p>
-        <button
-          onClick={onBack}
-          className="mt-6 h-10 px-6 rounded-lg bg-card store-shadow font-heading font-semibold text-sm text-foreground hover:scale-[1.02] active:scale-[0.98] transition-transform"
-        >
-          ← Back to Store
-        </button>
-      </div>
-    );
-  }
+  const handleAddToCart = () => addToCart(product);
 
   return (
     <div className="animate-slideInRight">
@@ -95,17 +42,28 @@ export default function ProductDetail({ product, store, onBack }: ProductDetailP
         Back
       </button>
 
-      {/* Hero */}
-      <div
-        className="rounded-xl p-6 text-center mb-6"
-        style={{ backgroundColor: product.color + "15" }}
-      >
+      {/* Hero image - full width */}
+      <div className="rounded-2xl overflow-hidden mb-5">
         {product.image_url ? (
-          <img src={product.image_url} alt={product.name} className="w-24 h-24 rounded-xl object-cover mx-auto mb-3" />
+          <img src={product.image_url} alt={product.name} className="w-full aspect-square object-cover" />
         ) : (
-          <span className="text-5xl block mb-3">{product.emoji}</span>
+          <div
+            className="w-full aspect-square flex items-center justify-center text-7xl"
+            style={{ backgroundColor: product.color + "15" }}
+          >
+            {product.emoji}
+          </div>
         )}
-        <h2 className="font-heading font-bold text-xl text-foreground" style={{ fontFamily: `'${store.font_heading}', sans-serif` }}>{product.name}</h2>
+      </div>
+
+      {/* Title & Price */}
+      <div className="mb-5">
+        <h2
+          className="font-heading font-bold text-xl"
+          style={{ fontFamily: `'${store.font_heading}', sans-serif`, color: store.text_color || undefined }}
+        >
+          {product.name}
+        </h2>
         <p className="text-muted-foreground text-sm mt-1">{product.tagline}</p>
         <p className="font-heading font-bold text-2xl mt-3" style={{ color: store.accent_color }}>
           ${product.price}
@@ -114,13 +72,17 @@ export default function ProductDetail({ product, store, onBack }: ProductDetailP
 
       {/* Description */}
       <div className="mb-6">
-        <h3 className="font-heading font-semibold text-sm text-foreground mb-2">About this product</h3>
+        <h3 className="font-heading font-semibold text-sm mb-2" style={{ color: store.text_color || undefined }}>
+          About this product
+        </h3>
         <p className="text-sm text-muted-foreground leading-relaxed">{product.description}</p>
       </div>
 
       {/* What's included */}
       <div className="mb-6">
-        <h3 className="font-heading font-semibold text-sm text-foreground mb-3">What's included</h3>
+        <h3 className="font-heading font-semibold text-sm mb-3" style={{ color: store.text_color || undefined }}>
+          What's included
+        </h3>
         <div className="flex flex-col gap-2.5">
           {included.map((item, i) => (
             <div key={i} className="flex items-center gap-2.5">
@@ -130,48 +92,53 @@ export default function ProductDetail({ product, store, onBack }: ProductDetailP
               >
                 <Check className="w-3 h-3" style={{ color: store.accent_color }} />
               </div>
-              <span className="text-sm text-foreground">{item}</span>
+              <span className="text-sm" style={{ color: store.text_color || undefined }}>{item}</span>
             </div>
           ))}
         </div>
       </div>
 
-      {/* Purchase form */}
-      <div ref={formRef} className="bg-card rounded-xl p-5 store-shadow">
-        <h3 className="font-heading font-semibold text-sm text-foreground mb-4">Complete your purchase</h3>
-        <div className="flex flex-col gap-3">
-          <input
-            type="text"
-            placeholder="Your name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className="h-11 rounded-lg bg-background px-3.5 text-[16px] sm:text-sm font-body border border-border outline-none focus:ring-2 focus:ring-primary/20 transition-shadow placeholder:text-muted-foreground"
-          />
-          <input
-            type="email"
-            placeholder="Your email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="h-11 rounded-lg bg-background px-3.5 text-[16px] sm:text-sm font-body border border-border outline-none focus:ring-2 focus:ring-primary/20 transition-shadow placeholder:text-muted-foreground"
-          />
+      {/* Add to Cart CTA */}
+      <div ref={ctaRef} className="space-y-3">
+        {quantity > 0 ? (
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-0.5 bg-muted rounded-xl flex-1">
+              <button
+                onClick={() => updateQuantity(product.id, quantity - 1)}
+                className="flex-1 h-12 flex items-center justify-center rounded-xl hover:bg-background transition-colors"
+              >
+                <Minus className="w-4 h-4" />
+              </button>
+              <span className="w-12 text-center font-heading font-bold text-lg">{quantity}</span>
+              <button
+                onClick={() => updateQuantity(product.id, quantity + 1)}
+                className="flex-1 h-12 flex items-center justify-center rounded-xl hover:bg-background transition-colors"
+              >
+                <Plus className="w-4 h-4" />
+              </button>
+            </div>
+            <button
+              onClick={handleAddToCart}
+              className="h-12 px-6 rounded-xl font-heading font-semibold text-sm text-primary-foreground hover:brightness-110 active:scale-[0.98] transition-all flex items-center gap-2"
+              style={{ backgroundColor: store.accent_color }}
+            >
+              <ShoppingBag className="w-4 h-4" />
+              Add More
+            </button>
+          </div>
+        ) : (
           <button
-            onClick={handleBuy}
-            disabled={loading}
-            className="h-12 rounded-lg font-heading font-semibold text-sm text-primary-foreground bg-primary hover:brightness-110 active:scale-[0.98] transition-all duration-150 disabled:opacity-70 flex items-center justify-center gap-2"
+            onClick={handleAddToCart}
+            className="w-full h-13 py-4 rounded-xl font-heading font-semibold text-sm text-primary-foreground hover:brightness-110 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+            style={{ backgroundColor: store.accent_color }}
           >
-            {loading ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin" />
-                Processing...
-              </>
-            ) : (
-              `Buy for $${product.price}`
-            )}
+            <ShoppingBag className="w-4 h-4" />
+            Add to Cart — ${product.price}
           </button>
-        </div>
+        )}
       </div>
 
-      {/* Sticky buy bar */}
+      {/* Sticky bar */}
       {showStickyBar && (
         <div className="fixed bottom-0 left-0 right-0 z-50 animate-slideUp">
           <div className="max-w-[480px] mx-auto px-4 pb-4">
@@ -183,17 +150,19 @@ export default function ProductDetail({ product, store, onBack }: ProductDetailP
                   <span className="text-lg">{product.emoji}</span>
                 )}
                 <div className="min-w-0">
-                  <p className="font-heading font-semibold text-sm text-foreground truncate">{product.name}</p>
+                  <p className="font-heading font-semibold text-sm truncate" style={{ color: store.text_color || undefined }}>{product.name}</p>
                   <p className="font-heading font-bold text-sm" style={{ color: store.accent_color }}>
                     ${product.price}
                   </p>
                 </div>
               </div>
               <button
-                onClick={() => formRef.current?.scrollIntoView({ behavior: "smooth" })}
-                className="h-10 px-5 rounded-lg font-heading font-semibold text-sm text-primary-foreground bg-primary hover:brightness-110 active:scale-[0.98] transition-all shrink-0"
+                onClick={handleAddToCart}
+                className="h-10 px-5 rounded-xl font-heading font-semibold text-sm text-primary-foreground hover:brightness-110 active:scale-[0.98] transition-all shrink-0 flex items-center gap-1.5"
+                style={{ backgroundColor: store.accent_color }}
               >
-                Buy Now
+                <Plus className="w-3.5 h-3.5" />
+                Add to Cart
               </button>
             </div>
           </div>
