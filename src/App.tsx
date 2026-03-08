@@ -10,6 +10,7 @@ import DashboardProducts from "./pages/DashboardProducts";
 import DashboardBundles from "./pages/DashboardBundles";
 import DashboardOrders from "./pages/DashboardOrders";
 import DashboardSettings from "./pages/DashboardSettings";
+import DashboardLinks from "./pages/DashboardLinks";
 import Auth from "./pages/Auth";
 import AuthGuard from "./components/AuthGuard";
 import NotFound from "./pages/NotFound";
@@ -37,6 +38,7 @@ const App = () => (
             <Route index element={<DashboardOverview />} />
             <Route path="products" element={<DashboardProducts />} />
             <Route path="bundles" element={<DashboardBundles />} />
+            <Route path="links" element={<DashboardLinks />} />
             <Route path="orders" element={<DashboardOrders />} />
             <Route path="settings" element={<DashboardSettings />} />
           </Route>
