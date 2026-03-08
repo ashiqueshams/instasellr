@@ -207,6 +207,8 @@ export default function Storefront() {
               <BundleCard key={bundle.id} bundle={bundle} products={bundle.products} onBuyBundle={() => setSelectedBundle(bundle)} />
             ))}
 
+            {!search && storeLinks.length > 0 && <StorefrontLinks links={storeLinks} store={store} />}
+
             <ProductList
               products={filteredProducts}
               onSelectProduct={setSelectedProduct}
@@ -254,6 +256,7 @@ export default function Storefront() {
             {!search && bundles.map((bundle) => (
               <BundleCard key={bundle.id} bundle={bundle} products={bundle.products} onBuyBundle={() => setSelectedBundle(bundle)} />
             ))}
+            {!search && storeLinks.length > 0 && <StorefrontLinks links={storeLinks} store={store} />}
             <ProductList
               products={filteredProducts}
               onSelectProduct={setSelectedProduct}
