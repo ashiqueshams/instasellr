@@ -35,34 +35,35 @@ export interface BundleItem {
 }
 
 export interface Store {
-  id: string;
-  user_id: string;
-  slug: string;
-  name: string;
-  bio: string;
-  avatar_initials: string;
-  accent_color: string;
-  font_heading: string;
-  font_body: string;
-  layout: string;
-  logo_url: string | null;
-  banner_url: string | null;
-  theme: string;
-  background_color: string | null;
-  banner_mode: string;
-  card_style: string;
-  social_position: string;
-  footer_image_url: string | null;
-  text_color: string | null;
-  social_links: {
-    x?: string;
-    instagram?: string;
-    youtube?: string;
-    tiktok?: string;
-    linkedin?: string;
-  };
-  created_at: string;
-}
+   id: string;
+   user_id: string;
+   slug: string;
+   name: string;
+   bio: string;
+   avatar_initials: string;
+   accent_color: string;
+   font_heading: string;
+   font_body: string;
+   layout: string;
+   logo_url: string | null;
+   banner_url: string | null;
+   theme: string;
+   background_color: string | null;
+   banner_mode: string;
+   card_style: string;
+   social_position: string;
+   footer_image_url: string | null;
+   text_color: string | null;
+   social_links_color?: string | null;
+   social_links: {
+     x?: string;
+     instagram?: string;
+     youtube?: string;
+     tiktok?: string;
+     linkedin?: string;
+   };
+   created_at: string;
+ }
 
 export interface Order {
   id: string;

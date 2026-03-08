@@ -283,6 +283,7 @@ export type Database = {
           name: string
           slug: string
           social_links: Json | null
+          social_links_color: string | null
           social_position: string | null
           text_color: string | null
           theme: string | null
@@ -306,6 +307,7 @@ export type Database = {
           name: string
           slug: string
           social_links?: Json | null
+          social_links_color?: string | null
           social_position?: string | null
           text_color?: string | null
           theme?: string | null
@@ -329,6 +331,7 @@ export type Database = {
           name?: string
           slug?: string
           social_links?: Json | null
+          social_links_color?: string | null
           social_position?: string | null
           text_color?: string | null
           theme?: string | null

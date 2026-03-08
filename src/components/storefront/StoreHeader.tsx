@@ -33,30 +33,30 @@ const socialIcons: Record<string, React.ReactNode> = {
 };
 
 export function SocialIcons({ store, className = "" }: { store: Store; className?: string }) {
-  const textColor = store.text_color || undefined;
-  return (
-    <div className={`flex gap-2.5 ${className}`}>
-      {Object.entries(store.social_links).map(([key, url]) => {
-        if (!url) return null;
-        return (
-          <a
-            key={key}
-            href={url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="w-10 h-10 rounded-full flex items-center justify-center transition-colors duration-200"
-            style={{
-              backgroundColor: store.banner_mode === "fullpage" ? "rgba(255,255,255,0.15)" : undefined,
-              color: textColor,
-            }}
-          >
-            {socialIcons[key]}
-          </a>
-        );
-      })}
-    </div>
-  );
-}
+   const socialColor = (store as any).social_links_color || store.text_color || undefined;
+   return (
+     <div className={`flex gap-2.5 ${className}`}>
+       {Object.entries(store.social_links).map(([key, url]) => {
+         if (!url) return null;
+         return (
+           <a
+             key={key}
+             href={url}
+             target="_blank"
+             rel="noopener noreferrer"
+             className="w-10 h-10 rounded-full flex items-center justify-center transition-colors duration-200"
+             style={{
+               backgroundColor: store.banner_mode === "fullpage" ? "rgba(255,255,255,0.15)" : undefined,
+               color: socialColor,
+             }}
+           >
+             {socialIcons[key]}
+           </a>
+         );
+       })}
+     </div>
+   );
+ }
 
 export default function StoreHeader({ store }: StoreHeaderProps) {
   const isFullpage = store.banner_mode === "fullpage";

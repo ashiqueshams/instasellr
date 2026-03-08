@@ -57,27 +57,28 @@ const SOCIAL_POSITION_OPTIONS = [
 export default function DashboardSettings() {
   const { toast } = useToast();
   const { store, loading, setStore } = useStore();
-  const [form, setForm] = useState({
-    name: "",
-    bio: "",
-    avatar_initials: "",
-    slug: "",
-    accent_color: "#ff4545",
-    font_heading: "Syne",
-    font_body: "Manrope",
-    layout: "list",
-    theme: "light",
-    background_color: "",
-    banner_mode: "strip",
-    card_style: "card",
-    social_position: "header",
-    text_color: "",
-    x: "",
-    instagram: "",
-    youtube: "",
-    tiktok: "",
-    linkedin: "",
-  });
+   const [form, setForm] = useState({
+     name: "",
+     bio: "",
+     avatar_initials: "",
+     slug: "",
+     accent_color: "#ff4545",
+     font_heading: "Syne",
+     font_body: "Manrope",
+     layout: "list",
+     theme: "light",
+     background_color: "",
+     banner_mode: "strip",
+     card_style: "card",
+     social_position: "below_products",
+     text_color: "",
+     social_links_color: "",
+     x: "",
+     instagram: "",
+     youtube: "",
+     tiktok: "",
+     linkedin: "",
+   });
   const [saving, setSaving] = useState(false);
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
@@ -98,20 +99,21 @@ export default function DashboardSettings() {
       slug: store.slug,
       accent_color: store.accent_color,
       font_heading: store.font_heading || "Syne",
-      font_body: store.font_body || "Manrope",
-      layout: store.layout || "list",
-      theme: store.theme || "light",
-      background_color: store.background_color || "",
-      banner_mode: store.banner_mode || "strip",
-      card_style: store.card_style || "card",
-      social_position: store.social_position || "header",
-      text_color: store.text_color || "",
-      x: store.social_links?.x || "",
-      instagram: store.social_links?.instagram || "",
-      youtube: store.social_links?.youtube || "",
-      tiktok: store.social_links?.tiktok || "",
-      linkedin: store.social_links?.linkedin || "",
-    });
+       font_body: store.font_body || "Manrope",
+       layout: store.layout || "list",
+       theme: store.theme || "light",
+       background_color: store.background_color || "",
+       banner_mode: store.banner_mode || "strip",
+       card_style: store.card_style || "card",
+       social_position: store.social_position || "below_products",
+       text_color: store.text_color || "",
+       social_links_color: (store as any).social_links_color || "",
+       x: store.social_links?.x || "",
+       instagram: store.social_links?.instagram || "",
+       youtube: store.social_links?.youtube || "",
+       tiktok: store.social_links?.tiktok || "",
+       linkedin: store.social_links?.linkedin || "",
+     });
     setLogoPreview(store.logo_url || null);
     setBannerPreview(store.banner_url || null);
     setFooterPreview(store.footer_image_url || null);
@@ -177,13 +179,14 @@ export default function DashboardSettings() {
       .eq("id", store.id);
 
     // Update new fields separately (may not be in types yet)
-    await (supabase.from("stores").update({
-      banner_mode: form.banner_mode,
-      card_style: form.card_style,
-      social_position: form.social_position,
-      footer_image_url: footerUrl,
-      text_color: form.text_color || null,
-    } as any).eq("id", store.id) as any);
+     await (supabase.from("stores").update({
+       banner_mode: form.banner_mode,
+       card_style: form.card_style,
+       social_position: form.social_position,
+       footer_image_url: footerUrl,
+       text_color: form.text_color || null,
+       social_links_color: form.social_links_color || null,
+     } as any).eq("id", store.id) as any);
 
     if (error) {
       toast({ title: "Failed to save", description: error.message, variant: "destructive" });
@@ -204,12 +207,13 @@ export default function DashboardSettings() {
         theme: form.theme,
         background_color: form.background_color || null,
         banner_mode: form.banner_mode,
-        card_style: form.card_style,
-        social_position: form.social_position,
-        footer_image_url: footerUrl,
-        text_color: form.text_color || null,
-        social_links: { x: form.x, instagram: form.instagram, youtube: form.youtube, tiktok: form.tiktok, linkedin: form.linkedin },
-      });
+         card_style: form.card_style,
+         social_position: form.social_position,
+         footer_image_url: footerUrl,
+         text_color: form.text_color || null,
+         social_links_color: form.social_links_color || null,
+         social_links: { x: form.x, instagram: form.instagram, youtube: form.youtube, tiktok: form.tiktok, linkedin: form.linkedin },
+       });
       setLogoFile(null);
       setBannerFile(null);
       setFooterFile(null);
@@ -350,16 +354,27 @@ export default function DashboardSettings() {
           </div>
 
           <div>
-            <label className="text-xs text-muted-foreground font-body mb-1 block">Text Color (optional — for fullpage mode)</label>
-            <div className="flex items-center gap-2">
-              <input type="color" value={form.text_color || "#ffffff"} onChange={(e) => setForm({ ...form, text_color: e.target.value })} className="w-11 h-11 rounded-lg border border-border cursor-pointer" />
-              <input value={form.text_color} placeholder="#ffffff" onChange={(e) => setForm({ ...form, text_color: e.target.value })} className={inputClass} />
-              {form.text_color && (
-                <button onClick={() => setForm({ ...form, text_color: "" })} className="text-xs text-muted-foreground hover:text-destructive">Clear</button>
-              )}
-            </div>
-          </div>
-        </div>
+             <label className="text-xs text-muted-foreground font-body mb-1 block">Text Color (optional — for fullpage mode)</label>
+             <div className="flex items-center gap-2">
+               <input type="color" value={form.text_color || "#ffffff"} onChange={(e) => setForm({ ...form, text_color: e.target.value })} className="w-11 h-11 rounded-lg border border-border cursor-pointer" />
+               <input value={form.text_color} placeholder="#ffffff" onChange={(e) => setForm({ ...form, text_color: e.target.value })} className={inputClass} />
+               {form.text_color && (
+                 <button onClick={() => setForm({ ...form, text_color: "" })} className="text-xs text-muted-foreground hover:text-destructive">Clear</button>
+               )}
+             </div>
+           </div>
+
+           <div>
+             <label className="text-xs text-muted-foreground font-body mb-1 block">Social Links Color</label>
+             <div className="flex items-center gap-2">
+               <input type="color" value={form.social_links_color || "#ffffff"} onChange={(e) => setForm({ ...form, social_links_color: e.target.value })} className="w-11 h-11 rounded-lg border border-border cursor-pointer" />
+               <input value={form.social_links_color} placeholder="#ffffff" onChange={(e) => setForm({ ...form, social_links_color: e.target.value })} className={inputClass} />
+               {form.social_links_color && (
+                 <button onClick={() => setForm({ ...form, social_links_color: "" })} className="text-xs text-muted-foreground hover:text-destructive">Clear</button>
+               )}
+             </div>
+           </div>
+         </div>
 
         {/* Typography */}
         <div className="bg-card rounded-xl p-5 store-shadow space-y-4">
