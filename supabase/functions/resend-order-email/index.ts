@@ -73,7 +73,7 @@ Deno.serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: "orders@updates.lovable.app",
+        from: "onboarding@resend.dev",
         to: [order.customer_email],
         subject: `Your purchase is ready — ${productName}`,
         html: emailHtml,
