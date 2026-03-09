@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Package, ShoppingCart, LayoutDashboard, Settings, LogOut, Menu, X, Layers, Link2 } from "lucide-react";
+import { Package, ShoppingCart, LayoutDashboard, Settings, LogOut, Menu, X, Layers, Link2, Truck } from "lucide-react";
 import { NavLink, useLocation, Outlet, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 
