@@ -94,6 +94,44 @@ export type Database = {
           },
         ]
       }
+      delivery_options: {
+        Row: {
+          cost: number
+          created_at: string
+          id: string
+          is_active: boolean
+          label: string
+          position: number
+          store_id: string
+        }
+        Insert: {
+          cost?: number
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          label: string
+          position?: number
+          store_id: string
+        }
+        Update: {
+          cost?: number
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          label?: string
+          position?: number
+          store_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "delivery_options_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       orders: {
         Row: {
           amount: number
