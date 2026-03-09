@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Package, ShoppingCart, LayoutDashboard, Settings, LogOut, Menu, X, Layers, Link2 } from "lucide-react";
+import { Package, ShoppingCart, LayoutDashboard, Settings, LogOut, Menu, X, Layers, Link2, Truck } from "lucide-react";
 import { NavLink, useLocation, Outlet, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -9,6 +9,7 @@ const navItems = [
   { label: "Bundles", icon: Layers, path: "/dashboard/bundles" },
   { label: "Links", icon: Link2, path: "/dashboard/links" },
   { label: "Orders", icon: ShoppingCart, path: "/dashboard/orders" },
+  { label: "Delivery", icon: Truck, path: "/dashboard/delivery" },
   { label: "Settings", icon: Settings, path: "/dashboard/settings" },
 ];
 

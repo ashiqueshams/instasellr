@@ -11,6 +11,7 @@ import DashboardBundles from "./pages/DashboardBundles";
 import DashboardOrders from "./pages/DashboardOrders";
 import DashboardSettings from "./pages/DashboardSettings";
 import DashboardLinks from "./pages/DashboardLinks";
+import DashboardDelivery from "./pages/DashboardDelivery";
 import Auth from "./pages/Auth";
 import AuthGuard from "./components/AuthGuard";
 import NotFound from "./pages/NotFound";
@@ -40,6 +41,7 @@ const App = () => (
             <Route path="bundles" element={<DashboardBundles />} />
             <Route path="links" element={<DashboardLinks />} />
             <Route path="orders" element={<DashboardOrders />} />
+            <Route path="delivery" element={<DashboardDelivery />} />
             <Route path="settings" element={<DashboardSettings />} />
           </Route>
           <Route path="*" element={<NotFound />} />
