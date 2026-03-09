@@ -1,9 +1,15 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ArrowLeft, Check, Loader2, ShoppingBag } from "lucide-react";
 import { Store } from "@/data/sampleData";
 import { useCart } from "@/contexts/CartContext";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+
+interface DeliveryOption {
+  id: string;
+  label: string;
+  cost: number;
+}
 
 interface CheckoutPageProps {
   store: Store;
@@ -15,6 +21,8 @@ export default function CheckoutPage({ store, onBack }: CheckoutPageProps) {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [purchased, setPurchased] = useState(false);
+  const [deliveryOptions, setDeliveryOptions] = useState<DeliveryOption[]>([]);
+  const [selectedDelivery, setSelectedDelivery] = useState<string | null>(null);
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -27,6 +35,25 @@ export default function CheckoutPage({ store, onBack }: CheckoutPageProps) {
   });
 
   const hasPhysical = items.some((i) => i.product.product_type === "physical");
+
+  // Fetch delivery options
+  useEffect(() => {
+    const fetchDelivery = async () => {
+      const { data } = await supabase
+        .from("delivery_options" as any)
+        .select("id, label, cost")
+        .eq("store_id", store.id)
+        .eq("is_active", true)
+        .order("position", { ascending: true });
+      const opts = (data as any as DeliveryOption[]) || [];
+      setDeliveryOptions(opts);
+      if (opts.length > 0) setSelectedDelivery(opts[0].id);
+    };
+    fetchDelivery();
+  }, [store.id]);
+
+  const deliveryCost = deliveryOptions.find((d) => d.id === selectedDelivery)?.cost || 0;
+  const grandTotal = totalPrice + (hasPhysical ? deliveryCost : 0);
 
   const handleCheckout = async () => {
     if (!form.name.trim()) {
@@ -42,15 +69,18 @@ export default function CheckoutPage({ store, onBack }: CheckoutPageProps) {
       return;
     }
     if (hasPhysical) {
-      if (!form.address.trim() || !form.city.trim() || !form.zip.trim() || !form.country.trim()) {
+      if (!form.address.trim() || !form.city.trim() || !form.country.trim()) {
         toast({ title: "Complete shipping address required for physical products", variant: "destructive" });
+        return;
+      }
+      if (deliveryOptions.length > 0 && !selectedDelivery) {
+        toast({ title: "Please select a delivery option", variant: "destructive" });
         return;
       }
     }
 
     setLoading(true);
     try {
-      // Create one order per product in cart
       for (const item of items) {
         const { error } = await supabase.functions.invoke("create-order", {
           body: {
@@ -64,7 +94,7 @@ export default function CheckoutPage({ store, onBack }: CheckoutPageProps) {
             shipping_state: hasPhysical ? form.state : null,
             shipping_zip: hasPhysical ? form.zip : null,
             shipping_country: hasPhysical ? form.country : null,
-            amount: item.product.price * item.quantity,
+            amount: item.product.price * item.quantity + (hasPhysical ? deliveryCost / items.length : 0),
             quantity: item.quantity,
           },
         });
@@ -157,14 +187,26 @@ export default function CheckoutPage({ store, onBack }: CheckoutPageProps) {
             </div>
           ))}
         </div>
-        <div className="border-t border-border mt-4 pt-4 flex items-center justify-between">
+
+        {/* Delivery cost line */}
+        {hasPhysical && deliveryOptions.length > 0 && selectedDelivery && (
+          <div className="flex items-center justify-between mt-3 pt-3 border-t border-border/50">
+            <span className="text-sm text-muted-foreground">Delivery</span>
+            <span className="font-heading font-semibold text-sm" style={{ color: store.text_color || undefined }}>
+              {deliveryCost > 0 ? `৳${deliveryCost.toFixed(2)}` : "Free"}
+            </span>
+          </div>
+        )}
+
+        <div className="border-t border-border mt-3 pt-4 flex items-center justify-between">
           <span className="font-heading font-semibold text-sm" style={{ color: store.text_color || undefined }}>Total</span>
-          <span className="font-heading font-bold text-xl" style={{ color: store.accent_color }}>${totalPrice.toFixed(2)}</span>
+          <span className="font-heading font-bold text-xl" style={{ color: store.accent_color }}>${grandTotal.toFixed(2)}</span>
         </div>
       </div>
 
-      {/* Contact Info */}
+      {/* Form */}
       <div className="space-y-5">
+        {/* Contact */}
         <div>
           <h3 className="font-heading font-semibold text-sm mb-3" style={{ color: store.text_color || undefined }}>
             Contact Information
@@ -176,7 +218,7 @@ export default function CheckoutPage({ store, onBack }: CheckoutPageProps) {
           </div>
         </div>
 
-        {/* Shipping - only if physical products */}
+        {/* Shipping */}
         {hasPhysical && (
           <div>
             <h3 className="font-heading font-semibold text-sm mb-3" style={{ color: store.text_color || undefined }}>
@@ -189,9 +231,53 @@ export default function CheckoutPage({ store, onBack }: CheckoutPageProps) {
                 <input placeholder="State" value={form.state} onChange={(e) => setForm({ ...form, state: e.target.value })} className={inputClass} />
               </div>
               <div className="grid grid-cols-2 gap-3">
-                <input placeholder="ZIP code *" value={form.zip} onChange={(e) => setForm({ ...form, zip: e.target.value })} className={inputClass} />
+                <input placeholder="ZIP code" value={form.zip} onChange={(e) => setForm({ ...form, zip: e.target.value })} className={inputClass} />
                 <input placeholder="Country *" value={form.country} onChange={(e) => setForm({ ...form, country: e.target.value })} className={inputClass} />
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* Delivery Options */}
+        {hasPhysical && deliveryOptions.length > 0 && (
+          <div>
+            <h3 className="font-heading font-semibold text-sm mb-3" style={{ color: store.text_color || undefined }}>
+              Delivery Method
+            </h3>
+            <div className="flex flex-col gap-2.5">
+              {deliveryOptions.map((opt) => {
+                const isSelected = selectedDelivery === opt.id;
+                return (
+                  <button
+                    key={opt.id}
+                    onClick={() => setSelectedDelivery(opt.id)}
+                    className="flex items-center gap-3 p-4 rounded-xl border-2 transition-all text-left"
+                    style={{
+                      borderColor: isSelected ? store.accent_color : "hsl(var(--border))",
+                      backgroundColor: isSelected ? store.accent_color + "08" : undefined,
+                    }}
+                  >
+                    <div
+                      className="w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors"
+                      style={{
+                        borderColor: isSelected ? store.accent_color : "hsl(var(--border))",
+                      }}
+                    >
+                      {isSelected && (
+                        <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: store.accent_color }} />
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-heading font-semibold text-sm" style={{ color: store.text_color || undefined }}>
+                        {opt.label}
+                      </p>
+                    </div>
+                    <span className="font-heading font-bold text-sm" style={{ color: store.accent_color }}>
+                      {opt.cost > 0 ? `৳${opt.cost.toFixed(2)}` : "Free"}
+                    </span>
+                  </button>
+                );
+              })}
             </div>
           </div>
         )}
@@ -208,7 +294,7 @@ export default function CheckoutPage({ store, onBack }: CheckoutPageProps) {
               Processing...
             </>
           ) : (
-            `Place Order — $${totalPrice.toFixed(2)}`
+            `Place Order — $${grandTotal.toFixed(2)}`
           )}
         </button>
       </div>
