@@ -41,6 +41,7 @@ const App = () => (
             <Route path="bundles" element={<DashboardBundles />} />
             <Route path="links" element={<DashboardLinks />} />
             <Route path="orders" element={<DashboardOrders />} />
+            <Route path="delivery" element={<DashboardDelivery />} />
             <Route path="settings" element={<DashboardSettings />} />
           </Route>
           <Route path="*" element={<NotFound />} />
