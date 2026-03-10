@@ -93,9 +93,11 @@ Deno.serve(async (req) => {
     // Get product and store info for email
     const { data: product } = await supabase
       .from("products")
-      .select("name, file_url, product_type")
+      .select("name, file_url")
       .eq("id", product_id)
       .single();
+    
+    const isDigital = productCheck.product_type === "digital";
 
     const { data: store } = await supabase
       .from("stores")
