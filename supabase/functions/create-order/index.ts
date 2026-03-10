@@ -42,6 +42,21 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
+    // Server-side price lookup — never trust client-supplied amount
+    const { data: productCheck, error: productCheckErr } = await supabase
+      .from("products")
+      .select("price, product_type")
+      .eq("id", product_id)
+      .single();
+
+    if (productCheckErr || !productCheck) {
+      return new Response(JSON.stringify({ error: "Product not found" }), {
+        status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const serverAmount = Number(productCheck.price) * qty;
+
     const download_token = crypto.randomUUID();
     const download_expires_at = new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString();
 
@@ -58,12 +73,12 @@ Deno.serve(async (req) => {
         shipping_state: shipping_state || null,
         shipping_zip: shipping_zip || null,
         shipping_country: shipping_country || null,
-        amount,
+        amount: serverAmount,
         status: "paid",
         download_token,
         download_expires_at,
         download_count: 0,
-        order_items: quantity ? [{ quantity }] : [],
+        order_items: [{ quantity: qty }],
       })
       .select("id")
       .single();
