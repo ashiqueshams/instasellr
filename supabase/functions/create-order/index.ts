@@ -13,16 +13,29 @@ Deno.serve(async (req) => {
 
   try {
     const {
-      product_id, store_id, customer_name, customer_email, amount,
+      product_id, store_id, customer_name, customer_email,
       customer_phone, shipping_address, shipping_city, shipping_state, shipping_zip, shipping_country, quantity
     } = await req.json();
 
-    if (!product_id || !store_id || !customer_name || !customer_email || !amount) {
+    if (!product_id || !store_id || !customer_name || !customer_email) {
       return new Response(JSON.stringify({ error: "Missing required fields" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+
+    // Validate inputs
+    if (typeof customer_name !== "string" || customer_name.length > 200) {
+      return new Response(JSON.stringify({ error: "Invalid customer name" }), {
+        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    if (typeof customer_email !== "string" || customer_email.length > 255 || !customer_email.includes("@")) {
+      return new Response(JSON.stringify({ error: "Invalid email" }), {
+        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    const qty = Math.max(1, Math.floor(Number(quantity) || 1));
 
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
