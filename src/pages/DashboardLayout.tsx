@@ -106,6 +106,9 @@ export default function DashboardLayout() {
           <Outlet />
         </div>
       </main>
+
+      {/* Order Notifications */}
+      <OrderNotification />
     </div>
   );
 }
