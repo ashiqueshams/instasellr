@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Package, ShoppingCart, LayoutDashboard, Settings, LogOut, Menu, X, Layers, Link2, Truck } from "lucide-react";
 import { NavLink, useLocation, Outlet, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import OrderNotification from "@/components/OrderNotification";
 
 const navItems = [
   { label: "Overview", icon: LayoutDashboard, path: "/dashboard" },
@@ -105,6 +106,9 @@ export default function DashboardLayout() {
           <Outlet />
         </div>
       </main>
+
+      {/* Order Notifications */}
+      <OrderNotification />
     </div>
   );
 }
