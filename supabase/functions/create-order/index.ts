@@ -112,7 +112,7 @@ Deno.serve(async (req) => {
     // Send email via Resend
     const resendKey = Deno.env.get("RESEND_API_KEY");
     if (resendKey && product) {
-      const isDigital = product.product_type === "digital";
+      // isDigital already determined above from productCheck
 
       const emailHtml = `
         <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 520px; margin: 0 auto; padding: 40px 20px;">
