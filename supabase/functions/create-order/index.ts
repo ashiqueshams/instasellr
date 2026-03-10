@@ -120,7 +120,7 @@ Deno.serve(async (req) => {
           <p style="color: #666; font-size: 14px; margin-bottom: 24px;">Thank you for purchasing from <strong>${store?.name || "our store"}</strong>.</p>
           <div style="background: #f8f9fa; border-radius: 12px; padding: 20px; margin-bottom: 24px;">
             <p style="font-size: 16px; font-weight: 600; color: #1a1a1a; margin: 0 0 4px;">${product.name}</p>
-            <p style="color: #666; font-size: 14px; margin: 0;">Amount paid: $${amount}</p>
+            <p style="color: #666; font-size: 14px; margin: 0;">Amount paid: $${serverAmount}</p>
             ${!isDigital && shipping_address ? `<p style="color: #666; font-size: 14px; margin: 8px 0 0;">Ships to: ${shipping_address}, ${shipping_city || ""} ${shipping_state || ""} ${shipping_zip || ""}, ${shipping_country || ""}</p>` : ""}
           </div>
           ${isDigital ? `<a href="${downloadUrl}" style="display: inline-block; background: #1a1a1a; color: #fff; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px;">Download Your File</a>
