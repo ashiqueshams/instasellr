@@ -13,21 +13,49 @@ Deno.serve(async (req) => {
 
   try {
     const {
-      product_id, store_id, customer_name, customer_email, amount,
+      product_id, store_id, customer_name, customer_email,
       customer_phone, shipping_address, shipping_city, shipping_state, shipping_zip, shipping_country, quantity
     } = await req.json();
 
-    if (!product_id || !store_id || !customer_name || !customer_email || !amount) {
+    if (!product_id || !store_id || !customer_name || !customer_email) {
       return new Response(JSON.stringify({ error: "Missing required fields" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
+    // Validate inputs
+    if (typeof customer_name !== "string" || customer_name.length > 200) {
+      return new Response(JSON.stringify({ error: "Invalid customer name" }), {
+        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    if (typeof customer_email !== "string" || customer_email.length > 255 || !customer_email.includes("@")) {
+      return new Response(JSON.stringify({ error: "Invalid email" }), {
+        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    const qty = Math.max(1, Math.floor(Number(quantity) || 1));
+
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
+
+    // Server-side price lookup — never trust client-supplied amount
+    const { data: productCheck, error: productCheckErr } = await supabase
+      .from("products")
+      .select("price, product_type")
+      .eq("id", product_id)
+      .single();
+
+    if (productCheckErr || !productCheck) {
+      return new Response(JSON.stringify({ error: "Product not found" }), {
+        status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const serverAmount = Number(productCheck.price) * qty;
 
     const download_token = crypto.randomUUID();
     const download_expires_at = new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString();
@@ -45,12 +73,12 @@ Deno.serve(async (req) => {
         shipping_state: shipping_state || null,
         shipping_zip: shipping_zip || null,
         shipping_country: shipping_country || null,
-        amount,
+        amount: serverAmount,
         status: "paid",
         download_token,
         download_expires_at,
         download_count: 0,
-        order_items: quantity ? [{ quantity }] : [],
+        order_items: [{ quantity: qty }],
       })
       .select("id")
       .single();
@@ -65,9 +93,11 @@ Deno.serve(async (req) => {
     // Get product and store info for email
     const { data: product } = await supabase
       .from("products")
-      .select("name, file_url, product_type")
+      .select("name, file_url")
       .eq("id", product_id)
       .single();
+    
+    const isDigital = productCheck.product_type === "digital";
 
     const { data: store } = await supabase
       .from("stores")
@@ -82,7 +112,7 @@ Deno.serve(async (req) => {
     // Send email via Resend
     const resendKey = Deno.env.get("RESEND_API_KEY");
     if (resendKey && product) {
-      const isDigital = product.product_type === "digital";
+      // isDigital already determined above from productCheck
 
       const emailHtml = `
         <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 520px; margin: 0 auto; padding: 40px 20px;">
@@ -90,7 +120,7 @@ Deno.serve(async (req) => {
           <p style="color: #666; font-size: 14px; margin-bottom: 24px;">Thank you for purchasing from <strong>${store?.name || "our store"}</strong>.</p>
           <div style="background: #f8f9fa; border-radius: 12px; padding: 20px; margin-bottom: 24px;">
             <p style="font-size: 16px; font-weight: 600; color: #1a1a1a; margin: 0 0 4px;">${product.name}</p>
-            <p style="color: #666; font-size: 14px; margin: 0;">Amount paid: $${amount}</p>
+            <p style="color: #666; font-size: 14px; margin: 0;">Amount paid: $${serverAmount}</p>
             ${!isDigital && shipping_address ? `<p style="color: #666; font-size: 14px; margin: 8px 0 0;">Ships to: ${shipping_address}, ${shipping_city || ""} ${shipping_state || ""} ${shipping_zip || ""}, ${shipping_country || ""}</p>` : ""}
           </div>
           ${isDigital ? `<a href="${downloadUrl}" style="display: inline-block; background: #1a1a1a; color: #fff; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px;">Download Your File</a>
