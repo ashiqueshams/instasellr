@@ -285,6 +285,11 @@ function StorefrontContent({
     </div>
   );
 
+  // Scroll to top on view change
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [selectedProduct, selectedBundle, showCheckout]);
+
   // Determine view content
   let viewContent;
   if (showCheckout) {
