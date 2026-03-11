@@ -1,6 +1,5 @@
-import { ShoppingBag, Plus } from "lucide-react";
 import { Product, Store } from "@/data/sampleData";
-import { useCart } from "@/contexts/CartContext";
+import ProductQuantityControl from "./ProductQuantityControl";
 
 interface ProductListProps {
   products: Product[];
@@ -11,7 +10,6 @@ interface ProductListProps {
 }
 
 export default function ProductList({ products, onSelectProduct, layout = "grid", cardStyle = "card", store }: ProductListProps) {
-  const { addToCart } = useCart();
   const textColor = store?.text_color || undefined;
   const accentColor = store?.accent_color || "#ff4545";
 
@@ -49,6 +47,11 @@ export default function ProductList({ products, onSelectProduct, layout = "grid"
 
             {/* Gradient overlay at bottom of image */}
             <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/30 to-transparent pointer-events-none" />
+
+            {/* Quantity control overlaid on image */}
+            <div className="absolute bottom-2 right-2 z-10" onClick={(e) => e.stopPropagation()}>
+              <ProductQuantityControl product={product} accentColor={accentColor} />
+            </div>
           </button>
 
           {/* Product info below image */}
@@ -63,14 +66,6 @@ export default function ProductList({ products, onSelectProduct, layout = "grid"
               <span className="font-heading font-bold text-sm" style={{ color: accentColor }}>
                 ${product.price}
               </span>
-              <button
-                onClick={(e) => { e.stopPropagation(); addToCart(product); }}
-                className="w-8 h-8 rounded-full flex items-center justify-center text-primary-foreground hover:brightness-110 active:scale-90 transition-all shadow-sm"
-                style={{ backgroundColor: accentColor }}
-                aria-label={`Add ${product.name} to cart`}
-              >
-                <Plus className="w-3.5 h-3.5" />
-              </button>
             </div>
           </div>
         </div>
