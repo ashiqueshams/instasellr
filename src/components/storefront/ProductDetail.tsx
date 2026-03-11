@@ -19,14 +19,6 @@ export default function ProductDetail({ product, store, onBack }: ProductDetailP
     ? ["Instant digital download", "Lifetime access & updates", "Commercial license included", "Premium support via email"]
     : ["Quality guaranteed", "Secure packaging", "Fast shipping", "Easy returns"];
 
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => setShowStickyBar(!entry.isIntersecting),
-      { threshold: 0.1 }
-    );
-    if (ctaRef.current) observer.observe(ctaRef.current);
-    return () => observer.disconnect();
-  }, []);
 
   const handleAddToCart = () => addToCart(product);
 
