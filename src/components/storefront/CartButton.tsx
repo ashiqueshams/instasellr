@@ -16,7 +16,7 @@ export default function CartButton({ store }: CartButtonProps) {
       <div className="max-w-[480px] mx-auto pointer-events-auto">
         <button
           onClick={() => setIsOpen(true)}
-          className="w-full flex items-center justify-between px-5 py-3.5 rounded-2xl text-primary-foreground shadow-xl hover:brightness-105 active:scale-[0.98] transition-all animate-fade-in"
+          className="w-full flex items-center justify-between px-5 py-3.5 rounded-2xl text-primary-foreground shadow-xl hover:brightness-105 active:scale-[0.98] transition-all animate-slideUp"
           style={{ backgroundColor: store.accent_color }}
         >
           <div className="flex items-center gap-3">
