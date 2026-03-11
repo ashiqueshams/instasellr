@@ -11,8 +11,6 @@ interface ProductDetailProps {
 
 export default function ProductDetail({ product, store, onBack }: ProductDetailProps) {
   const { addToCart, items, updateQuantity } = useCart();
-  const [showStickyBar, setShowStickyBar] = useState(false);
-  const ctaRef = useRef<HTMLDivElement>(null);
 
   const cartItem = items.find((i) => i.product.id === product.id);
   const quantity = cartItem?.quantity || 0;
