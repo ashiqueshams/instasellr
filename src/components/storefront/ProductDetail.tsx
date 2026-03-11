@@ -138,33 +138,46 @@ export default function ProductDetail({ product, store, onBack }: ProductDetailP
         )}
       </div>
 
-      {/* Sticky bar */}
+      {/* Sticky Add to Cart bar */}
       {showStickyBar && (
         <div className="fixed bottom-0 left-0 right-0 z-50 animate-slideUp">
           <div className="max-w-[480px] mx-auto px-4 pb-4">
-            <div className="bg-card rounded-xl p-3.5 store-shadow border border-border flex items-center justify-between gap-3">
-              <div className="flex items-center gap-2.5 min-w-0">
-                {product.image_url ? (
-                  <img src={product.image_url} alt={product.name} className="w-8 h-8 rounded-lg object-cover" />
-                ) : (
-                  <span className="text-lg">{product.emoji}</span>
-                )}
-                <div className="min-w-0">
-                  <p className="font-heading font-semibold text-sm truncate" style={{ color: store.text_color || undefined }}>{product.name}</p>
-                  <p className="font-heading font-bold text-sm" style={{ color: store.accent_color }}>
-                    ${product.price}
-                  </p>
+            {quantity > 0 ? (
+              <div className="flex items-center gap-2.5">
+                <div className="flex items-center bg-card rounded-2xl border border-border store-shadow flex-1 overflow-hidden">
+                  <button
+                    onClick={() => updateQuantity(product.id, quantity - 1)}
+                    className="flex-1 h-12 flex items-center justify-center hover:bg-muted transition-colors"
+                  >
+                    <Minus className="w-4 h-4" />
+                  </button>
+                  <span className="w-10 text-center font-heading font-bold text-base tabular-nums">{quantity}</span>
+                  <button
+                    onClick={() => updateQuantity(product.id, quantity + 1)}
+                    className="flex-1 h-12 flex items-center justify-center hover:bg-muted transition-colors"
+                  >
+                    <Plus className="w-4 h-4" />
+                  </button>
                 </div>
+                <button
+                  onClick={handleAddToCart}
+                  className="h-12 px-6 rounded-2xl font-heading font-semibold text-sm text-primary-foreground hover:brightness-110 active:scale-[0.98] transition-all flex items-center gap-2 shrink-0"
+                  style={{ backgroundColor: store.accent_color }}
+                >
+                  <ShoppingBag className="w-4 h-4" />
+                  Add More
+                </button>
               </div>
+            ) : (
               <button
                 onClick={handleAddToCart}
-                className="h-10 px-5 rounded-xl font-heading font-semibold text-sm text-primary-foreground hover:brightness-110 active:scale-[0.98] transition-all shrink-0 flex items-center gap-1.5"
+                className="w-full h-12 rounded-2xl font-heading font-semibold text-sm text-primary-foreground hover:brightness-110 active:scale-[0.98] transition-all flex items-center justify-center gap-2 shadow-lg"
                 style={{ backgroundColor: store.accent_color }}
               >
-                <Plus className="w-3.5 h-3.5" />
-                Add to Cart
+                <ShoppingBag className="w-4 h-4" />
+                Add to Cart — ${product.price}
               </button>
-            </div>
+            )}
           </div>
         </div>
       )}

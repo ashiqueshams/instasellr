@@ -28,7 +28,7 @@ export default function ProductQuantityControl({ product, accentColor }: Product
           addToCart(product);
           setExpanded(true);
         }}
-        className="w-8 h-8 rounded-full flex items-center justify-center text-primary-foreground hover:brightness-110 active:scale-90 transition-all shadow-md"
+        className="w-8 h-8 rounded-full flex items-center justify-center text-primary-foreground hover:brightness-110 active:scale-90 transition-all shadow-md animate-scale-in"
         style={{ backgroundColor: accentColor }}
         aria-label={`Add ${product.name} to cart`}
       >

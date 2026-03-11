@@ -310,18 +310,20 @@ function StorefrontContent({
         <div className="relative z-10 max-w-[480px] mx-auto px-5 py-12 pb-24">
           {mainContent}
         </div>
-        <CartButton store={store} />
+      {!selectedProduct && !selectedBundle && <CartButton store={store} />}
         <CartDrawer store={store} onCheckout={() => setShowCheckout(true)} />
       </div>
     );
   }
+
+  const showCartButton = !selectedProduct && !selectedBundle && !showCheckout;
 
   return (
     <div className="min-h-screen" style={storeStyle}>
       <div className="max-w-[480px] mx-auto px-5 py-8 pb-28">
         {viewContent}
       </div>
-      <CartButton store={store} />
+      {showCartButton && <CartButton store={store} />}
       <CartDrawer store={store} onCheckout={() => setShowCheckout(true)} />
     </div>
   );
