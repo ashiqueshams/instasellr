@@ -11,6 +11,8 @@ interface ProductDetailProps {
 
 export default function ProductDetail({ product, store, onBack }: ProductDetailProps) {
   const { addToCart, items, updateQuantity } = useCart();
+  const [showStickyBar, setShowStickyBar] = useState(false);
+  const ctaRef = useRef<HTMLDivElement>(null);
 
   const cartItem = items.find((i) => i.product.id === product.id);
   const quantity = cartItem?.quantity || 0;
@@ -19,6 +21,14 @@ export default function ProductDetail({ product, store, onBack }: ProductDetailP
     ? ["Instant digital download", "Lifetime access & updates", "Commercial license included", "Premium support via email"]
     : ["Quality guaranteed", "Secure packaging", "Fast shipping", "Easy returns"];
 
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => setShowStickyBar(!entry.isIntersecting),
+      { threshold: 0.1 }
+    );
+    if (ctaRef.current) observer.observe(ctaRef.current);
+    return () => observer.disconnect();
+  }, []);
 
   const handleAddToCart = () => addToCart(product);
 
@@ -88,47 +98,89 @@ export default function ProductDetail({ product, store, onBack }: ProductDetailP
         </div>
       </div>
 
-      {/* Sticky Add to Cart bar - always visible */}
-      <div className="fixed bottom-0 left-0 right-0 z-50 animate-slideUp">
-        <div className="max-w-[480px] mx-auto px-4 pb-4">
-          {quantity > 0 ? (
-            <div className="flex items-center gap-2.5">
-              <div className="flex items-center bg-card rounded-2xl border border-border store-shadow flex-1 overflow-hidden">
-                <button
-                  onClick={() => updateQuantity(product.id, quantity - 1)}
-                  className="flex-1 h-12 flex items-center justify-center hover:bg-muted transition-colors"
-                >
-                  <Minus className="w-4 h-4" />
-                </button>
-                <span className="w-10 text-center font-heading font-bold text-base tabular-nums">{quantity}</span>
-                <button
-                  onClick={() => updateQuantity(product.id, quantity + 1)}
-                  className="flex-1 h-12 flex items-center justify-center hover:bg-muted transition-colors"
-                >
-                  <Plus className="w-4 h-4" />
-                </button>
-              </div>
+      {/* Add to Cart CTA */}
+      <div ref={ctaRef} className="space-y-3">
+        {quantity > 0 ? (
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-0.5 bg-muted rounded-xl flex-1">
               <button
-                onClick={handleAddToCart}
-                className="h-12 px-6 rounded-2xl font-heading font-semibold text-sm text-primary-foreground hover:brightness-110 active:scale-[0.98] transition-all flex items-center gap-2 shrink-0"
-                style={{ backgroundColor: store.accent_color }}
+                onClick={() => updateQuantity(product.id, quantity - 1)}
+                className="flex-1 h-12 flex items-center justify-center rounded-xl hover:bg-background transition-colors"
               >
-                <ShoppingBag className="w-4 h-4" />
-                Add More
+                <Minus className="w-4 h-4" />
+              </button>
+              <span className="w-12 text-center font-heading font-bold text-lg">{quantity}</span>
+              <button
+                onClick={() => updateQuantity(product.id, quantity + 1)}
+                className="flex-1 h-12 flex items-center justify-center rounded-xl hover:bg-background transition-colors"
+              >
+                <Plus className="w-4 h-4" />
               </button>
             </div>
-          ) : (
             <button
               onClick={handleAddToCart}
-              className="w-full h-12 rounded-2xl font-heading font-semibold text-sm text-primary-foreground hover:brightness-110 active:scale-[0.98] transition-all flex items-center justify-center gap-2 shadow-lg"
+              className="h-12 px-6 rounded-xl font-heading font-semibold text-sm text-primary-foreground hover:brightness-110 active:scale-[0.98] transition-all flex items-center gap-2"
               style={{ backgroundColor: store.accent_color }}
             >
               <ShoppingBag className="w-4 h-4" />
-              Add to Cart — ${product.price}
+              Add More
             </button>
-          )}
-        </div>
+          </div>
+        ) : (
+          <button
+            onClick={handleAddToCart}
+            className="w-full h-13 py-4 rounded-xl font-heading font-semibold text-sm text-primary-foreground hover:brightness-110 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+            style={{ backgroundColor: store.accent_color }}
+          >
+            <ShoppingBag className="w-4 h-4" />
+            Add to Cart — ${product.price}
+          </button>
+        )}
       </div>
+
+      {/* Sticky Add to Cart bar */}
+      {showStickyBar && (
+        <div className="fixed bottom-0 left-0 right-0 z-50 animate-slideUp">
+          <div className="max-w-[480px] mx-auto px-4 pb-4">
+            {quantity > 0 ? (
+              <div className="flex items-center gap-2.5">
+                <div className="flex items-center bg-card rounded-2xl border border-border store-shadow flex-1 overflow-hidden">
+                  <button
+                    onClick={() => updateQuantity(product.id, quantity - 1)}
+                    className="flex-1 h-12 flex items-center justify-center hover:bg-muted transition-colors"
+                  >
+                    <Minus className="w-4 h-4" />
+                  </button>
+                  <span className="w-10 text-center font-heading font-bold text-base tabular-nums">{quantity}</span>
+                  <button
+                    onClick={() => updateQuantity(product.id, quantity + 1)}
+                    className="flex-1 h-12 flex items-center justify-center hover:bg-muted transition-colors"
+                  >
+                    <Plus className="w-4 h-4" />
+                  </button>
+                </div>
+                <button
+                  onClick={handleAddToCart}
+                  className="h-12 px-6 rounded-2xl font-heading font-semibold text-sm text-primary-foreground hover:brightness-110 active:scale-[0.98] transition-all flex items-center gap-2 shrink-0"
+                  style={{ backgroundColor: store.accent_color }}
+                >
+                  <ShoppingBag className="w-4 h-4" />
+                  Add More
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={handleAddToCart}
+                className="w-full h-12 rounded-2xl font-heading font-semibold text-sm text-primary-foreground hover:brightness-110 active:scale-[0.98] transition-all flex items-center justify-center gap-2 shadow-lg"
+                style={{ backgroundColor: store.accent_color }}
+              >
+                <ShoppingBag className="w-4 h-4" />
+                Add to Cart — ${product.price}
+              </button>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
