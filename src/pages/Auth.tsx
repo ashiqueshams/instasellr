@@ -14,6 +14,16 @@ export default function Auth() {
   const navigate = useNavigate();
   const { toast } = useToast();
 
+  // Redirect if already authenticated (e.g. after OAuth callback)
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) {
+        navigate("/dashboard", { replace: true });
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, [navigate]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
