@@ -94,6 +94,59 @@ export type Database = {
           },
         ]
       }
+      courier_settings: {
+        Row: {
+          access_token: string | null
+          client_email: string | null
+          client_id: string | null
+          client_password: string | null
+          client_secret: string | null
+          created_at: string
+          id: string
+          pathao_store_id: number | null
+          provider: string
+          refresh_token: string | null
+          store_id: string
+          token_expires_at: string | null
+        }
+        Insert: {
+          access_token?: string | null
+          client_email?: string | null
+          client_id?: string | null
+          client_password?: string | null
+          client_secret?: string | null
+          created_at?: string
+          id?: string
+          pathao_store_id?: number | null
+          provider?: string
+          refresh_token?: string | null
+          store_id: string
+          token_expires_at?: string | null
+        }
+        Update: {
+          access_token?: string | null
+          client_email?: string | null
+          client_id?: string | null
+          client_password?: string | null
+          client_secret?: string | null
+          created_at?: string
+          id?: string
+          pathao_store_id?: number | null
+          provider?: string
+          refresh_token?: string | null
+          store_id?: string
+          token_expires_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "courier_settings_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       delivery_options: {
         Row: {
           cost: number
@@ -144,7 +197,11 @@ export type Database = {
           download_token: string | null
           id: string
           order_items: Json | null
+          pathao_consignment_id: string | null
           product_id: string
+          recipient_area_id: number | null
+          recipient_city_id: number | null
+          recipient_zone_id: number | null
           shipping_address: string | null
           shipping_city: string | null
           shipping_country: string | null
@@ -165,7 +222,11 @@ export type Database = {
           download_token?: string | null
           id?: string
           order_items?: Json | null
+          pathao_consignment_id?: string | null
           product_id: string
+          recipient_area_id?: number | null
+          recipient_city_id?: number | null
+          recipient_zone_id?: number | null
           shipping_address?: string | null
           shipping_city?: string | null
           shipping_country?: string | null
@@ -186,7 +247,11 @@ export type Database = {
           download_token?: string | null
           id?: string
           order_items?: Json | null
+          pathao_consignment_id?: string | null
           product_id?: string
+          recipient_area_id?: number | null
+          recipient_city_id?: number | null
+          recipient_zone_id?: number | null
           shipping_address?: string | null
           shipping_city?: string | null
           shipping_country?: string | null

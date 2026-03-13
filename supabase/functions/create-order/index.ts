@@ -14,7 +14,8 @@ Deno.serve(async (req) => {
   try {
     const {
       product_id, store_id, customer_name, customer_email,
-      customer_phone, shipping_address, shipping_city, shipping_state, shipping_zip, shipping_country, quantity
+      customer_phone, shipping_address, shipping_city, shipping_state, shipping_zip, shipping_country,
+      recipient_city_id, recipient_zone_id, recipient_area_id, quantity
     } = await req.json();
 
     if (!product_id || !store_id || !customer_name || !customer_email) {
@@ -73,6 +74,9 @@ Deno.serve(async (req) => {
         shipping_state: shipping_state || null,
         shipping_zip: shipping_zip || null,
         shipping_country: shipping_country || null,
+        recipient_city_id: recipient_city_id || null,
+        recipient_zone_id: recipient_zone_id || null,
+        recipient_area_id: recipient_area_id || null,
         amount: serverAmount,
         status: "paid",
         download_token,
