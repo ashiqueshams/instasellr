@@ -11,6 +11,11 @@ interface DeliveryOption {
   cost: number;
 }
 
+interface CityZoneArea {
+  id: number;
+  name: string;
+}
+
 interface CheckoutPageProps {
   store: Store;
   onBack: () => void;
@@ -34,11 +39,22 @@ export default function CheckoutPage({ store, onBack }: CheckoutPageProps) {
     country: "",
   });
 
+  // Pathao location state
+  const [hasCourier, setHasCourier] = useState(false);
+  const [cities, setCities] = useState<CityZoneArea[]>([]);
+  const [zones, setZones] = useState<CityZoneArea[]>([]);
+  const [areas, setAreas] = useState<CityZoneArea[]>([]);
+  const [selectedCity, setSelectedCity] = useState(0);
+  const [selectedZone, setSelectedZone] = useState(0);
+  const [selectedArea, setSelectedArea] = useState(0);
+  const [loadingCities, setLoadingCities] = useState(false);
+
   const hasPhysical = items.some((i) => i.product.product_type === "physical");
 
-  // Fetch delivery options
+  // Check if store has courier configured & fetch delivery options
   useEffect(() => {
-    const fetchDelivery = async () => {
+    const init = async () => {
+      // Delivery options
       const { data } = await supabase
         .from("delivery_options" as any)
         .select("id, label, cost")
@@ -48,9 +64,44 @@ export default function CheckoutPage({ store, onBack }: CheckoutPageProps) {
       const opts = (data as any as DeliveryOption[]) || [];
       setDeliveryOptions(opts);
       if (opts.length > 0) setSelectedDelivery(opts[0].id);
+
+      // Check courier settings (public can't read, so use edge function)
+      if (hasPhysical) {
+        try {
+          const { data: cityData } = await supabase.functions.invoke("pathao-proxy", {
+            body: { action: "get-cities", store_id: store.id },
+          });
+          if (cityData?.data?.data && Array.isArray(cityData.data.data) && cityData.data.data.length > 0) {
+            setHasCourier(true);
+            setCities(cityData.data.data.map((c: any) => ({ id: c.city_id, name: c.city_name })));
+          }
+        } catch {
+          // No courier configured — fallback to free text
+        }
+      }
     };
-    fetchDelivery();
-  }, [store.id]);
+    init();
+  }, [store.id, hasPhysical]);
+
+  const fetchZones = async (cityId: number) => {
+    setZones([]);
+    setAreas([]);
+    setSelectedZone(0);
+    setSelectedArea(0);
+    const { data } = await supabase.functions.invoke("pathao-proxy", {
+      body: { action: "get-zones", store_id: store.id, city_id: cityId },
+    });
+    if (data?.data?.data) setZones(data.data.data.map((z: any) => ({ id: z.zone_id, name: z.zone_name })));
+  };
+
+  const fetchAreas = async (zoneId: number) => {
+    setAreas([]);
+    setSelectedArea(0);
+    const { data } = await supabase.functions.invoke("pathao-proxy", {
+      body: { action: "get-areas", store_id: store.id, zone_id: zoneId },
+    });
+    if (data?.data?.data) setAreas(data.data.data.map((a: any) => ({ id: a.area_id, name: a.area_name })));
+  };
 
   const deliveryCost = deliveryOptions.find((d) => d.id === selectedDelivery)?.cost || 0;
   const grandTotal = totalPrice + (hasPhysical ? deliveryCost : 0);
@@ -69,9 +120,20 @@ export default function CheckoutPage({ store, onBack }: CheckoutPageProps) {
       return;
     }
     if (hasPhysical) {
-      if (!form.address.trim() || !form.city.trim() || !form.country.trim()) {
-        toast({ title: "Complete shipping address required for physical products", variant: "destructive" });
+      if (!form.address.trim()) {
+        toast({ title: "Street address required", variant: "destructive" });
         return;
+      }
+      if (hasCourier) {
+        if (!selectedCity || !selectedZone || !selectedArea) {
+          toast({ title: "Please select city, zone, and area", variant: "destructive" });
+          return;
+        }
+      } else {
+        if (!form.city.trim() || !form.country.trim()) {
+          toast({ title: "Complete shipping address required", variant: "destructive" });
+          return;
+        }
       }
       if (deliveryOptions.length > 0 && !selectedDelivery) {
         toast({ title: "Please select a delivery option", variant: "destructive" });
@@ -81,6 +143,8 @@ export default function CheckoutPage({ store, onBack }: CheckoutPageProps) {
 
     setLoading(true);
     try {
+      const cityName = hasCourier ? cities.find(c => c.id === selectedCity)?.name || "" : form.city;
+
       for (const item of items) {
         const { error } = await supabase.functions.invoke("create-order", {
           body: {
@@ -90,10 +154,13 @@ export default function CheckoutPage({ store, onBack }: CheckoutPageProps) {
             customer_email: form.email,
             customer_phone: form.phone,
             shipping_address: hasPhysical ? form.address : null,
-            shipping_city: hasPhysical ? form.city : null,
+            shipping_city: hasPhysical ? cityName : null,
             shipping_state: hasPhysical ? form.state : null,
             shipping_zip: hasPhysical ? form.zip : null,
-            shipping_country: hasPhysical ? form.country : null,
+            shipping_country: hasPhysical ? (hasCourier ? "Bangladesh" : form.country) : null,
+            recipient_city_id: hasPhysical && hasCourier ? selectedCity : null,
+            recipient_zone_id: hasPhysical && hasCourier ? selectedZone : null,
+            recipient_area_id: hasPhysical && hasCourier ? selectedArea : null,
             amount: item.product.price * item.quantity + (hasPhysical ? deliveryCost / items.length : 0),
             quantity: item.quantity,
           },
@@ -110,6 +177,8 @@ export default function CheckoutPage({ store, onBack }: CheckoutPageProps) {
 
   const inputClass =
     "h-11 rounded-xl bg-muted/50 px-4 text-[16px] sm:text-sm border border-border outline-none focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-muted-foreground";
+  const selectClass =
+    "h-11 rounded-xl bg-muted/50 px-4 text-[16px] sm:text-sm border border-border outline-none focus:ring-2 focus:ring-primary/20 transition-all w-full";
 
   if (purchased) {
     return (
@@ -188,7 +257,6 @@ export default function CheckoutPage({ store, onBack }: CheckoutPageProps) {
           ))}
         </div>
 
-        {/* Delivery cost line */}
         {hasPhysical && deliveryOptions.length > 0 && selectedDelivery && (
           <div className="flex items-center justify-between mt-3 pt-3 border-t border-border/50">
             <span className="text-sm text-muted-foreground">Delivery</span>
@@ -226,14 +294,67 @@ export default function CheckoutPage({ store, onBack }: CheckoutPageProps) {
             </h3>
             <div className="flex flex-col gap-3">
               <input placeholder="Street address *" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} className={inputClass} />
-              <div className="grid grid-cols-2 gap-3">
-                <input placeholder="City *" value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} className={inputClass} />
-                <input placeholder="State" value={form.state} onChange={(e) => setForm({ ...form, state: e.target.value })} className={inputClass} />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <input placeholder="ZIP code" value={form.zip} onChange={(e) => setForm({ ...form, zip: e.target.value })} className={inputClass} />
-                <input placeholder="Country *" value={form.country} onChange={(e) => setForm({ ...form, country: e.target.value })} className={inputClass} />
-              </div>
+
+              {hasCourier ? (
+                <>
+                  {/* Pathao cascading dropdowns */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <select
+                      value={selectedCity}
+                      onChange={(e) => {
+                        const cityId = Number(e.target.value);
+                        setSelectedCity(cityId);
+                        if (cityId) fetchZones(cityId);
+                        else { setZones([]); setAreas([]); setSelectedZone(0); setSelectedArea(0); }
+                      }}
+                      className={selectClass}
+                    >
+                      <option value={0}>Select City *</option>
+                      {cities.map((c) => (
+                        <option key={c.id} value={c.id}>{c.name}</option>
+                      ))}
+                    </select>
+                    <select
+                      value={selectedZone}
+                      onChange={(e) => {
+                        const zoneId = Number(e.target.value);
+                        setSelectedZone(zoneId);
+                        if (zoneId) fetchAreas(zoneId);
+                        else { setAreas([]); setSelectedArea(0); }
+                      }}
+                      className={selectClass}
+                      disabled={zones.length === 0}
+                    >
+                      <option value={0}>Select Zone *</option>
+                      {zones.map((z) => (
+                        <option key={z.id} value={z.id}>{z.name}</option>
+                      ))}
+                    </select>
+                    <select
+                      value={selectedArea}
+                      onChange={(e) => setSelectedArea(Number(e.target.value))}
+                      className={selectClass}
+                      disabled={areas.length === 0}
+                    >
+                      <option value={0}>Select Area *</option>
+                      {areas.map((a) => (
+                        <option key={a.id} value={a.id}>{a.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="grid grid-cols-2 gap-3">
+                    <input placeholder="City *" value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} className={inputClass} />
+                    <input placeholder="State" value={form.state} onChange={(e) => setForm({ ...form, state: e.target.value })} className={inputClass} />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <input placeholder="ZIP code" value={form.zip} onChange={(e) => setForm({ ...form, zip: e.target.value })} className={inputClass} />
+                    <input placeholder="Country *" value={form.country} onChange={(e) => setForm({ ...form, country: e.target.value })} className={inputClass} />
+                  </div>
+                </>
+              )}
             </div>
           </div>
         )}
