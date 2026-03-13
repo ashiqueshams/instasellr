@@ -12,6 +12,7 @@ import DashboardOrders from "./pages/DashboardOrders";
 import DashboardSettings from "./pages/DashboardSettings";
 import DashboardLinks from "./pages/DashboardLinks";
 import DashboardDelivery from "./pages/DashboardDelivery";
+import DashboardCourier from "./pages/DashboardCourier";
 import Auth from "./pages/Auth";
 import AuthGuard from "./components/AuthGuard";
 import NotFound from "./pages/NotFound";
