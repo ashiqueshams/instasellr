@@ -198,7 +198,7 @@ export default function DashboardOrders() {
                     <td className="px-5 py-3.5 text-sm text-foreground">{order.product_name}</td>
                     <td className="px-5 py-3.5 font-heading font-semibold text-sm text-foreground">${order.amount}</td>
                     <td className="px-5 py-3.5">
-                      {order.status === "dispatched" || order.status === "paid" ? (
+                      {order.status === "dispatched" ? (
                         <span className={`inline-block text-xs font-semibold font-body px-2.5 py-1 rounded-full ${statusColor(order.status)}`}>
                           {order.status}
                         </span>
@@ -209,7 +209,7 @@ export default function DashboardOrders() {
                           disabled={dispatching === order.id}
                           className={`text-xs font-semibold font-body px-2 py-1 rounded-full border-0 outline-none cursor-pointer ${statusColor(order.status)}`}
                         >
-                          {STATUS_OPTIONS.map((s) => (
+                          {(order.status === "paid" ? PAID_STATUS_OPTIONS : STATUS_OPTIONS).map((s) => (
                             <option key={s} value={s}>{s}</option>
                           ))}
                         </select>
