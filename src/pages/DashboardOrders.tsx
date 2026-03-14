@@ -23,6 +23,7 @@ interface OrderWithProduct {
 }
 
 const STATUS_OPTIONS = ["pending", "approved", "dispatched"];
+const PAID_STATUS_OPTIONS = ["paid", "dispatched"];
 
 export default function DashboardOrders() {
   const [orders, setOrders] = useState<OrderWithProduct[]>([]);
