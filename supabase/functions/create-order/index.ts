@@ -103,7 +103,7 @@ Deno.serve(async (req) => {
       .eq("id", product_id)
       .single();
     
-    const isDigital = productCheck.product_type === "digital";
+    const isDigital = !isPhysical;
 
     const { data: store } = await supabase
       .from("stores")
