@@ -57,6 +57,8 @@ Deno.serve(async (req) => {
     }
 
     const serverAmount = Number(productCheck.price) * qty;
+    const isPhysical = productCheck.product_type === "physical";
+    const orderStatus = isPhysical ? "pending" : "paid";
 
     const download_token = crypto.randomUUID();
     const download_expires_at = new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString();
