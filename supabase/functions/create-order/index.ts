@@ -57,6 +57,8 @@ Deno.serve(async (req) => {
     }
 
     const serverAmount = Number(productCheck.price) * qty;
+    const isPhysical = productCheck.product_type === "physical";
+    const orderStatus = isPhysical ? "pending" : "paid";
 
     const download_token = crypto.randomUUID();
     const download_expires_at = new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString();
@@ -78,7 +80,7 @@ Deno.serve(async (req) => {
         recipient_zone_id: recipient_zone_id || null,
         recipient_area_id: recipient_area_id || null,
         amount: serverAmount,
-        status: "paid",
+        status: orderStatus,
         download_token,
         download_expires_at,
         download_count: 0,
@@ -101,7 +103,7 @@ Deno.serve(async (req) => {
       .eq("id", product_id)
       .single();
     
-    const isDigital = productCheck.product_type === "digital";
+    const isDigital = !isPhysical;
 
     const { data: store } = await supabase
       .from("stores")
