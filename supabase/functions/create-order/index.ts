@@ -80,7 +80,7 @@ Deno.serve(async (req) => {
         recipient_zone_id: recipient_zone_id || null,
         recipient_area_id: recipient_area_id || null,
         amount: serverAmount,
-        status: "paid",
+        status: orderStatus,
         download_token,
         download_expires_at,
         download_count: 0,
