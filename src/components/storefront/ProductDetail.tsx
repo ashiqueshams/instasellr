@@ -117,7 +117,14 @@ export default function ProductDetail({ product, store, onBack }: ProductDetailP
 
       {/* Add to Cart CTA */}
       <div ref={ctaRef} className="space-y-3">
-        {quantity > 0 ? (
+        {isOutOfStock ? (
+          <button
+            disabled
+            className="w-full h-13 py-4 rounded-xl font-heading font-semibold text-sm bg-muted text-muted-foreground cursor-not-allowed flex items-center justify-center gap-2"
+          >
+            Out of Stock
+          </button>
+        ) : quantity > 0 ? (
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-0.5 bg-muted rounded-xl flex-1">
               <button
