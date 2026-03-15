@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { Product, Bundle, Store } from "@/data/sampleData";
 import { supabase } from "@/integrations/supabase/client";
+import { mapProduct } from "@/lib/mapProduct";
 import { useParams } from "react-router-dom";
 import { CartProvider } from "@/contexts/CartContext";
 import StoreHeader, { SocialIcons } from "@/components/storefront/StoreHeader";
@@ -76,22 +77,7 @@ export default function Storefront() {
         .eq("is_active", true)
         .order("created_at", { ascending: false });
 
-      const mappedProducts: Product[] = (productsData || []).map((p) => ({
-        id: p.id,
-        store_id: p.store_id,
-        name: p.name,
-        tagline: p.tagline || "",
-        description: p.description || "",
-        price: p.price,
-        emoji: p.emoji || "📦",
-        color: p.color || "#6C5CE7",
-        category: p.category || "",
-        file_url: p.file_url,
-        image_url: p.image_url || null,
-        is_active: p.is_active ?? true,
-        product_type: ((p as any).product_type || "digital") as "digital" | "physical",
-        created_at: p.created_at,
-      }));
+      const mappedProducts: Product[] = (productsData || []).map((p) => mapProduct(p));
       setProducts(mappedProducts);
 
       // Fetch bundles

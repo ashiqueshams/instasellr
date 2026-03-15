@@ -12,6 +12,9 @@ export interface Product {
   image_url: string | null;
   is_active: boolean;
   product_type: "digital" | "physical";
+  stock_quantity: number | null;
+  compare_at_price: number | null;
+  weight: number | null;
   created_at: string;
 }
 

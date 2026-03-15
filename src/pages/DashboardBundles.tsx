@@ -3,6 +3,7 @@ import { Bundle, Product } from "@/data/sampleData";
 import { Plus, Trash2, X, Pencil, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { mapProduct } from "@/lib/mapProduct";
 import { useStore } from "@/hooks/use-store";
 
 const EMOJI_OPTIONS = ["🔥", "💎", "🎁", "⚡", "🌟", "🏆", "🎯", "📦"];
@@ -39,11 +40,7 @@ export default function DashboardBundles() {
     ]);
 
     if (productsData) {
-      setProducts(productsData.map((p: any) => ({
-        id: p.id, store_id: p.store_id, name: p.name, tagline: p.tagline || "", description: p.description || "",
-        price: p.price, emoji: p.emoji || "📦", color: p.color || "#6C5CE7", category: p.category || "",
-        file_url: p.file_url, image_url: p.image_url || null, is_active: p.is_active ?? true, product_type: (p as any).product_type || "digital", created_at: p.created_at,
-      })));
+      setProducts(productsData.map((p: any) => mapProduct(p)));
     }
 
     if (bundlesData) {

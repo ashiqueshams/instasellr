@@ -318,6 +318,7 @@ export type Database = {
         Row: {
           category: string | null
           color: string | null
+          compare_at_price: number | null
           created_at: string
           description: string | null
           emoji: string | null
@@ -328,12 +329,15 @@ export type Database = {
           name: string
           price: number
           product_type: string
+          stock_quantity: number | null
           store_id: string
           tagline: string | null
+          weight: number | null
         }
         Insert: {
           category?: string | null
           color?: string | null
+          compare_at_price?: number | null
           created_at?: string
           description?: string | null
           emoji?: string | null
@@ -344,12 +348,15 @@ export type Database = {
           name: string
           price?: number
           product_type?: string
+          stock_quantity?: number | null
           store_id: string
           tagline?: string | null
+          weight?: number | null
         }
         Update: {
           category?: string | null
           color?: string | null
+          compare_at_price?: number | null
           created_at?: string
           description?: string | null
           emoji?: string | null
@@ -360,8 +367,10 @@ export type Database = {
           name?: string
           price?: number
           product_type?: string
+          stock_quantity?: number | null
           store_id?: string
           tagline?: string | null
+          weight?: number | null
         }
         Relationships: [
           {
