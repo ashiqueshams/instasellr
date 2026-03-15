@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { Product, Bundle, Store } from "@/data/sampleData";
 import { supabase } from "@/integrations/supabase/client";
+import { mapProduct } from "@/lib/mapProduct";
 import { useParams } from "react-router-dom";
 import { CartProvider } from "@/contexts/CartContext";
 import StoreHeader, { SocialIcons } from "@/components/storefront/StoreHeader";

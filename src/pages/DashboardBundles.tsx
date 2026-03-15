@@ -3,6 +3,7 @@ import { Bundle, Product } from "@/data/sampleData";
 import { Plus, Trash2, X, Pencil, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { mapProduct } from "@/lib/mapProduct";
 import { useStore } from "@/hooks/use-store";
 
 const EMOJI_OPTIONS = ["🔥", "💎", "🎁", "⚡", "🌟", "🏆", "🎯", "📦"];
