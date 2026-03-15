@@ -65,9 +65,25 @@ export default function ProductDetail({ product, store, onBack }: ProductDetailP
           {product.name}
         </h2>
         <p className="text-muted-foreground text-sm mt-1">{product.tagline}</p>
-        <p className="font-heading font-bold text-2xl mt-3" style={{ color: store.accent_color }}>
-          ${product.price}
-        </p>
+        <div className="flex items-center gap-2 mt-3">
+          <p className="font-heading font-bold text-2xl" style={{ color: store.accent_color }}>
+            ${product.price}
+          </p>
+          {product.compare_at_price && product.compare_at_price > product.price && (
+            <p className="text-lg text-muted-foreground line-through">${product.compare_at_price}</p>
+          )}
+          {product.compare_at_price && product.compare_at_price > product.price && (
+            <span className="bg-destructive text-destructive-foreground text-xs font-bold px-2 py-0.5 rounded-full">
+              {Math.round(((product.compare_at_price - product.price) / product.compare_at_price) * 100)}% OFF
+            </span>
+          )}
+        </div>
+        {product.product_type === "physical" && product.stock_quantity === 0 && (
+          <p className="text-destructive text-sm font-semibold mt-2">Out of Stock</p>
+        )}
+        {product.product_type === "physical" && product.stock_quantity != null && product.stock_quantity > 0 && product.stock_quantity <= 5 && (
+          <p className="text-yellow-600 text-sm font-medium mt-2">Only {product.stock_quantity} left!</p>
+        )}
       </div>
 
       {/* Description */}
