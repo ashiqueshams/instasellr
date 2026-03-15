@@ -162,8 +162,8 @@ export default function CheckoutPage({ store, onBack }: CheckoutPageProps) {
             recipient_city_id: hasPhysical && hasCourier ? selectedCity : null,
             recipient_zone_id: hasPhysical && hasCourier ? selectedZone : null,
             recipient_area_id: hasPhysical && hasCourier ? selectedArea : null,
-            amount: item.product.price * item.quantity + (hasPhysical ? deliveryCost / items.length : 0),
             quantity: item.quantity,
+            payment_method: paymentMethod,
           },
         });
         if (error) throw error;
