@@ -38,6 +38,7 @@ export default function CheckoutPage({ store, onBack }: CheckoutPageProps) {
     zip: "",
     country: "",
   });
+  const [paymentMethod, setPaymentMethod] = useState<string>("cod");
 
   // Pathao location state
   const [hasCourier, setHasCourier] = useState(false);
