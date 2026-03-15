@@ -198,6 +198,7 @@ export type Database = {
           id: string
           order_items: Json | null
           pathao_consignment_id: string | null
+          payment_method: string | null
           product_id: string
           recipient_area_id: number | null
           recipient_city_id: number | null
@@ -223,6 +224,7 @@ export type Database = {
           id?: string
           order_items?: Json | null
           pathao_consignment_id?: string | null
+          payment_method?: string | null
           product_id: string
           recipient_area_id?: number | null
           recipient_city_id?: number | null
@@ -248,6 +250,7 @@ export type Database = {
           id?: string
           order_items?: Json | null
           pathao_consignment_id?: string | null
+          payment_method?: string | null
           product_id?: string
           recipient_area_id?: number | null
           recipient_city_id?: number | null

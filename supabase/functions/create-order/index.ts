@@ -15,7 +15,7 @@ Deno.serve(async (req) => {
     const {
       product_id, store_id, customer_name, customer_email,
       customer_phone, shipping_address, shipping_city, shipping_state, shipping_zip, shipping_country,
-      recipient_city_id, recipient_zone_id, recipient_area_id, quantity
+      recipient_city_id, recipient_zone_id, recipient_area_id, quantity, payment_method
     } = await req.json();
 
     if (!product_id || !store_id || !customer_name || !customer_email) {
@@ -85,6 +85,7 @@ Deno.serve(async (req) => {
         download_expires_at,
         download_count: 0,
         order_items: [{ quantity: qty }],
+        payment_method: payment_method || "cod",
       })
       .select("id")
       .single();

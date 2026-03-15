@@ -38,6 +38,7 @@ export default function CheckoutPage({ store, onBack }: CheckoutPageProps) {
     zip: "",
     country: "",
   });
+  const [paymentMethod, setPaymentMethod] = useState<string>("cod");
 
   // Pathao location state
   const [hasCourier, setHasCourier] = useState(false);
@@ -161,8 +162,8 @@ export default function CheckoutPage({ store, onBack }: CheckoutPageProps) {
             recipient_city_id: hasPhysical && hasCourier ? selectedCity : null,
             recipient_zone_id: hasPhysical && hasCourier ? selectedZone : null,
             recipient_area_id: hasPhysical && hasCourier ? selectedArea : null,
-            amount: item.product.price * item.quantity + (hasPhysical ? deliveryCost / items.length : 0),
             quantity: item.quantity,
+            payment_method: paymentMethod,
           },
         });
         if (error) throw error;
@@ -402,6 +403,50 @@ export default function CheckoutPage({ store, onBack }: CheckoutPageProps) {
             </div>
           </div>
         )}
+
+        {/* Payment Method */}
+        <div>
+          <h3 className="font-heading font-semibold text-sm mb-3" style={{ color: store.text_color || undefined }}>
+            Payment Method
+          </h3>
+          <div className="flex flex-col gap-2.5">
+            {[
+              { value: "cod", label: "Cash On Delivery", desc: "Pay when you receive your order" },
+              { value: "digital", label: "Digital Payment", desc: "bKash, Nagad, or card payment" },
+              { value: "bank", label: "Bank Transfer", desc: "Direct bank transfer" },
+            ].map((method) => {
+              const isSelected = paymentMethod === method.value;
+              return (
+                <button
+                  key={method.value}
+                  onClick={() => setPaymentMethod(method.value)}
+                  className="flex items-center gap-3 p-4 rounded-xl border-2 transition-all text-left"
+                  style={{
+                    borderColor: isSelected ? store.accent_color : "hsl(var(--border))",
+                    backgroundColor: isSelected ? store.accent_color + "08" : undefined,
+                  }}
+                >
+                  <div
+                    className="w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors"
+                    style={{
+                      borderColor: isSelected ? store.accent_color : "hsl(var(--border))",
+                    }}
+                  >
+                    {isSelected && (
+                      <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: store.accent_color }} />
+                    )}
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-heading font-semibold text-sm" style={{ color: store.text_color || undefined }}>
+                      {method.label}
+                    </p>
+                    <p className="text-xs text-muted-foreground">{method.desc}</p>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
 
         <button
           onClick={handleCheckout}
