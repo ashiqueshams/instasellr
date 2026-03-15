@@ -1,10 +1,12 @@
 import { useState, useRef, useEffect } from "react";
 import { Product } from "@/data/sampleData";
-import { Plus, Trash2, X, Upload, FileIcon, Loader2, Pencil, ImageIcon } from "lucide-react";
+import { Plus, Trash2, X, Upload, FileIcon, Loader2, Pencil, ImageIcon, Copy, Power } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useStore } from "@/hooks/use-store";
 import { uploadImage } from "@/lib/imageUpload";
+import { mapProduct } from "@/lib/mapProduct";
+import { Switch } from "@/components/ui/switch";
 
 const EMOJI_OPTIONS = ["🎨", "✨", "📝", "📦", "🎯", "💎", "🚀", "🔥", "📚", "🎵", "📸", "🛠️"];
 const COLOR_OPTIONS = ["#6C5CE7", "#00B894", "#E17055", "#0984E3", "#FDCB6E", "#E84393", "#636E72", "#2D3436"];
@@ -23,10 +25,13 @@ interface ProductForm {
   tagline: string;
   description: string;
   price: string;
+  compare_at_price: string;
   emoji: string;
   color: string;
   category: string;
   product_type: "digital" | "physical";
+  stock_quantity: string;
+  weight: string;
 }
 
 const emptyForm: ProductForm = {
@@ -34,10 +39,13 @@ const emptyForm: ProductForm = {
   tagline: "",
   description: "",
   price: "",
+  compare_at_price: "",
   emoji: "🎨",
   color: "#6C5CE7",
   category: "",
   product_type: "digital",
+  stock_quantity: "",
+  weight: "",
 };
 
 export default function DashboardProducts() {
@@ -67,22 +75,7 @@ export default function DashboardProducts() {
         .eq("store_id", store.id)
         .order("created_at", { ascending: false });
       if (data) {
-        setProducts(data.map((p) => ({
-          id: p.id,
-          store_id: p.store_id,
-          name: p.name,
-          tagline: p.tagline || "",
-          description: p.description || "",
-          price: p.price,
-          emoji: p.emoji || "🎨",
-          color: p.color || "#6C5CE7",
-          category: p.category || "",
-          file_url: p.file_url,
-          image_url: (p as any).image_url || null,
-          is_active: p.is_active ?? true,
-          product_type: (p as any).product_type || "digital",
-          created_at: p.created_at,
-        })));
+        setProducts(data.map((p) => mapProduct(p)));
       }
       if (error) {
         toast({ title: "Failed to load products", description: error.message, variant: "destructive" });
@@ -110,14 +103,56 @@ export default function DashboardProducts() {
       tagline: product.tagline,
       description: product.description,
       price: String(product.price),
+      compare_at_price: product.compare_at_price ? String(product.compare_at_price) : "",
       emoji: product.emoji,
       color: product.color,
       category: product.category,
       product_type: product.product_type || "digital",
+      stock_quantity: product.stock_quantity != null ? String(product.stock_quantity) : "",
+      weight: product.weight != null ? String(product.weight) : "",
     });
     setProductImagePreview(product.image_url);
     setUploadedFile(product.file_url ? { name: product.file_url, path: "" } : null);
     setShowForm(true);
+  };
+
+  const handleDuplicate = async (product: Product) => {
+    if (!store) return;
+    const productData = {
+      store_id: store.id,
+      name: `${product.name} (Copy)`,
+      tagline: product.tagline || null,
+      description: product.description || null,
+      price: product.price,
+      emoji: product.emoji,
+      color: product.color,
+      category: product.category || null,
+      image_url: product.image_url,
+      is_active: true,
+      product_type: product.product_type,
+      stock_quantity: product.stock_quantity,
+      compare_at_price: product.compare_at_price,
+      weight: product.weight,
+    };
+    const { data, error } = await supabase.from("products").insert(productData as any).select().single();
+    if (error) {
+      toast({ title: "Failed to duplicate", description: error.message, variant: "destructive" });
+      return;
+    }
+    if (data) {
+      setProducts([mapProduct(data), ...products]);
+      toast({ title: "Product duplicated!" });
+    }
+  };
+
+  const handleToggleActive = async (product: Product) => {
+    const newActive = !product.is_active;
+    const { error } = await supabase.from("products").update({ is_active: newActive }).eq("id", product.id);
+    if (error) {
+      toast({ title: "Failed to update", description: error.message, variant: "destructive" });
+      return;
+    }
+    setProducts(products.map((p) => p.id === product.id ? { ...p, is_active: newActive } : p));
   };
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -205,6 +240,7 @@ export default function DashboardProducts() {
       tagline: form.tagline || null,
       description: form.description || null,
       price: parseFloat(form.price),
+      compare_at_price: form.compare_at_price ? parseFloat(form.compare_at_price) : null,
       emoji: form.emoji,
       color: form.color,
       category: form.category || null,
@@ -212,10 +248,11 @@ export default function DashboardProducts() {
       image_url: imageUrl,
       is_active: true,
       product_type: form.product_type,
+      stock_quantity: form.product_type === "physical" && form.stock_quantity ? parseInt(form.stock_quantity) : null,
+      weight: form.product_type === "physical" && form.weight ? parseFloat(form.weight) : null,
     };
 
     if (editingId) {
-      // Update
       const { data, error } = await supabase
         .from("products")
         .update(productData as any)
@@ -229,7 +266,6 @@ export default function DashboardProducts() {
         return;
       }
 
-      // If new file data, update product_files
       if (uploadedFileData) {
         await supabase.from("product_files").delete().eq("product_id", editingId);
         await supabase.from("product_files").insert({
@@ -243,26 +279,10 @@ export default function DashboardProducts() {
       }
 
       if (data) {
-        setProducts(products.map((p) => p.id === editingId ? {
-          id: data.id,
-          store_id: data.store_id,
-          name: data.name,
-          tagline: data.tagline || "",
-          description: data.description || "",
-          price: data.price,
-          emoji: data.emoji || "🎨",
-          color: data.color || "#6C5CE7",
-          category: data.category || "",
-          file_url: data.file_url,
-          image_url: (data as any).image_url || null,
-          is_active: data.is_active ?? true,
-          product_type: (data as any).product_type || "digital",
-          created_at: data.created_at,
-        } : p));
+        setProducts(products.map((p) => p.id === editingId ? mapProduct(data) : p));
       }
       toast({ title: "Product updated!" });
     } else {
-      // Create
       const { data, error } = await supabase
         .from("products")
         .insert(productData as any)
@@ -287,22 +307,7 @@ export default function DashboardProducts() {
       }
 
       if (data) {
-        setProducts([{
-          id: data.id,
-          store_id: data.store_id,
-          name: data.name,
-          tagline: data.tagline || "",
-          description: data.description || "",
-          price: data.price,
-          emoji: data.emoji || "🎨",
-          color: data.color || "#6C5CE7",
-          category: data.category || "",
-          file_url: data.file_url,
-          image_url: (data as any).image_url || null,
-          is_active: data.is_active ?? true,
-          product_type: (data as any).product_type || "digital",
-          created_at: data.created_at,
-        }, ...products]);
+        setProducts([mapProduct(data), ...products]);
       }
       toast({ title: "Product added!" });
     }
@@ -360,7 +365,19 @@ export default function DashboardProducts() {
             <input placeholder="Tagline" value={form.tagline} onChange={(e) => setForm({ ...form, tagline: e.target.value })} className={`col-span-2 ${inputClass}`} />
             <textarea placeholder="Description" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="col-span-2 rounded-lg bg-background px-3.5 py-3 text-sm border border-border outline-none focus:ring-2 focus:ring-primary/20 placeholder:text-muted-foreground resize-none h-24" />
             <input placeholder="Price *" type="number" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} className={inputClass} />
+            <input placeholder="Compare-at price" type="number" value={form.compare_at_price} onChange={(e) => setForm({ ...form, compare_at_price: e.target.value })} className={inputClass} />
             <input placeholder="Category" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} className={inputClass} />
+
+            {/* Physical product fields */}
+            {form.product_type === "physical" && (
+              <>
+                <input placeholder="Stock quantity" type="number" value={form.stock_quantity} onChange={(e) => setForm({ ...form, stock_quantity: e.target.value })} className={inputClass} />
+                <input placeholder="Weight (grams)" type="number" value={form.weight} onChange={(e) => setForm({ ...form, weight: e.target.value })} className={inputClass} />
+              </>
+            )}
+
+            {/* Fill remaining space when physical has odd fields */}
+            {form.product_type !== "physical" && <div />}
 
             {/* Product Image */}
             <div className="col-span-2">
@@ -455,13 +472,14 @@ export default function DashboardProducts() {
       {/* Products table */}
       <div className="bg-card rounded-xl store-shadow overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[540px]">
+          <table className="w-full min-w-[640px]">
             <thead>
               <tr className="border-b border-border">
                 <th className="text-left text-xs text-muted-foreground font-body font-medium px-5 py-3">Product</th>
                 <th className="text-left text-xs text-muted-foreground font-body font-medium px-5 py-3">Category</th>
                 <th className="text-left text-xs text-muted-foreground font-body font-medium px-5 py-3">Price</th>
-                <th className="text-left text-xs text-muted-foreground font-body font-medium px-5 py-3">File</th>
+                <th className="text-left text-xs text-muted-foreground font-body font-medium px-5 py-3">Stock</th>
+                <th className="text-left text-xs text-muted-foreground font-body font-medium px-5 py-3">Active</th>
                 <th className="text-right text-xs text-muted-foreground font-body font-medium px-5 py-3">Actions</th>
               </tr>
             </thead>
@@ -484,27 +502,54 @@ export default function DashboardProducts() {
                     </div>
                   </td>
                   <td className="px-5 py-3.5 text-sm text-muted-foreground">{product.category || "—"}</td>
-                  <td className="px-5 py-3.5 font-heading font-semibold text-sm text-foreground">${product.price}</td>
                   <td className="px-5 py-3.5">
-                    {product.file_url ? (
-                      <span className="inline-flex items-center gap-1 text-xs font-medium text-primary">
-                        <FileIcon className="w-3 h-3" /> Uploaded
-                      </span>
+                    <div>
+                      <span className="font-heading font-semibold text-sm text-foreground">${product.price}</span>
+                      {product.compare_at_price && product.compare_at_price > product.price && (
+                        <span className="ml-1.5 text-xs text-muted-foreground line-through">${product.compare_at_price}</span>
+                      )}
+                    </div>
+                  </td>
+                  <td className="px-5 py-3.5">
+                    {product.product_type === "physical" ? (
+                      product.stock_quantity != null ? (
+                        <span className={`text-sm font-medium ${product.stock_quantity === 0 ? "text-destructive" : product.stock_quantity <= 5 ? "text-yellow-600" : "text-foreground"}`}>
+                          {product.stock_quantity === 0 ? "Out of stock" : product.stock_quantity}
+                        </span>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">∞</span>
+                      )
                     ) : (
                       <span className="text-xs text-muted-foreground">—</span>
                     )}
+                  </td>
+                  <td className="px-5 py-3.5">
+                    <Switch
+                      checked={product.is_active}
+                      onCheckedChange={() => handleToggleActive(product)}
+                      className="data-[state=checked]:bg-primary"
+                    />
                   </td>
                   <td className="px-5 py-3.5 text-right">
                     <div className="flex items-center gap-1 justify-end">
                       <button
                         onClick={() => startEdit(product)}
                         className="w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+                        title="Edit"
                       >
                         <Pencil className="w-4 h-4" />
                       </button>
                       <button
+                        onClick={() => handleDuplicate(product)}
+                        className="w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+                        title="Duplicate"
+                      >
+                        <Copy className="w-4 h-4" />
+                      </button>
+                      <button
                         onClick={() => handleDelete(product.id)}
                         className="w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                        title="Delete"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
