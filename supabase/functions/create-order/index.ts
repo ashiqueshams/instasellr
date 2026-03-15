@@ -85,6 +85,7 @@ Deno.serve(async (req) => {
         download_expires_at,
         download_count: 0,
         order_items: [{ quantity: qty }],
+        payment_method: payment_method || "cod",
       })
       .select("id")
       .single();
