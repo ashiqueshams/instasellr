@@ -30,7 +30,8 @@ export default function ProductDetail({ product, store, onBack }: ProductDetailP
     return () => observer.disconnect();
   }, []);
 
-  const handleAddToCart = () => addToCart(product);
+  const isOutOfStock = product.product_type === "physical" && product.stock_quantity === 0;
+  const handleAddToCart = () => { if (!isOutOfStock) addToCart(product); };
 
   return (
     <div className="animate-slideInRight">
