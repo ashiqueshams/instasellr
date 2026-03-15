@@ -45,13 +45,29 @@ export default function ProductList({ products, onSelectProduct, layout = "grid"
               </div>
             )}
 
+            {/* Out of stock overlay */}
+            {product.product_type === "physical" && product.stock_quantity === 0 && (
+              <div className="absolute inset-0 bg-background/60 flex items-center justify-center">
+                <span className="bg-destructive text-destructive-foreground text-xs font-semibold px-3 py-1 rounded-full">Out of Stock</span>
+              </div>
+            )}
+
+            {/* Discount badge */}
+            {product.compare_at_price && product.compare_at_price > product.price && (
+              <div className="absolute top-2 left-2 bg-destructive text-destructive-foreground text-[10px] font-bold px-2 py-0.5 rounded-full">
+                {Math.round(((product.compare_at_price - product.price) / product.compare_at_price) * 100)}% OFF
+              </div>
+            )}
+
             {/* Gradient overlay at bottom of image */}
             <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/30 to-transparent pointer-events-none" />
 
             {/* Quantity control overlaid on image */}
-            <div className="absolute bottom-2 right-2 z-10" onClick={(e) => e.stopPropagation()}>
-              <ProductQuantityControl product={product} accentColor={accentColor} />
-            </div>
+            {!(product.product_type === "physical" && product.stock_quantity === 0) && (
+              <div className="absolute bottom-2 right-2 z-10" onClick={(e) => e.stopPropagation()}>
+                <ProductQuantityControl product={product} accentColor={accentColor} />
+              </div>
+            )}
           </button>
 
           {/* Product info below image */}
