@@ -174,6 +174,7 @@ export default function DashboardSettings() {
           youtube: form.youtube || undefined,
           tiktok: form.tiktok || undefined,
           linkedin: form.linkedin || undefined,
+          facebook: form.facebook || undefined,
         },
       } as any)
       .eq("id", store.id);
