@@ -59,13 +59,14 @@ export interface Store {
    footer_image_url: string | null;
    text_color: string | null;
    social_links_color?: string | null;
-   social_links: {
-     x?: string;
-     instagram?: string;
-     youtube?: string;
-     tiktok?: string;
-     linkedin?: string;
-   };
+    social_links: {
+      x?: string;
+      instagram?: string;
+      youtube?: string;
+      tiktok?: string;
+      linkedin?: string;
+      facebook?: string;
+    };
    created_at: string;
  }
 

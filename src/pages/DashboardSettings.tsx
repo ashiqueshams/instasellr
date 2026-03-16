@@ -427,7 +427,7 @@ export default function DashboardSettings() {
           <p className="font-heading font-semibold text-sm text-foreground">Social Links</p>
           {(["x", "instagram", "youtube", "tiktok", "linkedin", "facebook"] as const).map((key) => (
             <div key={key}>
-              <label className="text-xs text-muted-foreground font-body mb-1 block capitalize">{key === "x" ? "X (Twitter)" : key}</label>
+              <label className="text-xs text-muted-foreground font-body mb-1 block capitalize">{key === "x" ? "X (Twitter)" : key === "facebook" ? "Facebook" : key}</label>
               <input value={form[key]} onChange={(e) => setForm({ ...form, [key]: e.target.value })} placeholder={`https://${key}.com/...`} className={inputClass} />
             </div>
           ))}

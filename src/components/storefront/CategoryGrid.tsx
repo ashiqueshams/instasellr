@@ -62,7 +62,7 @@ export default function CategoryGrid({ products, store, onSelectCategory, select
               ) : (
                 <div
                   className="absolute inset-0 flex items-center justify-center text-3xl"
-                  style={{ backgroundColor: accentColor + "15" }}
+                  style={{ backgroundColor: accentColor }}
                 >
                   {getCategoryEmoji(catProducts)}
                 </div>

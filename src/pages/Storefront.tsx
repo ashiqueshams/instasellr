@@ -292,7 +292,7 @@ function StorefrontContent({
     return (
       <div className="min-h-screen relative" style={{ fontFamily: `'${store.font_body}', sans-serif` }}>
         <div className="fixed inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${store.banner_url})` }} />
-        <div className="fixed inset-0" style={{ backgroundColor: store.background_color ? `${store.background_color}99` : "rgba(0,0,0,0.25)" }} />
+        <div className="fixed inset-0" style={{ backgroundColor: store.background_color || "rgba(0,0,0,0.25)" }} />
         <div className="relative z-10 max-w-[480px] mx-auto px-5 py-12 pb-24">
           {mainContent}
         </div>
