@@ -76,7 +76,8 @@ export default function DashboardSettings() {
      instagram: "",
      youtube: "",
      tiktok: "",
-     linkedin: "",
+      linkedin: "",
+      facebook: "",
    });
   const [saving, setSaving] = useState(false);
   const [logoFile, setLogoFile] = useState<File | null>(null);
