@@ -211,7 +211,7 @@ export default function DashboardSettings() {
          social_position: form.social_position,
          footer_image_url: footerUrl,
           text_color: form.text_color || null,
-          social_links: { x: form.x, instagram: form.instagram, youtube: form.youtube, tiktok: form.tiktok, linkedin: form.linkedin },
+          social_links: { x: form.x, instagram: form.instagram, youtube: form.youtube, tiktok: form.tiktok, linkedin: form.linkedin, facebook: form.facebook },
        });
       setLogoFile(null);
       setBannerFile(null);
