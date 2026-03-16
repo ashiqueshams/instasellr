@@ -112,6 +112,7 @@ export default function DashboardSettings() {
        youtube: store.social_links?.youtube || "",
        tiktok: store.social_links?.tiktok || "",
        linkedin: store.social_links?.linkedin || "",
+       facebook: store.social_links?.facebook || "",
      });
     setLogoPreview(store.logo_url || null);
     setBannerPreview(store.banner_url || null);
