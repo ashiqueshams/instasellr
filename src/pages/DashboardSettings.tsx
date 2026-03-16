@@ -76,7 +76,8 @@ export default function DashboardSettings() {
      instagram: "",
      youtube: "",
      tiktok: "",
-     linkedin: "",
+      linkedin: "",
+      facebook: "",
    });
   const [saving, setSaving] = useState(false);
   const [logoFile, setLogoFile] = useState<File | null>(null);
@@ -111,6 +112,7 @@ export default function DashboardSettings() {
        youtube: store.social_links?.youtube || "",
        tiktok: store.social_links?.tiktok || "",
        linkedin: store.social_links?.linkedin || "",
+       facebook: store.social_links?.facebook || "",
      });
     setLogoPreview(store.logo_url || null);
     setBannerPreview(store.banner_url || null);
@@ -172,6 +174,7 @@ export default function DashboardSettings() {
           youtube: form.youtube || undefined,
           tiktok: form.tiktok || undefined,
           linkedin: form.linkedin || undefined,
+          facebook: form.facebook || undefined,
         },
       } as any)
       .eq("id", store.id);
@@ -208,7 +211,7 @@ export default function DashboardSettings() {
          social_position: form.social_position,
          footer_image_url: footerUrl,
           text_color: form.text_color || null,
-          social_links: { x: form.x, instagram: form.instagram, youtube: form.youtube, tiktok: form.tiktok, linkedin: form.linkedin },
+          social_links: { x: form.x, instagram: form.instagram, youtube: form.youtube, tiktok: form.tiktok, linkedin: form.linkedin, facebook: form.facebook },
        });
       setLogoFile(null);
       setBannerFile(null);
@@ -422,9 +425,9 @@ export default function DashboardSettings() {
         {/* Social Links */}
         <div className="bg-card rounded-xl p-5 store-shadow space-y-4">
           <p className="font-heading font-semibold text-sm text-foreground">Social Links</p>
-          {(["x", "instagram", "youtube", "tiktok", "linkedin"] as const).map((key) => (
+          {(["x", "instagram", "youtube", "tiktok", "linkedin", "facebook"] as const).map((key) => (
             <div key={key}>
-              <label className="text-xs text-muted-foreground font-body mb-1 block capitalize">{key === "x" ? "X (Twitter)" : key}</label>
+              <label className="text-xs text-muted-foreground font-body mb-1 block capitalize">{key === "x" ? "X (Twitter)" : key === "facebook" ? "Facebook" : key}</label>
               <input value={form[key]} onChange={(e) => setForm({ ...form, [key]: e.target.value })} placeholder={`https://${key}.com/...`} className={inputClass} />
             </div>
           ))}
