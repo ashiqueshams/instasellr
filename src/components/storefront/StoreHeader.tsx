@@ -1,7 +1,9 @@
 import { Store } from "@/data/sampleData";
+import { ChevronRight } from "lucide-react";
 
 interface StoreHeaderProps {
   store: Store;
+  onShopAll?: () => void;
 }
 
 const socialIcons: Record<string, React.ReactNode> = {
@@ -38,73 +40,94 @@ const socialIcons: Record<string, React.ReactNode> = {
 };
 
 export function SocialIcons({ store, className = "" }: { store: Store; className?: string }) {
-   const socialColor = store.accent_color;
-   return (
-     <div className={`flex gap-2.5 ${className}`}>
-       {Object.entries(store.social_links).map(([key, url]) => {
-         if (!url) return null;
-         return (
-           <a
-             key={key}
-             href={url}
-             target="_blank"
-             rel="noopener noreferrer"
-              className="w-8 h-8 flex items-center justify-center transition-opacity duration-200 hover:opacity-70"
-              style={{
-                color: socialColor,
-              }}
-           >
-             {socialIcons[key]}
-           </a>
-         );
-       })}
-     </div>
-   );
- }
-
-export default function StoreHeader({ store }: StoreHeaderProps) {
-  const isFullpage = store.banner_mode === "fullpage";
-  const textColor = store.text_color || undefined;
-
+  const socialColor = store.accent_color;
   return (
-    <div className="flex flex-col items-center text-center animate-fadeUp">
-      {/* Banner (strip mode only) */}
-      {!isFullpage && store.banner_url && (
-        <div className="w-full h-28 rounded-xl overflow-hidden mb-4 -mt-2">
+    <div className={`flex gap-2.5 ${className}`}>
+      {Object.entries(store.social_links).map(([key, url]) => {
+        if (!url) return null;
+        return (
+          <a
+            key={key}
+            href={url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-8 h-8 flex items-center justify-center transition-opacity duration-200 hover:opacity-70"
+            style={{ color: socialColor }}
+          >
+            {socialIcons[key]}
+          </a>
+        );
+      })}
+    </div>
+  );
+}
+
+export default function StoreHeader({ store, onShopAll }: StoreHeaderProps) {
+  return (
+    <div className="animate-fadeUp">
+      {/* Hero banner */}
+      {store.banner_url && (
+        <div className="w-full h-48 rounded-2xl overflow-hidden mb-5 -mt-2">
           <img src={store.banner_url} alt="Store banner" className="w-full h-full object-cover" />
         </div>
       )}
 
-      {/* Avatar */}
-      <div
-        className="w-20 h-20 rounded-full flex items-center justify-center font-heading font-bold text-2xl text-primary-foreground relative overflow-hidden"
-        style={{ backgroundColor: store.accent_color }}
-      >
-        {store.logo_url ? (
-          <img src={store.logo_url} alt={store.name} className="w-full h-full object-cover" />
-        ) : (
-          <span style={{ color: store.text_color ? "#fff" : undefined }}>{store.avatar_initials}</span>
-        )}
+      {/* App-icon style logo + name + tagline + Shop All */}
+      <div className="flex items-start gap-4">
+        {/* Logo - rounded square like app icon */}
+        <div
+          className="w-[72px] h-[72px] rounded-[18px] flex-shrink-0 flex items-center justify-center font-heading font-bold text-2xl text-white relative overflow-hidden shadow-lg"
+          style={{ backgroundColor: store.accent_color }}
+        >
+          {store.logo_url ? (
+            <img src={store.logo_url} alt={store.name} className="w-full h-full object-cover" />
+          ) : (
+            <span>{store.avatar_initials}</span>
+          )}
+        </div>
+
+        {/* Name, tagline, Shop All button */}
+        <div className="flex-1 min-w-0">
+          <h1
+            className="font-heading font-bold text-lg leading-tight"
+            style={{ fontFamily: `'${store.font_heading}', sans-serif`, color: store.text_color || undefined }}
+          >
+            {store.name}
+          </h1>
+          <p
+            className="text-xs mt-0.5 leading-relaxed text-muted-foreground line-clamp-2"
+          >
+            {store.bio}
+          </p>
+          {onShopAll && (
+            <button
+              onClick={onShopAll}
+              className="mt-2.5 px-5 py-1.5 rounded-full text-white text-sm font-semibold transition-all hover:brightness-110 active:scale-95"
+              style={{ backgroundColor: store.accent_color }}
+            >
+              Shop All
+            </button>
+          )}
+        </div>
       </div>
 
-      {/* Name & bio */}
-      <h1
-        className="font-heading font-bold text-xl mt-4"
-        style={{ fontFamily: `'${store.font_heading}', sans-serif`, color: textColor || undefined }}
-      >
-        {store.name}
-      </h1>
-      <p
-        className="text-sm mt-1.5 max-w-[280px] leading-relaxed"
-        style={{ color: textColor ? `${textColor}cc` : undefined }}
-      >
-        {store.bio}
-      </p>
+      {/* Info bar - like App Store stats */}
+      <div className="flex items-center justify-around mt-5 py-3 border-y border-border/50">
+        <InfoStat label="PRODUCTS" value={store._productCount?.toString() || "—"} />
+        <div className="w-px h-8 bg-border/50" />
+        <InfoStat label="TYPE" value={store._hasPhysical ? "Physical" : "Digital"} />
+        <div className="w-px h-8 bg-border/50" />
+        <InfoStat label="SHIPPING" value={store._hasPhysical ? "Available" : "Instant"} />
+      </div>
+    </div>
+  );
+}
 
-      {/* Social icons (header position only) */}
-      {store.social_position === "header" && (
-        <SocialIcons store={store} className="mt-4" />
-      )}
+function InfoStat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex flex-col items-center text-center px-2">
+      <span className="text-[10px] font-medium text-muted-foreground tracking-wide">{label}</span>
+      <span className="text-sm font-bold font-heading mt-0.5">{value}</span>
     </div>
   );
 }
