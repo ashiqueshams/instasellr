@@ -93,7 +93,7 @@ export default function HorizontalProductScroll({
 
                 {!(product.product_type === "physical" && product.stock_quantity === 0) && (
                   <div className="absolute bottom-1.5 right-1.5 z-10" onClick={(e) => e.stopPropagation()}>
-                    <ProductQuantityControl product={product} accentColor={accentColor} size="sm" />
+                    <ProductQuantityControl product={product} accentColor={accentColor} />
                   </div>
                 )}
               </div>

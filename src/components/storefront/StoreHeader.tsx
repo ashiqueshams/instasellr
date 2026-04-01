@@ -113,11 +113,11 @@ export default function StoreHeader({ store, onShopAll }: StoreHeaderProps) {
 
       {/* Info bar - like App Store stats */}
       <div className="flex items-center justify-around mt-5 py-3 border-y border-border/50">
-        <InfoStat label="PRODUCTS" value={store._productCount?.toString() || "—"} />
+        <InfoStat label="PRODUCTS" value={(store as any)._productCount?.toString() || "—"} />
         <div className="w-px h-8 bg-border/50" />
-        <InfoStat label="TYPE" value={store._hasPhysical ? "Physical" : "Digital"} />
+        <InfoStat label="TYPE" value={(store as any)._hasPhysical ? "Physical" : "Digital"} />
         <div className="w-px h-8 bg-border/50" />
-        <InfoStat label="SHIPPING" value={store._hasPhysical ? "Available" : "Instant"} />
+        <InfoStat label="SHIPPING" value={(store as any)._hasPhysical ? "Available" : "Instant"} />
       </div>
     </div>
   );
