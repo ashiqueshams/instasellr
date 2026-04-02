@@ -12,6 +12,7 @@ const navItems = [
   { label: "Orders", icon: ShoppingCart, path: "/dashboard/orders" },
   { label: "Delivery", icon: Truck, path: "/dashboard/delivery" },
   { label: "Courier", icon: Send, path: "/dashboard/courier" },
+  { label: "Reviews", icon: Star, path: "/dashboard/reviews" },
   { label: "Settings", icon: Settings, path: "/dashboard/settings" },
 ];
 
