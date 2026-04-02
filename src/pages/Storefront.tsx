@@ -337,6 +337,9 @@ function StorefrontContent({
             />
           )}
 
+          {/* Reviews */}
+          <ReviewsSection store={store} />
+
           {/* Seller Information */}
           <SellerInfo store={store} />
 
