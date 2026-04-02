@@ -16,6 +16,7 @@ import CartButton from "@/components/storefront/CartButton";
 import CheckoutPage from "@/components/storefront/CheckoutPage";
 import HorizontalProductScroll from "@/components/storefront/HorizontalProductScroll";
 import SellerInfo from "@/components/storefront/SellerInfo";
+import ReviewsSection from "@/components/storefront/ReviewsSection";
 
 export default function Storefront() {
   const { slug } = useParams<{ slug: string }>();
@@ -335,6 +336,9 @@ function StorefrontContent({
               onSeeAll={() => setShowAllProducts(true)}
             />
           )}
+
+          {/* Reviews */}
+          <ReviewsSection store={store} />
 
           {/* Seller Information */}
           <SellerInfo store={store} />
