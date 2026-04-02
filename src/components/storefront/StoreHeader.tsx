@@ -115,7 +115,11 @@ export default function StoreHeader({ store, onShopAll }: StoreHeaderProps) {
       <div className="flex items-center justify-around mt-5 py-3 border-y border-border/50">
         <InfoStat label="PRODUCTS" value={(store as any)._productCount?.toString() || "—"} />
         <div className="w-px h-8 bg-border/50" />
-        <InfoStat label="TYPE" value={(store as any)._hasPhysical ? "Physical" : "Digital"} />
+        <InfoStat
+          label="RATING"
+          value={(store as any)._avgRating ? `${(store as any)._avgRating.toFixed(1)} ★` : "—"}
+          subtext={(store as any)._reviewCount > 0 ? `${(store as any)._reviewCount} review${(store as any)._reviewCount !== 1 ? "s" : ""}` : undefined}
+        />
         <div className="w-px h-8 bg-border/50" />
         <InfoStat label="SHIPPING" value={(store as any)._hasPhysical ? "Available" : "Instant"} />
       </div>
