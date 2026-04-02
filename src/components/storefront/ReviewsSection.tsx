@@ -15,6 +15,8 @@ interface Review {
   rating: number;
   review_text: string;
   created_at: string;
+  owner_response?: string | null;
+  owner_response_at?: string | null;
 }
 
 interface ReviewsSectionProps {
