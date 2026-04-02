@@ -403,6 +403,36 @@ export type Database = {
         }
         Relationships: []
       }
+      reviews: {
+        Row: {
+          created_at: string
+          customer_email: string
+          customer_name: string
+          id: string
+          rating: number
+          review_text: string
+          store_id: string
+        }
+        Insert: {
+          created_at?: string
+          customer_email: string
+          customer_name: string
+          id?: string
+          rating: number
+          review_text?: string
+          store_id: string
+        }
+        Update: {
+          created_at?: string
+          customer_email?: string
+          customer_name?: string
+          id?: string
+          rating?: number
+          review_text?: string
+          store_id?: string
+        }
+        Relationships: []
+      }
       store_links: {
         Row: {
           created_at: string
