@@ -127,11 +127,12 @@ export default function StoreHeader({ store, onShopAll }: StoreHeaderProps) {
   );
 }
 
-function InfoStat({ label, value }: { label: string; value: string }) {
+function InfoStat({ label, value, subtext }: { label: string; value: string; subtext?: string }) {
   return (
     <div className="flex flex-col items-center text-center px-2">
       <span className="text-[10px] font-medium text-muted-foreground tracking-wide">{label}</span>
       <span className="text-sm font-bold font-heading mt-0.5">{value}</span>
+      {subtext && <span className="text-[9px] text-muted-foreground">{subtext}</span>}
     </div>
   );
 }

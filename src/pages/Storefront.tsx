@@ -208,11 +208,31 @@ function StorefrontContent({
   showAllProducts, setShowAllProducts,
 }: StorefrontContentProps) {
 
+  const [avgRating, setAvgRating] = useState<number | null>(null);
+  const [reviewCount, setReviewCount] = useState(0);
+
+  useEffect(() => {
+    const fetchRatingStats = async () => {
+      const { data } = await supabase
+        .from("reviews")
+        .select("rating")
+        .eq("store_id", store.id) as any;
+      if (data && data.length > 0) {
+        const sum = data.reduce((s: number, r: any) => s + r.rating, 0);
+        setAvgRating(sum / data.length);
+        setReviewCount(data.length);
+      }
+    };
+    fetchRatingStats();
+  }, [store.id]);
+
   // Enrich store with computed props for header
   const enrichedStore = {
     ...store,
     _productCount: products.length,
     _hasPhysical: products.some((p) => p.product_type === "physical"),
+    _avgRating: avgRating,
+    _reviewCount: reviewCount,
   };
 
   // New products (most recent 8)
