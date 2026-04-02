@@ -115,7 +115,11 @@ export default function StoreHeader({ store, onShopAll }: StoreHeaderProps) {
       <div className="flex items-center justify-around mt-5 py-3 border-y border-border/50">
         <InfoStat label="PRODUCTS" value={(store as any)._productCount?.toString() || "—"} />
         <div className="w-px h-8 bg-border/50" />
-        <InfoStat label="TYPE" value={(store as any)._hasPhysical ? "Physical" : "Digital"} />
+        <InfoStat
+          label="RATING"
+          value={(store as any)._avgRating ? `${(store as any)._avgRating.toFixed(1)} ★` : "—"}
+          subtext={(store as any)._reviewCount > 0 ? `${(store as any)._reviewCount} review${(store as any)._reviewCount !== 1 ? "s" : ""}` : undefined}
+        />
         <div className="w-px h-8 bg-border/50" />
         <InfoStat label="SHIPPING" value={(store as any)._hasPhysical ? "Available" : "Instant"} />
       </div>
@@ -123,11 +127,12 @@ export default function StoreHeader({ store, onShopAll }: StoreHeaderProps) {
   );
 }
 
-function InfoStat({ label, value }: { label: string; value: string }) {
+function InfoStat({ label, value, subtext }: { label: string; value: string; subtext?: string }) {
   return (
     <div className="flex flex-col items-center text-center px-2">
       <span className="text-[10px] font-medium text-muted-foreground tracking-wide">{label}</span>
       <span className="text-sm font-bold font-heading mt-0.5">{value}</span>
+      {subtext && <span className="text-[9px] text-muted-foreground">{subtext}</span>}
     </div>
   );
 }

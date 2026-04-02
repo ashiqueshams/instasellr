@@ -15,6 +15,8 @@ interface Review {
   rating: number;
   review_text: string;
   created_at: string;
+  owner_response?: string | null;
+  owner_response_at?: string | null;
 }
 
 interface ReviewsSectionProps {
@@ -215,6 +217,15 @@ export default function ReviewsSection({ store }: ReviewsSectionProps) {
               <StarRating rating={review.rating} size={13} />
               {review.review_text && (
                 <p className="text-sm text-muted-foreground mt-2 leading-relaxed">{review.review_text}</p>
+              )}
+              {review.owner_response && (
+                <div className="mt-3 pl-3 border-l-2 border-border">
+                  <p className="text-[11px] font-semibold text-foreground mb-0.5">Developer Response</p>
+                  {review.owner_response_at && (
+                    <span className="text-[10px] text-muted-foreground">{timeAgo(review.owner_response_at)}</span>
+                  )}
+                  <p className="text-sm text-muted-foreground mt-1 leading-relaxed">{review.owner_response}</p>
+                </div>
               )}
             </div>
           ))}

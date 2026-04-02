@@ -13,6 +13,7 @@ import DashboardSettings from "./pages/DashboardSettings";
 import DashboardLinks from "./pages/DashboardLinks";
 import DashboardDelivery from "./pages/DashboardDelivery";
 import DashboardCourier from "./pages/DashboardCourier";
+import DashboardReviews from "./pages/DashboardReviews";
 import Auth from "./pages/Auth";
 import AuthGuard from "./components/AuthGuard";
 import NotFound from "./pages/NotFound";
@@ -44,6 +45,7 @@ const App = () => (
             <Route path="orders" element={<DashboardOrders />} />
             <Route path="delivery" element={<DashboardDelivery />} />
             <Route path="courier" element={<DashboardCourier />} />
+            <Route path="reviews" element={<DashboardReviews />} />
             <Route path="settings" element={<DashboardSettings />} />
           </Route>
           <Route path="*" element={<NotFound />} />
