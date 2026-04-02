@@ -409,6 +409,8 @@ export type Database = {
           customer_email: string
           customer_name: string
           id: string
+          owner_response: string | null
+          owner_response_at: string | null
           rating: number
           review_text: string
           store_id: string
@@ -418,6 +420,8 @@ export type Database = {
           customer_email: string
           customer_name: string
           id?: string
+          owner_response?: string | null
+          owner_response_at?: string | null
           rating: number
           review_text?: string
           store_id: string
@@ -427,6 +431,8 @@ export type Database = {
           customer_email?: string
           customer_name?: string
           id?: string
+          owner_response?: string | null
+          owner_response_at?: string | null
           rating?: number
           review_text?: string
           store_id?: string
