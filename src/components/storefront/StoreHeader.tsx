@@ -67,7 +67,7 @@ export default function StoreHeader({ store, onShopAll }: StoreHeaderProps) {
     <div className="animate-fadeUp">
       {/* Hero banner */}
       {store.banner_url && (
-        <div className="w-[calc(100%+40px)] -ml-5 -mt-8 h-48 overflow-hidden mb-5">
+        <div className="w-screen relative left-1/2 -translate-x-1/2 -mt-8 h-48 overflow-hidden mb-5">
           <img src={store.banner_url} alt="Store banner" className="w-full h-full object-cover" />
         </div>
       )}
