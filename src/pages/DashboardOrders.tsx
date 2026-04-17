@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Send, Loader2, Truck } from "lucide-react";
+import { Send, Loader2, ChevronDown, Clock, Globe, HelpCircle, CheckCircle2, Truck } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useStore } from "@/hooks/use-store";
 
@@ -20,16 +20,34 @@ interface OrderWithProduct {
   recipient_city_id: number | null;
   recipient_zone_id: number | null;
   recipient_area_id: number | null;
+  payment_method: string | null;
+  order_items: any;
 }
 
 const STATUS_OPTIONS = ["pending", "approved", "dispatched"];
 const PAID_STATUS_OPTIONS = ["paid", "dispatched"];
+
+const shortCode = (id: string, name: string) => {
+  const prefix = (name || "ORD").replace(/[^a-zA-Z]/g, "").slice(0, 3).toUpperCase() || "ORD";
+  const num = parseInt(id.replace(/[^0-9]/g, "").slice(0, 3) || "0", 10) % 1000;
+  return `${prefix}${num}`;
+};
+
+const statusIcon = (status: string) => {
+  switch (status) {
+    case "paid":
+    case "approved": return <CheckCircle2 className="w-3.5 h-3.5 text-green-600" />;
+    case "dispatched": return <Truck className="w-3.5 h-3.5 text-purple-600" />;
+    default: return <HelpCircle className="w-3.5 h-3.5 text-amber-500" />;
+  }
+};
 
 export default function DashboardOrders() {
   const [orders, setOrders] = useState<OrderWithProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const [resending, setResending] = useState<string | null>(null);
   const [dispatching, setDispatching] = useState<string | null>(null);
+  const [expanded, setExpanded] = useState<string | null>(null);
   const { toast } = useToast();
   const { store } = useStore();
 
@@ -41,7 +59,7 @@ export default function DashboardOrders() {
   const fetchOrders = async () => {
     const { data, error } = await supabase
       .from("orders")
-      .select("id, customer_name, customer_email, customer_phone, amount, status, created_at, download_count, pathao_consignment_id, shipping_address, shipping_city, recipient_city_id, recipient_zone_id, recipient_area_id, products(name)")
+      .select("id, customer_name, customer_email, customer_phone, amount, status, created_at, download_count, pathao_consignment_id, shipping_address, shipping_city, recipient_city_id, recipient_zone_id, recipient_area_id, payment_method, order_items, products(name)")
       .eq("store_id", store!.id)
       .order("created_at", { ascending: false });
 
@@ -63,6 +81,8 @@ export default function DashboardOrders() {
           recipient_city_id: o.recipient_city_id,
           recipient_zone_id: o.recipient_zone_id,
           recipient_area_id: o.recipient_area_id,
+          payment_method: o.payment_method,
+          order_items: o.order_items,
         }))
       );
     }
@@ -74,12 +94,7 @@ export default function DashboardOrders() {
       await handleDispatch(order);
       return;
     }
-
-    const { error } = await supabase
-      .from("orders")
-      .update({ status: newStatus })
-      .eq("id", order.id);
-
+    const { error } = await supabase.from("orders").update({ status: newStatus }).eq("id", order.id);
     if (error) {
       toast({ title: "Failed to update status", description: error.message, variant: "destructive" });
     } else {
@@ -92,15 +107,13 @@ export default function DashboardOrders() {
     if (!order.recipient_city_id || !order.recipient_zone_id || !order.recipient_area_id) {
       toast({
         title: "Missing address data",
-        description: "This order doesn't have Pathao-compatible address data (city/zone/area). Cannot dispatch via Pathao.",
+        description: "This order doesn't have Pathao-compatible address data. Cannot dispatch via Pathao.",
         variant: "destructive",
       });
-      // Still update status locally
       const { error } = await supabase.from("orders").update({ status: "dispatched" }).eq("id", order.id);
       if (!error) setOrders((prev) => prev.map((o) => (o.id === order.id ? { ...o, status: "dispatched" } : o)));
       return;
     }
-
     setDispatching(order.id);
     try {
       const { data, error } = await supabase.functions.invoke("pathao-proxy", {
@@ -121,7 +134,6 @@ export default function DashboardOrders() {
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
-
       const consignmentId = data?.data?.consignment_id;
       setOrders((prev) =>
         prev.map((o) =>
@@ -140,9 +152,7 @@ export default function DashboardOrders() {
   const handleResend = async (orderId: string) => {
     setResending(orderId);
     try {
-      const { error } = await supabase.functions.invoke("resend-order-email", {
-        body: { order_id: orderId },
-      });
+      const { error } = await supabase.functions.invoke("resend-order-email", { body: { order_id: orderId } });
       if (error) throw error;
       toast({ title: "Email sent!", description: "Download link resent to customer." });
     } catch (err: any) {
@@ -151,108 +161,184 @@ export default function DashboardOrders() {
     setResending(null);
   };
 
-  const statusColor = (status: string) => {
-    switch (status) {
-      case "paid": return "bg-green-100 text-green-700";
-      case "approved": return "bg-blue-100 text-blue-700";
-      case "dispatched": return "bg-purple-100 text-purple-700";
-      case "pending": return "bg-yellow-100 text-yellow-700";
-      default: return "bg-muted text-muted-foreground";
+  const toggleExpand = (id: string) => setExpanded(expanded === id ? null : id);
+
+  const formatDate = (d: string) => {
+    const date = new Date(d);
+    return date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+  };
+
+  const itemsList = (order: OrderWithProduct) => {
+    if (Array.isArray(order.order_items) && order.order_items.length > 0) {
+      return order.order_items as Array<{ name: string; quantity?: number; price?: number }>;
     }
+    return [{ name: order.product_name, quantity: 1, price: order.amount }];
   };
 
   return (
     <div>
-      <h1 className="font-heading font-bold text-2xl text-foreground mb-6">Orders</h1>
-      <div className="bg-card rounded-xl store-shadow overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[740px]">
-            <thead>
-              <tr className="border-b border-border">
-                <th className="text-left text-xs text-muted-foreground font-body font-medium px-5 py-3">Customer</th>
-                <th className="text-left text-xs text-muted-foreground font-body font-medium px-5 py-3">Product</th>
-                <th className="text-left text-xs text-muted-foreground font-body font-medium px-5 py-3">Amount</th>
-                <th className="text-left text-xs text-muted-foreground font-body font-medium px-5 py-3">Status</th>
-                <th className="text-left text-xs text-muted-foreground font-body font-medium px-5 py-3">Courier</th>
-                <th className="text-left text-xs text-muted-foreground font-body font-medium px-5 py-3">Date</th>
-                <th className="text-right text-xs text-muted-foreground font-body font-medium px-5 py-3">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {loading ? (
-                <tr>
-                  <td colSpan={7} className="px-5 py-12 text-center text-sm text-muted-foreground">Loading orders…</td>
-                </tr>
-              ) : orders.length === 0 ? (
-                <tr>
-                  <td colSpan={7} className="px-5 py-12 text-center text-sm text-muted-foreground">No orders yet.</td>
-                </tr>
-              ) : (
-                orders.map((order) => (
-                  <tr key={order.id} className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors">
-                    <td className="px-5 py-3.5">
-                      <p className="font-body font-semibold text-sm text-foreground">{order.customer_name}</p>
-                      <p className="text-xs text-muted-foreground">{order.customer_email}</p>
-                      {order.customer_phone && <p className="text-xs text-muted-foreground">{order.customer_phone}</p>}
-                    </td>
-                    <td className="px-5 py-3.5 text-sm text-foreground">{order.product_name}</td>
-                    <td className="px-5 py-3.5 font-heading font-semibold text-sm text-foreground">${order.amount}</td>
-                    <td className="px-5 py-3.5">
+      <h1 className="font-heading font-bold text-3xl text-foreground mb-5">Orders</h1>
+
+      <div className="space-y-3">
+        {loading ? (
+          <div className="text-center text-sm text-muted-foreground py-12">Loading orders…</div>
+        ) : orders.length === 0 ? (
+          <div className="text-center text-sm text-muted-foreground py-12 bg-card rounded-xl border border-border">
+            No orders yet.
+          </div>
+        ) : (
+          orders.map((order) => {
+            const isOpen = expanded === order.id;
+            const items = itemsList(order);
+            return (
+              <div
+                key={order.id}
+                className="bg-card rounded-xl border border-border overflow-hidden transition-all"
+              >
+                {/* Card header — always visible */}
+                <button
+                  onClick={() => toggleExpand(order.id)}
+                  className="w-full text-left px-4 py-3.5 hover:bg-muted/30 transition-colors"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-start gap-3 min-w-0 flex-1">
+                      <Globe className="w-5 h-5 text-foreground/70 mt-0.5 shrink-0" />
+                      <div className="min-w-0 flex-1">
+                        <div className="font-heading font-bold text-base text-foreground tracking-wide">
+                          {shortCode(order.id, order.customer_name)}
+                        </div>
+                        <div className="text-sm text-muted-foreground mt-0.5 truncate">{order.customer_name}</div>
+                        <div className="text-sm text-muted-foreground truncate">
+                          {items.map((it, i) => (
+                            <span key={i}>{i > 0 && ", "}{it.quantity || 1}x {it.name}</span>
+                          ))}
+                        </div>
+                        <div className="flex items-center gap-1.5 mt-1.5 text-xs text-muted-foreground">
+                          <Clock className="w-3.5 h-3.5" />
+                          <span className="font-medium">{formatDate(order.created_at)}</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex flex-col items-end gap-2 shrink-0">
+                      <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-border text-xs font-semibold capitalize">
+                        {statusIcon(order.status)}
+                        {order.status}
+                      </div>
+                      <div className="flex items-center gap-1.5 text-foreground">
+                        <span className="font-heading font-bold text-base">৳{Number(order.amount).toLocaleString()}</span>
+                        <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${isOpen ? "rotate-180" : ""}`} />
+                      </div>
+                    </div>
+                  </div>
+                </button>
+
+                {/* Expanded details */}
+                {isOpen && (
+                  <div className="border-t border-border bg-muted/20 px-4 py-4 space-y-4 text-sm">
+                    {/* Status control */}
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="font-semibold text-foreground">Status</span>
                       {order.status === "dispatched" ? (
-                        <span className={`inline-block text-xs font-semibold font-body px-2.5 py-1 rounded-full ${statusColor(order.status)}`}>
-                          {order.status}
-                        </span>
+                        <span className="text-xs font-semibold text-purple-700 capitalize">{order.status}</span>
                       ) : (
                         <select
                           value={order.status}
                           onChange={(e) => handleStatusChange(order, e.target.value)}
                           disabled={dispatching === order.id}
-                          className={`text-xs font-semibold font-body px-2 py-1 rounded-full border-0 outline-none cursor-pointer ${statusColor(order.status)}`}
+                          className="text-xs font-semibold px-3 py-1.5 rounded-lg border border-border bg-card cursor-pointer outline-none"
                         >
                           {(order.status === "paid" ? PAID_STATUS_OPTIONS : STATUS_OPTIONS).map((s) => (
                             <option key={s} value={s}>{s}</option>
                           ))}
                         </select>
                       )}
-                    </td>
-                    <td className="px-5 py-3.5 text-sm">
-                      {order.pathao_consignment_id ? (
-                        <span className="text-xs font-mono text-primary">{order.pathao_consignment_id}</span>
-                      ) : order.status === "dispatched" ? (
-                        <span className="text-xs text-muted-foreground">Manual</span>
-                      ) : (
-                        <span className="text-xs text-muted-foreground">—</span>
-                      )}
-                    </td>
-                    <td className="px-5 py-3.5 text-sm text-muted-foreground">
-                      {new Date(order.created_at).toLocaleDateString()}
-                    </td>
-                    <td className="px-5 py-3.5 text-right flex items-center justify-end gap-1.5">
-                      {dispatching === order.id && (
-                        <Loader2 className="w-4 h-4 animate-spin text-primary" />
-                      )}
+                    </div>
+
+                    {/* Customer */}
+                    <div>
+                      <div className="font-semibold text-foreground mb-2">Customer</div>
+                      <div className="space-y-1.5">
+                        <Row label="Name" value={order.customer_name} />
+                        <Row label="Email" value={order.customer_email} />
+                        {order.customer_phone && <Row label="Phone" value={order.customer_phone} />}
+                      </div>
+                    </div>
+
+                    {/* Fulfillment */}
+                    {(order.shipping_address || order.shipping_city) && (
+                      <div>
+                        <div className="font-semibold text-foreground mb-2">Fulfillment</div>
+                        <div className="space-y-1.5">
+                          {order.shipping_city && <Row label="City" value={order.shipping_city} />}
+                          {order.shipping_address && <Row label="Address" value={order.shipping_address} />}
+                          {order.pathao_consignment_id && (
+                            <Row label="Consignment" value={order.pathao_consignment_id} mono />
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Receipt */}
+                    <div>
+                      <div className="font-semibold text-foreground mb-2">Receipt</div>
+                      <div className="space-y-1.5">
+                        {items.map((it, i) => (
+                          <Row
+                            key={i}
+                            label={`${it.quantity || 1}x ${it.name}`}
+                            value={`৳${Number(it.price || 0).toLocaleString()}`}
+                          />
+                        ))}
+                        <div className="border-t border-border pt-1.5 mt-1.5">
+                          <Row label="Total" value={`৳${Number(order.amount).toLocaleString()}`} bold />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Payment */}
+                    {order.payment_method && (
+                      <div>
+                        <div className="font-semibold text-foreground mb-2">Payment</div>
+                        <Row label="Method" value={order.payment_method.toUpperCase()} />
+                      </div>
+                    )}
+
+                    {/* Actions */}
+                    <div className="flex items-center gap-2 pt-2">
                       {order.status === "paid" && (
                         <button
                           onClick={() => handleResend(order.id)}
                           disabled={resending === order.id}
-                          className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-semibold text-primary bg-primary/10 hover:bg-primary/20 transition-colors disabled:opacity-50"
+                          className="inline-flex items-center gap-1.5 h-9 px-4 rounded-lg text-xs font-semibold text-primary bg-primary/10 hover:bg-primary/20 transition-colors disabled:opacity-50"
                         >
-                          {resending === order.id ? (
-                            <Loader2 className="w-3 h-3 animate-spin" />
-                          ) : (
-                            <Send className="w-3 h-3" />
-                          )}
-                          Resend
+                          {resending === order.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+                          Resend Email
                         </button>
                       )}
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+                      {dispatching === order.id && (
+                        <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" /> Dispatching…
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })
+        )}
       </div>
+    </div>
+  );
+}
+
+function Row({ label, value, bold, mono }: { label: string; value: string; bold?: boolean; mono?: boolean }) {
+  return (
+    <div className="flex items-start justify-between gap-3">
+      <span className={`text-muted-foreground ${bold ? "font-semibold text-foreground" : ""}`}>{label}</span>
+      <span className={`text-right text-foreground ${bold ? "font-bold" : ""} ${mono ? "font-mono text-xs" : ""}`}>
+        {value}
+      </span>
     </div>
   );
 }
