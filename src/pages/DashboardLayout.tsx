@@ -5,11 +5,11 @@ import { supabase } from "@/integrations/supabase/client";
 import OrderNotification from "@/components/OrderNotification";
 
 const navItems = [
-  { label: "Orders", icon: ShoppingCart, path: "/dashboard" },
-  { label: "Overview", icon: LayoutDashboard, path: "/dashboard/overview" },
+  { label: "Overview", icon: LayoutDashboard, path: "/dashboard" },
   { label: "Products", icon: Package, path: "/dashboard/products" },
   { label: "Bundles", icon: Layers, path: "/dashboard/bundles" },
   { label: "Links", icon: Link2, path: "/dashboard/links" },
+  { label: "Orders", icon: ShoppingCart, path: "/dashboard/orders" },
   { label: "Delivery", icon: Truck, path: "/dashboard/delivery" },
   { label: "Courier", icon: Send, path: "/dashboard/courier" },
   { label: "Reviews", icon: Star, path: "/dashboard/reviews" },

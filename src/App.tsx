@@ -38,8 +38,7 @@ const App = () => (
               </AuthGuard>
             }
           >
-            <Route index element={<DashboardOrders />} />
-            <Route path="overview" element={<DashboardOverview />} />
+            <Route index element={<DashboardOverview />} />
             <Route path="products" element={<DashboardProducts />} />
             <Route path="bundles" element={<DashboardBundles />} />
             <Route path="links" element={<DashboardLinks />} />
