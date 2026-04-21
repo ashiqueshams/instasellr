@@ -11,6 +11,7 @@ import DashboardBundles from "./pages/DashboardBundles";
 import DashboardOrders from "./pages/DashboardOrders";
 import DashboardSettings from "./pages/DashboardSettings";
 import DashboardLinks from "./pages/DashboardLinks";
+import DashboardReferrals from "./pages/DashboardReferrals";
 import DashboardDelivery from "./pages/DashboardDelivery";
 import DashboardCourier from "./pages/DashboardCourier";
 import DashboardReviews from "./pages/DashboardReviews";
@@ -43,6 +44,7 @@ const App = () => (
             <Route path="products" element={<DashboardProducts />} />
             <Route path="bundles" element={<DashboardBundles />} />
             <Route path="links" element={<DashboardLinks />} />
+            <Route path="referrals" element={<DashboardReferrals />} />
             <Route path="orders" element={<Navigate to="/dashboard" replace />} />
             <Route path="delivery" element={<DashboardDelivery />} />
             <Route path="courier" element={<DashboardCourier />} />

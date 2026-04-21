@@ -15,7 +15,8 @@ Deno.serve(async (req) => {
     const {
       product_id, store_id, customer_name, customer_email,
       customer_phone, shipping_address, shipping_city, shipping_state, shipping_zip, shipping_country,
-      recipient_city_id, recipient_zone_id, recipient_area_id, quantity, payment_method
+      recipient_city_id, recipient_zone_id, recipient_area_id, quantity, payment_method,
+      referral_code,
     } = await req.json();
 
     if (!product_id || !store_id || !customer_name || !customer_email) {
@@ -25,7 +26,6 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Validate inputs
     if (typeof customer_name !== "string" || customer_name.length > 200) {
       return new Response(JSON.stringify({ error: "Invalid customer name" }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -43,7 +43,7 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // Server-side price lookup — never trust client-supplied amount
+    // Server-side price lookup
     const { data: productCheck, error: productCheckErr } = await supabase
       .from("products")
       .select("price, product_type")
@@ -56,9 +56,36 @@ Deno.serve(async (req) => {
       });
     }
 
-    const serverAmount = Number(productCheck.price) * qty;
+    let serverAmount = Number(productCheck.price) * qty;
     const isPhysical = productCheck.product_type === "physical";
     const orderStatus = isPhysical ? "pending" : "paid";
+
+    // Server-side referral validation + discount + commission
+    let referralCampaignId: string | null = null;
+    let referralCodeFinal: string | null = null;
+    let referralCommission = 0;
+
+    if (referral_code && typeof referral_code === "string") {
+      const sanitized = referral_code.trim().toUpperCase().slice(0, 32);
+      if (sanitized) {
+        const { data: campaign } = await supabase
+          .from("referral_campaigns")
+          .select("id, code, discount_percent, commission_percent")
+          .eq("store_id", store_id)
+          .eq("code", sanitized)
+          .eq("is_active", true)
+          .maybeSingle();
+
+        if (campaign) {
+          const discount = Math.max(0, Math.min(100, Number(campaign.discount_percent) || 0));
+          const commissionPct = Math.max(0, Math.min(100, Number(campaign.commission_percent) || 0));
+          serverAmount = +(serverAmount * (1 - discount / 100)).toFixed(2);
+          referralCommission = +(serverAmount * (commissionPct / 100)).toFixed(2);
+          referralCampaignId = campaign.id;
+          referralCodeFinal = campaign.code;
+        }
+      }
+    }
 
     const download_token = crypto.randomUUID();
     const download_expires_at = new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString();
@@ -86,6 +113,9 @@ Deno.serve(async (req) => {
         download_count: 0,
         order_items: [{ quantity: qty }],
         payment_method: payment_method || "cod",
+        referral_campaign_id: referralCampaignId,
+        referral_code: referralCodeFinal,
+        referral_commission_amount: referralCommission,
       })
       .select("id")
       .single();
@@ -97,13 +127,12 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Get product and store info for email
     const { data: product } = await supabase
       .from("products")
       .select("name, file_url")
       .eq("id", product_id)
       .single();
-    
+
     const isDigital = !isPhysical;
 
     const { data: store } = await supabase
@@ -112,22 +141,19 @@ Deno.serve(async (req) => {
       .eq("id", store_id)
       .single();
 
-    // Build download URL (only for digital products)
     const projectId = Deno.env.get("SUPABASE_URL")!.match(/https:\/\/(.+?)\.supabase\.co/)?.[1];
     const downloadUrl = `https://${projectId}.supabase.co/functions/v1/download?orderId=${order.id}&token=${download_token}`;
 
-    // Send email via Resend
     const resendKey = Deno.env.get("RESEND_API_KEY");
     if (resendKey && product) {
-      // isDigital already determined above from productCheck
-
       const emailHtml = `
         <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 520px; margin: 0 auto; padding: 40px 20px;">
           <h1 style="font-size: 22px; font-weight: 700; color: #1a1a1a; margin-bottom: 8px;">Your order is confirmed! 🎉</h1>
           <p style="color: #666; font-size: 14px; margin-bottom: 24px;">Thank you for purchasing from <strong>${store?.name || "our store"}</strong>.</p>
           <div style="background: #f8f9fa; border-radius: 12px; padding: 20px; margin-bottom: 24px;">
             <p style="font-size: 16px; font-weight: 600; color: #1a1a1a; margin: 0 0 4px;">${product.name}</p>
-            <p style="color: #666; font-size: 14px; margin: 0;">Amount paid: $${serverAmount}</p>
+            <p style="color: #666; font-size: 14px; margin: 0;">Amount paid: ৳${serverAmount}</p>
+            ${referralCodeFinal ? `<p style="color: #16a34a; font-size: 13px; margin: 6px 0 0;">Referral discount applied (${referralCodeFinal})</p>` : ""}
             ${!isDigital && shipping_address ? `<p style="color: #666; font-size: 14px; margin: 8px 0 0;">Ships to: ${shipping_address}, ${shipping_city || ""} ${shipping_state || ""} ${shipping_zip || ""}, ${shipping_country || ""}</p>` : ""}
           </div>
           ${isDigital ? `<a href="${downloadUrl}" style="display: inline-block; background: #1a1a1a; color: #fff; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px;">Download Your File</a>
@@ -151,7 +177,7 @@ Deno.serve(async (req) => {
     }
 
     return new Response(
-      JSON.stringify({ order_id: order.id, download_token }),
+      JSON.stringify({ order_id: order.id, download_token, final_amount: serverAmount }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err) {
