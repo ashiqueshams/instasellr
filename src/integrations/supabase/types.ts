@@ -203,6 +203,9 @@ export type Database = {
           recipient_area_id: number | null
           recipient_city_id: number | null
           recipient_zone_id: number | null
+          referral_campaign_id: string | null
+          referral_code: string | null
+          referral_commission_amount: number | null
           shipping_address: string | null
           shipping_city: string | null
           shipping_country: string | null
@@ -229,6 +232,9 @@ export type Database = {
           recipient_area_id?: number | null
           recipient_city_id?: number | null
           recipient_zone_id?: number | null
+          referral_campaign_id?: string | null
+          referral_code?: string | null
+          referral_commission_amount?: number | null
           shipping_address?: string | null
           shipping_city?: string | null
           shipping_country?: string | null
@@ -255,6 +261,9 @@ export type Database = {
           recipient_area_id?: number | null
           recipient_city_id?: number | null
           recipient_zone_id?: number | null
+          referral_campaign_id?: string | null
+          referral_code?: string | null
+          referral_commission_amount?: number | null
           shipping_address?: string | null
           shipping_city?: string | null
           shipping_country?: string | null
@@ -270,6 +279,13 @@ export type Database = {
             columns: ["product_id"]
             isOneToOne: false
             referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_referral_campaign_id_fkey"
+            columns: ["referral_campaign_id"]
+            isOneToOne: false
+            referencedRelation: "referral_campaigns"
             referencedColumns: ["id"]
           },
           {
@@ -402,6 +418,86 @@ export type Database = {
           id?: string
         }
         Relationships: []
+      }
+      referral_campaigns: {
+        Row: {
+          code: string
+          commission_percent: number
+          created_at: string
+          discount_percent: number
+          id: string
+          influencer_name: string
+          is_active: boolean
+          notes: string | null
+          store_id: string
+        }
+        Insert: {
+          code: string
+          commission_percent?: number
+          created_at?: string
+          discount_percent?: number
+          id?: string
+          influencer_name: string
+          is_active?: boolean
+          notes?: string | null
+          store_id: string
+        }
+        Update: {
+          code?: string
+          commission_percent?: number
+          created_at?: string
+          discount_percent?: number
+          id?: string
+          influencer_name?: string
+          is_active?: boolean
+          notes?: string | null
+          store_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "referral_campaigns_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      referral_clicks: {
+        Row: {
+          campaign_id: string
+          created_at: string
+          id: string
+          store_id: string
+        }
+        Insert: {
+          campaign_id: string
+          created_at?: string
+          id?: string
+          store_id: string
+        }
+        Update: {
+          campaign_id?: string
+          created_at?: string
+          id?: string
+          store_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "referral_clicks_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "referral_campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "referral_clicks_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       reviews: {
         Row: {
