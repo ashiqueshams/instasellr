@@ -17,6 +17,8 @@ import CheckoutPage from "@/components/storefront/CheckoutPage";
 import HorizontalProductScroll from "@/components/storefront/HorizontalProductScroll";
 import SellerInfo from "@/components/storefront/SellerInfo";
 import ReviewsSection from "@/components/storefront/ReviewsSection";
+import { useReferral } from "@/hooks/use-referral";
+import { Tag } from "lucide-react";
 
 export default function Storefront() {
   const { slug } = useParams<{ slug: string }>();
@@ -208,6 +210,7 @@ function StorefrontContent({
   showAllProducts, setShowAllProducts,
 }: StorefrontContentProps) {
 
+  const { campaign: referral } = useReferral(store.id);
   const [avgRating, setAvgRating] = useState<number | null>(null);
   const [reviewCount, setReviewCount] = useState(0);
 
@@ -254,7 +257,7 @@ function StorefrontContent({
     return (
       <div className="min-h-screen bg-white">
         <div className="max-w-[480px] mx-auto px-5 py-8 pb-28">
-          <CheckoutPage store={store} onBack={() => setShowCheckout(false)} />
+          <CheckoutPage store={store} onBack={() => setShowCheckout(false)} referral={referral} />
         </div>
         <CartDrawer store={store} onCheckout={() => setShowCheckout(true)} />
       </div>
@@ -326,6 +329,29 @@ function StorefrontContent({
         <div className="flex flex-col gap-6">
           {/* Header with hero, logo, name, Shop All, info bar */}
           <StoreHeader store={enrichedStore} onShopAll={() => setShowAllProducts(true)} />
+
+          {/* Referral banner */}
+          {referral && (
+            <div
+              className="rounded-2xl px-4 py-3 flex items-center gap-3 animate-fadeUp"
+              style={{ backgroundColor: store.accent_color + "12", border: `1px solid ${store.accent_color}30` }}
+            >
+              <div
+                className="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
+                style={{ backgroundColor: store.accent_color + "20" }}
+              >
+                <Tag className="w-4 h-4" style={{ color: store.accent_color }} />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-heading font-semibold text-sm" style={{ color: store.text_color || undefined }}>
+                  {referral.discount_percent}% off via {referral.influencer_name}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Discount auto-applied at checkout · Code <span className="font-mono">{referral.code}</span>
+                </p>
+              </div>
+            </div>
+          )}
 
           {/* Bundles */}
           {bundles.map((bundle) => (

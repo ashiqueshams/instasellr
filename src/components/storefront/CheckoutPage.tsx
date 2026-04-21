@@ -16,12 +16,20 @@ interface CityZoneArea {
   name: string;
 }
 
+interface ReferralLite {
+  id: string;
+  code: string;
+  influencer_name: string;
+  discount_percent: number;
+}
+
 interface CheckoutPageProps {
   store: Store;
   onBack: () => void;
+  referral?: ReferralLite | null;
 }
 
-export default function CheckoutPage({ store, onBack }: CheckoutPageProps) {
+export default function CheckoutPage({ store, onBack, referral }: CheckoutPageProps) {
   const { items, totalPrice, clearCart } = useCart();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
@@ -105,7 +113,9 @@ export default function CheckoutPage({ store, onBack }: CheckoutPageProps) {
   };
 
   const deliveryCost = deliveryOptions.find((d) => d.id === selectedDelivery)?.cost || 0;
-  const grandTotal = totalPrice + (hasPhysical ? deliveryCost : 0);
+  const discountPct = referral?.discount_percent || 0;
+  const discountAmount = +(totalPrice * (discountPct / 100)).toFixed(2);
+  const grandTotal = (totalPrice - discountAmount) + (hasPhysical ? deliveryCost : 0);
 
   const handleCheckout = async () => {
     if (!form.name.trim()) {
@@ -164,6 +174,7 @@ export default function CheckoutPage({ store, onBack }: CheckoutPageProps) {
             recipient_area_id: hasPhysical && hasCourier ? selectedArea : null,
             quantity: item.quantity,
             payment_method: paymentMethod,
+            referral_code: referral?.code || null,
           },
         });
         if (error) throw error;
@@ -257,6 +268,17 @@ export default function CheckoutPage({ store, onBack }: CheckoutPageProps) {
             </div>
           ))}
         </div>
+
+        {referral && discountAmount > 0 && (
+          <div className="flex items-center justify-between mt-3 pt-3 border-t border-border/50">
+            <span className="text-sm" style={{ color: store.accent_color }}>
+              Referral discount ({referral.code} · {discountPct}% off)
+            </span>
+            <span className="font-heading font-semibold text-sm" style={{ color: store.accent_color }}>
+              −৳{discountAmount.toFixed(2)}
+            </span>
+          </div>
+        )}
 
         {hasPhysical && deliveryOptions.length > 0 && selectedDelivery && (
           <div className="flex items-center justify-between mt-3 pt-3 border-t border-border/50">

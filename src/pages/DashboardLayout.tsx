@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Package, ShoppingCart, LayoutDashboard, Settings, LogOut, Menu, X, Layers, Link2, Truck, Send, Star } from "lucide-react";
+import { Package, ShoppingCart, LayoutDashboard, Settings, LogOut, Menu, X, Layers, Link2, Truck, Send, Star, Megaphone } from "lucide-react";
 import { NavLink, useLocation, Outlet, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import OrderNotification from "@/components/OrderNotification";
@@ -10,6 +10,7 @@ const navItems = [
   { label: "Products", icon: Package, path: "/dashboard/products" },
   { label: "Bundles", icon: Layers, path: "/dashboard/bundles" },
   { label: "Links", icon: Link2, path: "/dashboard/links" },
+  { label: "Referrals", icon: Megaphone, path: "/dashboard/referrals" },
   { label: "Delivery", icon: Truck, path: "/dashboard/delivery" },
   { label: "Courier", icon: Send, path: "/dashboard/courier" },
   { label: "Reviews", icon: Star, path: "/dashboard/reviews" },
