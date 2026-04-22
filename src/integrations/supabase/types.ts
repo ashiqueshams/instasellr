@@ -701,7 +701,30 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      store_pixels: {
+        Row: {
+          google_ads_conversion_id: string | null
+          google_ads_conversion_label: string | null
+          meta_pixel_id: string | null
+          store_id: string | null
+          tiktok_pixel_id: string | null
+        }
+        Insert: {
+          google_ads_conversion_id?: never
+          google_ads_conversion_label?: never
+          meta_pixel_id?: never
+          store_id?: string | null
+          tiktok_pixel_id?: never
+        }
+        Update: {
+          google_ads_conversion_id?: never
+          google_ads_conversion_label?: never
+          meta_pixel_id?: never
+          store_id?: string | null
+          tiktok_pixel_id?: never
+        }
+        Relationships: []
+      }
     }
     Functions: {
       [_ in never]: never
