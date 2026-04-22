@@ -3,7 +3,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useStore } from "@/hooks/use-store";
 import { supabase } from "@/integrations/supabase/client";
 import { uploadImage } from "@/lib/imageUpload";
-import { Loader2, X, ImageIcon, Upload } from "lucide-react";
+import { Loader2, X, ImageIcon, Upload, BarChart3, ChevronRight } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const FONT_OPTIONS = [
   { label: "Syne", value: "Syne" },
@@ -275,6 +276,25 @@ export default function DashboardSettings() {
       <h1 className="font-heading font-bold text-2xl text-foreground mb-6">Settings</h1>
 
       <div className="space-y-6">
+        {/* Ad Tracking entry */}
+        <Link
+          to="/dashboard/settings/ad-tracking"
+          className="bg-card rounded-xl p-5 store-shadow flex items-center justify-between hover:bg-muted/30 transition-colors"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+              <BarChart3 className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="font-heading font-semibold text-sm text-foreground">Ad Tracking</p>
+              <p className="text-xs text-muted-foreground font-body">
+                Meta Pixel, Conversions API, Google Ads, TikTok Pixel
+              </p>
+            </div>
+          </div>
+          <ChevronRight className="w-4 h-4 text-muted-foreground" />
+        </Link>
+
         {/* Basic Info */}
         <div className="bg-card rounded-xl p-5 store-shadow space-y-4">
           <p className="font-heading font-semibold text-sm text-foreground">Basic Info</p>

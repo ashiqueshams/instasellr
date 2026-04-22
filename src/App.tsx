@@ -10,6 +10,7 @@ import DashboardProducts from "./pages/DashboardProducts";
 import DashboardBundles from "./pages/DashboardBundles";
 import DashboardOrders from "./pages/DashboardOrders";
 import DashboardSettings from "./pages/DashboardSettings";
+import DashboardAdTracking from "./pages/DashboardAdTracking";
 import DashboardLinks from "./pages/DashboardLinks";
 import DashboardReferrals from "./pages/DashboardReferrals";
 import DashboardDelivery from "./pages/DashboardDelivery";
@@ -50,6 +51,7 @@ const App = () => (
             <Route path="courier" element={<DashboardCourier />} />
             <Route path="reviews" element={<DashboardReviews />} />
             <Route path="settings" element={<DashboardSettings />} />
+            <Route path="settings/ad-tracking" element={<DashboardAdTracking />} />
           </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>
