@@ -535,6 +535,57 @@ export type Database = {
         }
         Relationships: []
       }
+      store_integrations: {
+        Row: {
+          created_at: string
+          google_ads_conversion_id: string | null
+          google_ads_conversion_label: string | null
+          google_ads_enabled: boolean
+          id: string
+          meta_capi_enabled: boolean
+          meta_capi_token: string | null
+          meta_pixel_enabled: boolean
+          meta_pixel_id: string | null
+          meta_test_event_code: string | null
+          store_id: string
+          tiktok_pixel_enabled: boolean
+          tiktok_pixel_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          google_ads_conversion_id?: string | null
+          google_ads_conversion_label?: string | null
+          google_ads_enabled?: boolean
+          id?: string
+          meta_capi_enabled?: boolean
+          meta_capi_token?: string | null
+          meta_pixel_enabled?: boolean
+          meta_pixel_id?: string | null
+          meta_test_event_code?: string | null
+          store_id: string
+          tiktok_pixel_enabled?: boolean
+          tiktok_pixel_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          google_ads_conversion_id?: string | null
+          google_ads_conversion_label?: string | null
+          google_ads_enabled?: boolean
+          id?: string
+          meta_capi_enabled?: boolean
+          meta_capi_token?: string | null
+          meta_pixel_enabled?: boolean
+          meta_pixel_id?: string | null
+          meta_test_event_code?: string | null
+          store_id?: string
+          tiktok_pixel_enabled?: boolean
+          tiktok_pixel_id?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       store_links: {
         Row: {
           created_at: string
@@ -650,7 +701,30 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      store_pixels: {
+        Row: {
+          google_ads_conversion_id: string | null
+          google_ads_conversion_label: string | null
+          meta_pixel_id: string | null
+          store_id: string | null
+          tiktok_pixel_id: string | null
+        }
+        Insert: {
+          google_ads_conversion_id?: never
+          google_ads_conversion_label?: never
+          meta_pixel_id?: never
+          store_id?: string | null
+          tiktok_pixel_id?: never
+        }
+        Update: {
+          google_ads_conversion_id?: never
+          google_ads_conversion_label?: never
+          meta_pixel_id?: never
+          store_id?: string | null
+          tiktok_pixel_id?: never
+        }
+        Relationships: []
+      }
     }
     Functions: {
       [_ in never]: never
