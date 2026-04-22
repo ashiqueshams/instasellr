@@ -61,6 +61,19 @@ export default function CheckoutPage({ store, onBack, referral }: CheckoutPagePr
 
   const hasPhysical = items.some((i) => i.product.product_type === "physical");
 
+  // Fire InitiateCheckout once when checkout mounts with items
+  useEffect(() => {
+    if (items.length === 0) return;
+    try {
+      trackInitiateCheckout({
+        totalItems: items.reduce((s, i) => s + i.quantity, 0),
+        totalValue: totalPrice,
+        productIds: items.map((i) => i.product.id),
+      });
+    } catch {/* never break checkout */}
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Check if store has courier configured & fetch delivery options
   useEffect(() => {
     const init = async () => {
