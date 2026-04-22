@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { ArrowLeft, Check, Minus, Plus, ShoppingBag } from "lucide-react";
 import { Product, Store } from "@/data/sampleData";
 import { useCart } from "@/contexts/CartContext";
+import { trackViewContent } from "@/lib/tracking";
 
 interface ProductDetailProps {
   product: Product;
@@ -29,6 +30,10 @@ export default function ProductDetail({ product, store, onBack }: ProductDetailP
     if (ctaRef.current) observer.observe(ctaRef.current);
     return () => observer.disconnect();
   }, []);
+
+  useEffect(() => {
+    trackViewContent({ id: product.id, name: product.name, price: product.price });
+  }, [product.id, product.name, product.price]);
 
   const isOutOfStock = product.product_type === "physical" && product.stock_quantity === 0;
   const handleAddToCart = () => { if (!isOutOfStock) addToCart(product); };
