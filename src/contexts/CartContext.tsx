@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useCallback, ReactNode } from "react";
 import { Product, CartItem } from "@/data/sampleData";
+import { trackAddToCart } from "@/lib/tracking";
 
 interface CartContextType {
   items: CartItem[];
@@ -30,6 +31,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       }
       return [...prev, { product, quantity: 1 }];
     });
+    try { trackAddToCart({ id: product.id, name: product.name, price: product.price }, 1); } catch {}
   }, []);
 
   const getItemQuantity = useCallback((productId: string) => {

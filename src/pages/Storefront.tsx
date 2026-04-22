@@ -17,6 +17,7 @@ import CheckoutPage from "@/components/storefront/CheckoutPage";
 import HorizontalProductScroll from "@/components/storefront/HorizontalProductScroll";
 import SellerInfo from "@/components/storefront/SellerInfo";
 import ReviewsSection from "@/components/storefront/ReviewsSection";
+import TrackingScripts from "@/components/storefront/TrackingScripts";
 import { useReferral } from "@/hooks/use-referral";
 import { Tag } from "lucide-react";
 
@@ -159,6 +160,7 @@ export default function Storefront() {
 
   return (
     <CartProvider>
+      <TrackingScripts storeId={store.id} />
       <StorefrontContent
         store={store}
         products={products}
