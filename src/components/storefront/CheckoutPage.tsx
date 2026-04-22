@@ -4,7 +4,7 @@ import { Store } from "@/data/sampleData";
 import { useCart } from "@/contexts/CartContext";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { trackInitiateCheckout, trackPurchase } from "@/lib/tracking";
+import { trackInitiateCheckout, trackPurchase, getClickIds } from "@/lib/tracking";
 
 interface DeliveryOption {
   id: string;
@@ -204,11 +204,40 @@ export default function CheckoutPage({ store, onBack, referral }: CheckoutPagePr
       // Fire Purchase pixel event (use first order id as primary; dedupe key for CAPI)
       try {
         if (orderIds.length > 0) {
+          const primaryOrderId = orderIds[0];
+          const totalForPixel = purchaseTotal || grandTotal;
+          const eventId = `purchase_${primaryOrderId}`;
+
           trackPurchase({
-            id: orderIds[0],
-            total: purchaseTotal || grandTotal,
+            id: primaryOrderId,
+            total: totalForPixel,
             productIds,
           });
+
+          // Fire-and-forget server-side Meta CAPI Purchase (deduped via event_id)
+          const { fbc, fbp } = getClickIds();
+          supabase.functions
+            .invoke("meta-capi-purchase", {
+              body: {
+                store_id: store.id,
+                order_id: primaryOrderId,
+                event_id: eventId,
+                value: totalForPixel,
+                currency: "USD",
+                content_ids: productIds,
+                customer: {
+                  email: form.email,
+                  phone: form.phone || undefined,
+                },
+                browser_data: {
+                  client_ip_address: null,
+                  client_user_agent: typeof navigator !== "undefined" ? navigator.userAgent : "",
+                  fbc,
+                  fbp,
+                },
+              },
+            })
+            .catch(() => {/* fail silently — never block confirmation */});
         }
       } catch {/* never break checkout on tracking failure */}
 
