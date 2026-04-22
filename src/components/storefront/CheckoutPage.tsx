@@ -4,6 +4,7 @@ import { Store } from "@/data/sampleData";
 import { useCart } from "@/contexts/CartContext";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { trackInitiateCheckout, trackPurchase } from "@/lib/tracking";
 
 interface DeliveryOption {
   id: string;
@@ -156,8 +157,12 @@ export default function CheckoutPage({ store, onBack, referral }: CheckoutPagePr
     try {
       const cityName = hasCourier ? cities.find(c => c.id === selectedCity)?.name || "" : form.city;
 
+      const orderIds: string[] = [];
+      let purchaseTotal = 0;
+      const productIds: string[] = [];
+
       for (const item of items) {
-        const { error } = await supabase.functions.invoke("create-order", {
+        const { data, error } = await supabase.functions.invoke("create-order", {
           body: {
             product_id: item.product.id,
             store_id: store.id,
@@ -178,7 +183,22 @@ export default function CheckoutPage({ store, onBack, referral }: CheckoutPagePr
           },
         });
         if (error) throw error;
+        if (data?.order_id) orderIds.push(data.order_id);
+        if (typeof data?.final_amount === "number") purchaseTotal += data.final_amount;
+        productIds.push(item.product.id);
       }
+
+      // Fire Purchase pixel event (use first order id as primary; dedupe key for CAPI)
+      try {
+        if (orderIds.length > 0) {
+          trackPurchase({
+            id: orderIds[0],
+            total: purchaseTotal || grandTotal,
+            productIds,
+          });
+        }
+      } catch {/* never break checkout on tracking failure */}
+
       setPurchased(true);
       clearCart();
     } catch (err: any) {
