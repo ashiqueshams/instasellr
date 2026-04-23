@@ -383,6 +383,10 @@ export default function DashboardProducts() {
                 <input placeholder="Weight (grams)" type="number" value={form.weight} onChange={(e) => setForm({ ...form, weight: e.target.value })} className={inputClass} />
               </>
             )}
+            <input placeholder="Material (e.g. cotton, georgette)" value={form.material} onChange={(e) => setForm({ ...form, material: e.target.value })} className={`col-span-2 ${inputClass}`} />
+            <textarea placeholder="Care instructions (used by chatbot to answer 'kapor ki?' / material questions)" value={form.care_instructions} onChange={(e) => setForm({ ...form, care_instructions: e.target.value })} className="col-span-2 rounded-lg bg-background px-3.5 py-3 text-sm border border-border outline-none focus:ring-2 focus:ring-primary/20 placeholder:text-muted-foreground resize-none h-20" />
+            {false && (
+              <></>
 
             {/* Fill remaining space when physical has odd fields */}
             {form.product_type !== "physical" && <div />}
