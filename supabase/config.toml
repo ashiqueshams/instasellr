@@ -11,3 +11,6 @@ verify_jwt = false
 
 [functions.ensure-storage]
 verify_jwt = false
+
+[functions.meta-messenger-webhook]
+verify_jwt = false
