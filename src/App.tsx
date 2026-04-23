@@ -16,6 +16,9 @@ import DashboardReferrals from "./pages/DashboardReferrals";
 import DashboardDelivery from "./pages/DashboardDelivery";
 import DashboardCourier from "./pages/DashboardCourier";
 import DashboardReviews from "./pages/DashboardReviews";
+import DashboardChatbot from "./pages/DashboardChatbot";
+import DashboardChatbotFAQs from "./pages/DashboardChatbotFAQs";
+import DashboardInbox from "./pages/DashboardInbox";
 import Auth from "./pages/Auth";
 import AuthGuard from "./components/AuthGuard";
 import NotFound from "./pages/NotFound";
@@ -50,6 +53,9 @@ const App = () => (
             <Route path="delivery" element={<DashboardDelivery />} />
             <Route path="courier" element={<DashboardCourier />} />
             <Route path="reviews" element={<DashboardReviews />} />
+            <Route path="inbox" element={<DashboardInbox />} />
+            <Route path="chatbot" element={<DashboardChatbot />} />
+            <Route path="chatbot/faqs" element={<DashboardChatbotFAQs />} />
             <Route path="settings" element={<DashboardSettings />} />
             <Route path="settings/ad-tracking" element={<DashboardAdTracking />} />
           </Route>
