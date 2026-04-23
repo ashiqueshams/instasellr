@@ -94,6 +94,206 @@ export type Database = {
           },
         ]
       }
+      chatbot_conversations: {
+        Row: {
+          created_at: string
+          customer_name: string | null
+          customer_profile_pic: string | null
+          customer_psid: string
+          id: string
+          last_message_at: string
+          last_message_preview: string | null
+          platform: string
+          source: string
+          status: string
+          store_id: string
+          unread_count: number
+        }
+        Insert: {
+          created_at?: string
+          customer_name?: string | null
+          customer_profile_pic?: string | null
+          customer_psid: string
+          id?: string
+          last_message_at?: string
+          last_message_preview?: string | null
+          platform?: string
+          source?: string
+          status?: string
+          store_id: string
+          unread_count?: number
+        }
+        Update: {
+          created_at?: string
+          customer_name?: string | null
+          customer_profile_pic?: string | null
+          customer_psid?: string
+          id?: string
+          last_message_at?: string
+          last_message_preview?: string | null
+          platform?: string
+          source?: string
+          status?: string
+          store_id?: string
+          unread_count?: number
+        }
+        Relationships: []
+      }
+      chatbot_faqs: {
+        Row: {
+          answer: string
+          created_at: string
+          id: string
+          is_active: boolean
+          keywords: string[] | null
+          language: string
+          position: number
+          question: string
+          store_id: string
+        }
+        Insert: {
+          answer: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          keywords?: string[] | null
+          language?: string
+          position?: number
+          question: string
+          store_id: string
+        }
+        Update: {
+          answer?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          keywords?: string[] | null
+          language?: string
+          position?: number
+          question?: string
+          store_id?: string
+        }
+        Relationships: []
+      }
+      chatbot_messages: {
+        Row: {
+          attachments: Json | null
+          confidence_score: number | null
+          conversation_id: string
+          created_at: string
+          detected_language: string | null
+          direction: string
+          id: string
+          matched_product_id: string | null
+          sender: string
+          source_post_id: string | null
+          source_story_id: string | null
+          text: string | null
+        }
+        Insert: {
+          attachments?: Json | null
+          confidence_score?: number | null
+          conversation_id: string
+          created_at?: string
+          detected_language?: string | null
+          direction: string
+          id?: string
+          matched_product_id?: string | null
+          sender?: string
+          source_post_id?: string | null
+          source_story_id?: string | null
+          text?: string | null
+        }
+        Update: {
+          attachments?: Json | null
+          confidence_score?: number | null
+          conversation_id?: string
+          created_at?: string
+          detected_language?: string | null
+          direction?: string
+          id?: string
+          matched_product_id?: string | null
+          sender?: string
+          source_post_id?: string | null
+          source_story_id?: string | null
+          text?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chatbot_messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "chatbot_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chatbot_settings: {
+        Row: {
+          auto_reply_comments: boolean
+          auto_reply_dms: boolean
+          auto_reply_story_replies: boolean
+          auto_thank_story_mentions: boolean
+          comment_filter_questions_only: boolean
+          created_at: string
+          default_language: string
+          enabled: boolean
+          escalation_threshold: number
+          fallback_message: string | null
+          greeting_message: string | null
+          id: string
+          instagram_business_id: string | null
+          meta_page_access_token: string | null
+          meta_page_id: string | null
+          store_id: string
+          tone: string
+          updated_at: string
+          webhook_verify_token: string | null
+        }
+        Insert: {
+          auto_reply_comments?: boolean
+          auto_reply_dms?: boolean
+          auto_reply_story_replies?: boolean
+          auto_thank_story_mentions?: boolean
+          comment_filter_questions_only?: boolean
+          created_at?: string
+          default_language?: string
+          enabled?: boolean
+          escalation_threshold?: number
+          fallback_message?: string | null
+          greeting_message?: string | null
+          id?: string
+          instagram_business_id?: string | null
+          meta_page_access_token?: string | null
+          meta_page_id?: string | null
+          store_id: string
+          tone?: string
+          updated_at?: string
+          webhook_verify_token?: string | null
+        }
+        Update: {
+          auto_reply_comments?: boolean
+          auto_reply_dms?: boolean
+          auto_reply_story_replies?: boolean
+          auto_thank_story_mentions?: boolean
+          comment_filter_questions_only?: boolean
+          created_at?: string
+          default_language?: string
+          enabled?: boolean
+          escalation_threshold?: number
+          fallback_message?: string | null
+          greeting_message?: string | null
+          id?: string
+          instagram_business_id?: string | null
+          meta_page_access_token?: string | null
+          meta_page_id?: string | null
+          store_id?: string
+          tone?: string
+          updated_at?: string
+          webhook_verify_token?: string | null
+        }
+        Relationships: []
+      }
       courier_settings: {
         Row: {
           access_token: string | null
@@ -332,6 +532,7 @@ export type Database = {
       }
       products: {
         Row: {
+          care_instructions: string | null
           category: string | null
           color: string | null
           compare_at_price: number | null
@@ -342,6 +543,7 @@ export type Database = {
           id: string
           image_url: string | null
           is_active: boolean | null
+          material: string | null
           name: string
           price: number
           product_type: string
@@ -351,6 +553,7 @@ export type Database = {
           weight: number | null
         }
         Insert: {
+          care_instructions?: string | null
           category?: string | null
           color?: string | null
           compare_at_price?: number | null
@@ -361,6 +564,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_active?: boolean | null
+          material?: string | null
           name: string
           price?: number
           product_type?: string
@@ -370,6 +574,7 @@ export type Database = {
           weight?: number | null
         }
         Update: {
+          care_instructions?: string | null
           category?: string | null
           color?: string | null
           compare_at_price?: number | null
@@ -380,6 +585,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_active?: boolean | null
+          material?: string | null
           name?: string
           price?: number
           product_type?: string
