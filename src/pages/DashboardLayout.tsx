@@ -1,11 +1,13 @@
 import { useState } from "react";
-import { Package, ShoppingCart, LayoutDashboard, Settings, LogOut, Menu, X, Layers, Link2, Truck, Send, Star, Megaphone } from "lucide-react";
+import { Package, ShoppingCart, LayoutDashboard, Settings, LogOut, Menu, X, Layers, Link2, Truck, Send, Star, Megaphone, Inbox, Bot } from "lucide-react";
 import { NavLink, useLocation, Outlet, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import OrderNotification from "@/components/OrderNotification";
 
 const navItems = [
   { label: "Orders", icon: ShoppingCart, path: "/dashboard" },
+  { label: "Inbox", icon: Inbox, path: "/dashboard/inbox" },
+  { label: "Chatbot", icon: Bot, path: "/dashboard/chatbot" },
   { label: "Overview", icon: LayoutDashboard, path: "/dashboard/overview" },
   { label: "Products", icon: Package, path: "/dashboard/products" },
   { label: "Bundles", icon: Layers, path: "/dashboard/bundles" },

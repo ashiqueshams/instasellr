@@ -32,6 +32,8 @@ interface ProductForm {
   product_type: "digital" | "physical";
   stock_quantity: string;
   weight: string;
+  material: string;
+  care_instructions: string;
 }
 
 const emptyForm: ProductForm = {
@@ -46,6 +48,8 @@ const emptyForm: ProductForm = {
   product_type: "digital",
   stock_quantity: "",
   weight: "",
+  material: "",
+  care_instructions: "",
 };
 
 export default function DashboardProducts() {
@@ -110,6 +114,8 @@ export default function DashboardProducts() {
       product_type: product.product_type || "digital",
       stock_quantity: product.stock_quantity != null ? String(product.stock_quantity) : "",
       weight: product.weight != null ? String(product.weight) : "",
+      material: product.material || "",
+      care_instructions: product.care_instructions || "",
     });
     setProductImagePreview(product.image_url);
     setUploadedFile(product.file_url ? { name: product.file_url, path: "" } : null);
@@ -250,6 +256,8 @@ export default function DashboardProducts() {
       product_type: form.product_type,
       stock_quantity: form.product_type === "physical" && form.stock_quantity ? parseInt(form.stock_quantity) : null,
       weight: form.product_type === "physical" && form.weight ? parseFloat(form.weight) : null,
+      material: form.material || null,
+      care_instructions: form.care_instructions || null,
     };
 
     if (editingId) {
@@ -375,9 +383,8 @@ export default function DashboardProducts() {
                 <input placeholder="Weight (grams)" type="number" value={form.weight} onChange={(e) => setForm({ ...form, weight: e.target.value })} className={inputClass} />
               </>
             )}
-
-            {/* Fill remaining space when physical has odd fields */}
-            {form.product_type !== "physical" && <div />}
+            <input placeholder="Material (e.g. cotton, georgette)" value={form.material} onChange={(e) => setForm({ ...form, material: e.target.value })} className={`col-span-2 ${inputClass}`} />
+            <textarea placeholder="Care instructions (used by chatbot to answer material questions)" value={form.care_instructions} onChange={(e) => setForm({ ...form, care_instructions: e.target.value })} className="col-span-2 rounded-lg bg-background px-3.5 py-3 text-sm border border-border outline-none focus:ring-2 focus:ring-primary/20 placeholder:text-muted-foreground resize-none h-20" />
 
             {/* Product Image */}
             <div className="col-span-2">
