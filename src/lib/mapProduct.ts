@@ -18,6 +18,8 @@ export function mapProduct(p: any): Product {
     stock_quantity: p.stock_quantity ?? null,
     compare_at_price: p.compare_at_price ?? null,
     weight: p.weight ?? null,
+    material: p.material ?? "",
+    care_instructions: p.care_instructions ?? "",
     created_at: p.created_at,
   };
 }

@@ -15,6 +15,8 @@ export interface Product {
   stock_quantity: number | null;
   compare_at_price: number | null;
   weight: number | null;
+  material?: string;
+  care_instructions?: string;
   created_at: string;
 }
 
