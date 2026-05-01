@@ -847,6 +847,9 @@ export type Database = {
           layout: string | null
           logo_url: string | null
           name: string
+          onboarding_completed: boolean
+          onboarding_step: number
+          preferred_language: string
           slug: string
           social_links: Json | null
           social_links_color: string | null
@@ -871,6 +874,9 @@ export type Database = {
           layout?: string | null
           logo_url?: string | null
           name: string
+          onboarding_completed?: boolean
+          onboarding_step?: number
+          preferred_language?: string
           slug: string
           social_links?: Json | null
           social_links_color?: string | null
@@ -895,6 +901,9 @@ export type Database = {
           layout?: string | null
           logo_url?: string | null
           name?: string
+          onboarding_completed?: boolean
+          onboarding_step?: number
+          preferred_language?: string
           slug?: string
           social_links?: Json | null
           social_links_color?: string | null
