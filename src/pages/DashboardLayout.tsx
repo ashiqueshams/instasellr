@@ -3,6 +3,7 @@ import { Package, ShoppingCart, LayoutDashboard, Settings, LogOut, Menu, X, Laye
 import { NavLink, useLocation, Outlet, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import OrderNotification from "@/components/OrderNotification";
+import CoachMarks from "@/components/onboarding/CoachMarks";
 
 const navItems = [
   { label: "Orders", icon: ShoppingCart, path: "/dashboard" },
@@ -114,6 +115,9 @@ export default function DashboardLayout() {
 
       {/* Order Notifications */}
       <OrderNotification />
+
+      {/* First-time tour */}
+      <CoachMarks />
     </div>
   );
 }

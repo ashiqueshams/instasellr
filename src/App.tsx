@@ -19,6 +19,7 @@ import DashboardReviews from "./pages/DashboardReviews";
 import DashboardChatbot from "./pages/DashboardChatbot";
 import DashboardChatbotFAQs from "./pages/DashboardChatbotFAQs";
 import DashboardInbox from "./pages/DashboardInbox";
+import Onboarding from "./pages/Onboarding";
 import Auth from "./pages/Auth";
 import AuthGuard from "./components/AuthGuard";
 import NotFound from "./pages/NotFound";
@@ -34,6 +35,7 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="/auth" element={<Auth />} />
+          <Route path="/onboarding" element={<Onboarding />} />
           <Route path="/store/:slug" element={<Storefront />} />
           <Route
             path="/dashboard"
