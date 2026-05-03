@@ -96,46 +96,100 @@ export type Database = {
       }
       chatbot_conversations: {
         Row: {
+          cart_draft: Json
           created_at: string
+          current_intent: string | null
           customer_name: string | null
+          customer_profile_id: string | null
           customer_profile_pic: string | null
           customer_psid: string
+          feedback_sentiment: string | null
+          feedback_text: string | null
           id: string
           last_message_at: string
           last_message_preview: string | null
           platform: string
+          sales_stage: string
           source: string
           status: string
           store_id: string
           unread_count: number
         }
         Insert: {
+          cart_draft?: Json
           created_at?: string
+          current_intent?: string | null
           customer_name?: string | null
+          customer_profile_id?: string | null
           customer_profile_pic?: string | null
           customer_psid: string
+          feedback_sentiment?: string | null
+          feedback_text?: string | null
           id?: string
           last_message_at?: string
           last_message_preview?: string | null
           platform?: string
+          sales_stage?: string
           source?: string
           status?: string
           store_id: string
           unread_count?: number
         }
         Update: {
+          cart_draft?: Json
           created_at?: string
+          current_intent?: string | null
           customer_name?: string | null
+          customer_profile_id?: string | null
           customer_profile_pic?: string | null
           customer_psid?: string
+          feedback_sentiment?: string | null
+          feedback_text?: string | null
           id?: string
           last_message_at?: string
           last_message_preview?: string | null
           platform?: string
+          sales_stage?: string
           source?: string
           status?: string
           store_id?: string
           unread_count?: number
+        }
+        Relationships: []
+      }
+      chatbot_discount_rules: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          max_discount_percent: number
+          max_uses_per_customer: number
+          min_order_value: number
+          store_id: string
+          trigger_signals: string[]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          max_discount_percent?: number
+          max_uses_per_customer?: number
+          min_order_value?: number
+          store_id: string
+          trigger_signals?: string[]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          max_discount_percent?: number
+          max_uses_per_customer?: number
+          min_order_value?: number
+          store_id?: string
+          trigger_signals?: string[]
+          updated_at?: string
         }
         Relationships: []
       }
@@ -175,6 +229,48 @@ export type Database = {
         }
         Relationships: []
       }
+      chatbot_learning_events: {
+        Row: {
+          behavior_tags: string[] | null
+          conversation_id: string | null
+          conversation_snapshot: Json | null
+          created_at: string
+          customer_psid: string | null
+          discount_offered_percent: number | null
+          id: string
+          order_value: number | null
+          outcome: string
+          store_id: string
+          time_to_first_reply_seconds: number | null
+        }
+        Insert: {
+          behavior_tags?: string[] | null
+          conversation_id?: string | null
+          conversation_snapshot?: Json | null
+          created_at?: string
+          customer_psid?: string | null
+          discount_offered_percent?: number | null
+          id?: string
+          order_value?: number | null
+          outcome: string
+          store_id: string
+          time_to_first_reply_seconds?: number | null
+        }
+        Update: {
+          behavior_tags?: string[] | null
+          conversation_id?: string | null
+          conversation_snapshot?: Json | null
+          created_at?: string
+          customer_psid?: string | null
+          discount_offered_percent?: number | null
+          id?: string
+          order_value?: number | null
+          outcome?: string
+          store_id?: string
+          time_to_first_reply_seconds?: number | null
+        }
+        Relationships: []
+      }
       chatbot_messages: {
         Row: {
           attachments: Json | null
@@ -184,8 +280,10 @@ export type Database = {
           detected_language: string | null
           direction: string
           id: string
+          intent: string | null
           matched_product_id: string | null
           sender: string
+          sentiment: string | null
           source_post_id: string | null
           source_story_id: string | null
           text: string | null
@@ -198,8 +296,10 @@ export type Database = {
           detected_language?: string | null
           direction: string
           id?: string
+          intent?: string | null
           matched_product_id?: string | null
           sender?: string
+          sentiment?: string | null
           source_post_id?: string | null
           source_story_id?: string | null
           text?: string | null
@@ -212,8 +312,10 @@ export type Database = {
           detected_language?: string | null
           direction?: string
           id?: string
+          intent?: string | null
           matched_product_id?: string | null
           sender?: string
+          sentiment?: string | null
           source_post_id?: string | null
           source_story_id?: string | null
           text?: string | null
@@ -228,12 +330,49 @@ export type Database = {
           },
         ]
       }
+      chatbot_playbook: {
+        Row: {
+          created_at: string
+          generated_at: string
+          id: string
+          is_active: boolean
+          sample_size: number
+          store_id: string
+          strategy: Json
+          summary: string | null
+          version: number
+        }
+        Insert: {
+          created_at?: string
+          generated_at?: string
+          id?: string
+          is_active?: boolean
+          sample_size?: number
+          store_id: string
+          strategy?: Json
+          summary?: string | null
+          version?: number
+        }
+        Update: {
+          created_at?: string
+          generated_at?: string
+          id?: string
+          is_active?: boolean
+          sample_size?: number
+          store_id?: string
+          strategy?: Json
+          summary?: string | null
+          version?: number
+        }
+        Relationships: []
+      }
       chatbot_settings: {
         Row: {
           auto_reply_comments: boolean
           auto_reply_dms: boolean
           auto_reply_story_replies: boolean
           auto_thank_story_mentions: boolean
+          brain_enabled: boolean
           comment_filter_questions_only: boolean
           created_at: string
           default_language: string
@@ -245,6 +384,8 @@ export type Database = {
           instagram_business_id: string | null
           meta_page_access_token: string | null
           meta_page_id: string | null
+          recovery_delay_hours: number
+          recovery_enabled: boolean
           store_id: string
           tone: string
           updated_at: string
@@ -255,6 +396,7 @@ export type Database = {
           auto_reply_dms?: boolean
           auto_reply_story_replies?: boolean
           auto_thank_story_mentions?: boolean
+          brain_enabled?: boolean
           comment_filter_questions_only?: boolean
           created_at?: string
           default_language?: string
@@ -266,6 +408,8 @@ export type Database = {
           instagram_business_id?: string | null
           meta_page_access_token?: string | null
           meta_page_id?: string | null
+          recovery_delay_hours?: number
+          recovery_enabled?: boolean
           store_id: string
           tone?: string
           updated_at?: string
@@ -276,6 +420,7 @@ export type Database = {
           auto_reply_dms?: boolean
           auto_reply_story_replies?: boolean
           auto_thank_story_mentions?: boolean
+          brain_enabled?: boolean
           comment_filter_questions_only?: boolean
           created_at?: string
           default_language?: string
@@ -287,6 +432,8 @@ export type Database = {
           instagram_business_id?: string | null
           meta_page_access_token?: string | null
           meta_page_id?: string | null
+          recovery_delay_hours?: number
+          recovery_enabled?: boolean
           store_id?: string
           tone?: string
           updated_at?: string
@@ -346,6 +493,96 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      customer_profiles: {
+        Row: {
+          address: string | null
+          behavior_tags: string[]
+          city: string | null
+          conversion_factors: Json
+          created_at: string
+          customer_psid: string
+          id: string
+          last_intent: string | null
+          last_order_at: string | null
+          last_seen_product_id: string | null
+          last_sentiment: string | null
+          lifetime_orders: number
+          lifetime_value: number
+          name: string | null
+          notes: string | null
+          phone: string | null
+          platform: string
+          preferred_categories: string[]
+          preferred_color: string | null
+          preferred_language: string | null
+          preferred_price_max: number | null
+          preferred_price_min: number | null
+          preferred_size: string | null
+          recovery_sent_at: string | null
+          silent_since: string | null
+          store_id: string
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          behavior_tags?: string[]
+          city?: string | null
+          conversion_factors?: Json
+          created_at?: string
+          customer_psid: string
+          id?: string
+          last_intent?: string | null
+          last_order_at?: string | null
+          last_seen_product_id?: string | null
+          last_sentiment?: string | null
+          lifetime_orders?: number
+          lifetime_value?: number
+          name?: string | null
+          notes?: string | null
+          phone?: string | null
+          platform?: string
+          preferred_categories?: string[]
+          preferred_color?: string | null
+          preferred_language?: string | null
+          preferred_price_max?: number | null
+          preferred_price_min?: number | null
+          preferred_size?: string | null
+          recovery_sent_at?: string | null
+          silent_since?: string | null
+          store_id: string
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          behavior_tags?: string[]
+          city?: string | null
+          conversion_factors?: Json
+          created_at?: string
+          customer_psid?: string
+          id?: string
+          last_intent?: string | null
+          last_order_at?: string | null
+          last_seen_product_id?: string | null
+          last_sentiment?: string | null
+          lifetime_orders?: number
+          lifetime_value?: number
+          name?: string | null
+          notes?: string | null
+          phone?: string | null
+          platform?: string
+          preferred_categories?: string[]
+          preferred_color?: string | null
+          preferred_language?: string | null
+          preferred_price_max?: number | null
+          preferred_price_min?: number | null
+          preferred_size?: string | null
+          recovery_sent_at?: string | null
+          silent_since?: string | null
+          store_id?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       delivery_options: {
         Row: {
@@ -411,6 +648,7 @@ export type Database = {
           shipping_country: string | null
           shipping_state: string | null
           shipping_zip: string | null
+          source: string
           status: string
           store_id: string
           stripe_payment_id: string | null
@@ -440,6 +678,7 @@ export type Database = {
           shipping_country?: string | null
           shipping_state?: string | null
           shipping_zip?: string | null
+          source?: string
           status?: string
           store_id: string
           stripe_payment_id?: string | null
@@ -469,6 +708,7 @@ export type Database = {
           shipping_country?: string | null
           shipping_state?: string | null
           shipping_zip?: string | null
+          source?: string
           status?: string
           store_id?: string
           stripe_payment_id?: string | null
