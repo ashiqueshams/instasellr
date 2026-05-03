@@ -21,6 +21,8 @@ interface Conversation {
   last_message_at: string;
   last_message_preview: string;
   unread_count: number;
+  sales_stage?: string;
+  cart_draft?: any;
 }
 
 interface Message {
