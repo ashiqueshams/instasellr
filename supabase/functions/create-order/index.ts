@@ -16,7 +16,7 @@ Deno.serve(async (req) => {
       product_id, store_id, customer_name, customer_email,
       customer_phone, shipping_address, shipping_city, shipping_state, shipping_zip, shipping_country,
       recipient_city_id, recipient_zone_id, recipient_area_id, quantity, payment_method,
-      referral_code,
+      referral_code, source,
     } = await req.json();
 
     if (!product_id || !store_id || !customer_name || !customer_email) {
