@@ -103,8 +103,21 @@ export default function DashboardInbox() {
         .eq("conversation_id", activeId)
         .order("created_at");
       setMessages((data ?? []) as any);
-      // mark read
       await supabase.from("chatbot_conversations").update({ unread_count: 0 }).eq("id", activeId);
+
+      const conv = convs.find((c) => c.id === activeId);
+      if (conv && store) {
+        const { data: prof } = await supabase
+          .from("customer_profiles")
+          .select("*")
+          .eq("store_id", store.id)
+          .eq("platform", conv.platform)
+          .eq("customer_psid", conv.customer_psid)
+          .maybeSingle();
+        setProfile(prof);
+      } else {
+        setProfile(null);
+      }
     })();
 
     const channel = supabase
