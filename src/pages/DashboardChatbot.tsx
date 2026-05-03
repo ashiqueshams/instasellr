@@ -97,6 +97,9 @@ const ALL_TRIGGERS = [
 export default function DashboardChatbot() {
   const { store } = useStore();
   const [s, setS] = useState<Settings | null>(null);
+  const [rules, setRules] = useState<DiscountRules | null>(null);
+  const [playbook, setPlaybook] = useState<Playbook | null>(null);
+  const [retraining, setRetraining] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -110,12 +113,14 @@ export default function DashboardChatbot() {
   useEffect(() => {
     if (!store) return;
     (async () => {
-      const { data } = await supabase
-        .from("chatbot_settings")
-        .select("*")
-        .eq("store_id", store.id)
-        .maybeSingle();
-      setS(data ? (data as any) : defaults(store.id));
+      const [{ data: setData }, { data: ruleData }, { data: pbData }] = await Promise.all([
+        supabase.from("chatbot_settings").select("*").eq("store_id", store.id).maybeSingle(),
+        supabase.from("chatbot_discount_rules").select("*").eq("store_id", store.id).maybeSingle(),
+        supabase.from("chatbot_playbook").select("*").eq("store_id", store.id).eq("is_active", true).order("version", { ascending: false }).limit(1).maybeSingle(),
+      ]);
+      setS(setData ? (setData as any) : defaults(store.id));
+      setRules(ruleData ? (ruleData as any) : discountDefaults(store.id));
+      setPlaybook(pbData as any);
       setLoading(false);
     })();
   }, [store]);
