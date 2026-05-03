@@ -50,6 +50,7 @@ export default function DashboardInbox() {
   const [filter, setFilter] = useState<"all" | "needs_human" | "dm" | "story_reply" | "comment">("all");
   const [activeId, setActiveId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
+  const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [reply, setReply] = useState("");
   const [sending, setSending] = useState(false);
