@@ -260,6 +260,32 @@ export default function DashboardInbox() {
                 <Button variant="outline" size="sm" onClick={markResolved}>Mark resolved</Button>
               </div>
 
+              {(profile || (active.cart_draft && Object.keys(active.cart_draft).length > 0)) && (
+                <div className="border-b border-border bg-muted/30 px-4 py-2 text-xs space-y-1.5">
+                  {profile && (
+                    <div className="flex flex-wrap gap-1.5 items-center">
+                      {profile.name && <span className="font-medium">{profile.name}</span>}
+                      {profile.phone && <span className="text-muted-foreground">· {profile.phone}</span>}
+                      {profile.lifetime_orders > 0 && (
+                        <Badge variant="outline" className="h-4 px-1 text-[10px]">
+                          {profile.lifetime_orders} orders · ৳{Number(profile.lifetime_value || 0).toFixed(0)}
+                        </Badge>
+                      )}
+                      {(profile.behavior_tags ?? []).map((t: string) => (
+                        <Badge key={t} variant="secondary" className="h-4 px-1 text-[10px]">{t.replace(/_/g, " ")}</Badge>
+                      ))}
+                      {profile.last_sentiment && <Badge variant="outline" className="h-4 px-1 text-[10px]">{profile.last_sentiment}</Badge>}
+                    </div>
+                  )}
+                  {active.cart_draft && Object.keys(active.cart_draft).length > 0 && (
+                    <div className="text-muted-foreground">
+                      🛒 Cart draft: {[active.cart_draft.product_name, active.cart_draft.quantity && `×${active.cart_draft.quantity}`, active.cart_draft.name, active.cart_draft.phone, active.cart_draft.address].filter(Boolean).join(" · ")}
+                      {active.sales_stage && <span className="ml-2">· stage: <span className="font-medium">{active.sales_stage}</span></span>}
+                    </div>
+                  )}
+                </div>
+              )}
+
               <div ref={scrollRef} className="flex-1 overflow-auto p-4 space-y-3">
                 {messages.map((m) => (
                   <div key={m.id} className={cn("flex", m.direction === "out" ? "justify-end" : "justify-start")}>
