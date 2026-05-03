@@ -14,3 +14,12 @@ verify_jwt = false
 
 [functions.meta-messenger-webhook]
 verify_jwt = false
+
+[functions.chatbot-reply]
+verify_jwt = false
+
+[functions.chatbot-recovery]
+verify_jwt = false
+
+[functions.chatbot-learn]
+verify_jwt = false

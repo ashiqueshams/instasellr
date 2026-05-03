@@ -138,6 +138,9 @@ async function handleMessage(supabase: any, settings: any, msg: any, platformObj
   // Get AI reply
   const ai = await callBrain({
     store_id: settings.store_id,
+    conversation_id: conv.id,
+    customer_psid: senderId,
+    platform,
     text,
     image_urls: imageUrls,
     source,
@@ -196,6 +199,9 @@ async function handleComment(supabase: any, settings: any, value: any, platformO
 
   const ai = await callBrain({
     store_id: settings.store_id,
+    conversation_id: conv.id,
+    customer_psid: fromId,
+    platform,
     text,
     source: "comment",
   });

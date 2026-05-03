@@ -32,6 +32,28 @@ interface Settings {
   auto_thank_story_mentions: boolean;
   comment_filter_questions_only: boolean;
   escalation_threshold: number;
+  brain_enabled: boolean;
+  recovery_enabled: boolean;
+  recovery_delay_hours: number;
+}
+
+interface DiscountRules {
+  id?: string;
+  store_id: string;
+  is_active: boolean;
+  max_discount_percent: number;
+  min_order_value: number;
+  trigger_signals: string[];
+  max_uses_per_customer: number;
+}
+
+interface Playbook {
+  id: string;
+  version: number;
+  summary: string;
+  strategy: any;
+  sample_size: number;
+  generated_at: string;
 }
 
 const defaults = (storeId: string): Settings => ({
@@ -51,11 +73,33 @@ const defaults = (storeId: string): Settings => ({
   auto_thank_story_mentions: false,
   comment_filter_questions_only: true,
   escalation_threshold: 0.6,
+  brain_enabled: true,
+  recovery_enabled: false,
+  recovery_delay_hours: 4,
 });
+
+const discountDefaults = (storeId: string): DiscountRules => ({
+  store_id: storeId,
+  is_active: false,
+  max_discount_percent: 10,
+  min_order_value: 0,
+  trigger_signals: ["price_objection", "about_to_leave"],
+  max_uses_per_customer: 1,
+});
+
+const ALL_TRIGGERS = [
+  { id: "price_objection", label: "Price objection (customer says it's expensive)" },
+  { id: "about_to_leave", label: "About to leave (silent / hesitant)" },
+  { id: "repeat_customer", label: "Repeat customer" },
+  { id: "high_value_cart", label: "High-value cart" },
+];
 
 export default function DashboardChatbot() {
   const { store } = useStore();
   const [s, setS] = useState<Settings | null>(null);
+  const [rules, setRules] = useState<DiscountRules | null>(null);
+  const [playbook, setPlaybook] = useState<Playbook | null>(null);
+  const [retraining, setRetraining] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -69,12 +113,14 @@ export default function DashboardChatbot() {
   useEffect(() => {
     if (!store) return;
     (async () => {
-      const { data } = await supabase
-        .from("chatbot_settings")
-        .select("*")
-        .eq("store_id", store.id)
-        .maybeSingle();
-      setS(data ? (data as any) : defaults(store.id));
+      const [{ data: setData }, { data: ruleData }, { data: pbData }] = await Promise.all([
+        supabase.from("chatbot_settings").select("*").eq("store_id", store.id).maybeSingle(),
+        supabase.from("chatbot_discount_rules").select("*").eq("store_id", store.id).maybeSingle(),
+        supabase.from("chatbot_playbook").select("*").eq("store_id", store.id).eq("is_active", true).order("version", { ascending: false }).limit(1).maybeSingle(),
+      ]);
+      setS(setData ? (setData as any) : defaults(store.id));
+      setRules(ruleData ? (ruleData as any) : discountDefaults(store.id));
+      setPlaybook(pbData as any);
       setLoading(false);
     })();
   }, [store]);
@@ -82,19 +128,30 @@ export default function DashboardChatbot() {
   const save = async () => {
     if (!s || !store) return;
     setSaving(true);
-    const payload = { ...s, store_id: store.id };
     const { data, error } = await supabase
       .from("chatbot_settings")
-      .upsert(payload, { onConflict: "store_id" })
+      .upsert({ ...s, store_id: store.id }, { onConflict: "store_id" })
       .select()
       .single();
-    setSaving(false);
-    if (error) {
-      toast.error(error.message);
-    } else {
-      setS(data as any);
-      toast.success("Settings saved");
+    if (rules) {
+      await supabase
+        .from("chatbot_discount_rules")
+        .upsert({ ...rules, store_id: store.id }, { onConflict: "store_id" });
     }
+    setSaving(false);
+    if (error) toast.error(error.message);
+    else { setS(data as any); toast.success("Settings saved"); }
+  };
+
+  const retrain = async () => {
+    if (!store) return;
+    setRetraining(true);
+    const { error } = await supabase.functions.invoke("chatbot-learn", { body: { store_id: store.id } });
+    setRetraining(false);
+    if (error) { toast.error(error.message); return; }
+    toast.success("Retraining started — refresh in a moment");
+    const { data: pbData } = await supabase.from("chatbot_playbook").select("*").eq("store_id", store.id).eq("is_active", true).order("version", { ascending: false }).limit(1).maybeSingle();
+    setPlaybook(pbData as any);
   };
 
   const webhookUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/meta-messenger-webhook`;
@@ -147,12 +204,117 @@ export default function DashboardChatbot() {
       </div>
 
       <Tabs defaultValue="general">
-        <TabsList>
+        <TabsList className="flex-wrap h-auto">
           <TabsTrigger value="general">General</TabsTrigger>
+          <TabsTrigger value="brain">🧠 Brain</TabsTrigger>
+          <TabsTrigger value="discounts">Discounts</TabsTrigger>
           <TabsTrigger value="meta">Meta Connection</TabsTrigger>
-          <TabsTrigger value="rules">Auto-engage Rules</TabsTrigger>
-          <TabsTrigger value="test"><Sparkles className="h-3.5 w-3.5 mr-1" />Test the bot</TabsTrigger>
+          <TabsTrigger value="rules">Auto-engage</TabsTrigger>
+          <TabsTrigger value="test"><Sparkles className="h-3.5 w-3.5 mr-1" />Test</TabsTrigger>
         </TabsList>
+
+        {/* Brain */}
+        <TabsContent value="brain" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">AI Sales Brain</CardTitle>
+              <CardDescription>Personalizes replies, builds customer profiles, learns what converts.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between">
+                <Label>Brain enabled</Label>
+                <Switch checked={s.brain_enabled} onCheckedChange={(v) => setS({ ...s, brain_enabled: v })} />
+              </div>
+              <div className="flex items-center justify-between border-t pt-4">
+                <div>
+                  <Label>Conversation recovery</Label>
+                  <p className="text-xs text-muted-foreground mt-0.5">Send ONE gentle nudge to silent customers (within Meta's 24h window).</p>
+                </div>
+                <Switch checked={s.recovery_enabled} onCheckedChange={(v) => setS({ ...s, recovery_enabled: v })} />
+              </div>
+              {s.recovery_enabled && (
+                <div className="space-y-2">
+                  <Label>Send recovery after ({s.recovery_delay_hours}h of silence)</Label>
+                  <input type="range" min={1} max={20} value={s.recovery_delay_hours}
+                    onChange={(e) => setS({ ...s, recovery_delay_hours: Number(e.target.value) })} className="w-full" />
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Learned playbook {playbook && <Badge variant="outline" className="ml-2">v{playbook.version}</Badge>}</CardTitle>
+              <CardDescription>Auto-rewritten every Sunday based on what closes orders for YOUR store.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {playbook ? (
+                <>
+                  <p className="text-sm">{playbook.summary}</p>
+                  <p className="text-xs text-muted-foreground">Based on {playbook.sample_size} conversations · generated {new Date(playbook.generated_at).toLocaleDateString()}</p>
+                </>
+              ) : (
+                <p className="text-sm text-muted-foreground">No playbook yet. Once you have ~10 closed conversations, the brain will generate one.</p>
+              )}
+              <Button variant="outline" size="sm" onClick={retrain} disabled={retraining}>
+                {retraining && <Loader2 className="h-3.5 w-3.5 mr-2 animate-spin" />}
+                Retrain now
+              </Button>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Discounts */}
+        <TabsContent value="discounts" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Discount rules</CardTitle>
+              <CardDescription>Owner-set rails. Bot can offer discounts ONLY within these limits.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {rules && (
+                <>
+                  <div className="flex items-center justify-between">
+                    <Label>Allow bot to offer discounts</Label>
+                    <Switch checked={rules.is_active} onCheckedChange={(v) => setRules({ ...rules, is_active: v })} />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-2">
+                      <Label>Max discount %</Label>
+                      <Input type="number" min={0} max={50} value={rules.max_discount_percent}
+                        onChange={(e) => setRules({ ...rules, max_discount_percent: Number(e.target.value) })} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Min order value (৳)</Label>
+                      <Input type="number" min={0} value={rules.min_order_value}
+                        onChange={(e) => setRules({ ...rules, min_order_value: Number(e.target.value) })} />
+                    </div>
+                    <div className="space-y-2 col-span-2">
+                      <Label>Max uses per customer</Label>
+                      <Input type="number" min={1} value={rules.max_uses_per_customer}
+                        onChange={(e) => setRules({ ...rules, max_uses_per_customer: Number(e.target.value) })} />
+                    </div>
+                  </div>
+                  <div className="space-y-2 pt-2">
+                    <Label>Trigger signals</Label>
+                    {ALL_TRIGGERS.map((t) => (
+                      <label key={t.id} className="flex items-start gap-2 text-sm">
+                        <input type="checkbox" className="mt-1"
+                          checked={rules.trigger_signals.includes(t.id)}
+                          onChange={(e) => {
+                            const set = new Set(rules.trigger_signals);
+                            e.target.checked ? set.add(t.id) : set.delete(t.id);
+                            setRules({ ...rules, trigger_signals: Array.from(set) });
+                          }} />
+                        <span>{t.label}</span>
+                      </label>
+                    ))}
+                  </div>
+                </>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
 
         {/* General */}
         <TabsContent value="general" className="space-y-4">

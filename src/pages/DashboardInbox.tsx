@@ -21,6 +21,8 @@ interface Conversation {
   last_message_at: string;
   last_message_preview: string;
   unread_count: number;
+  sales_stage?: string;
+  cart_draft?: any;
 }
 
 interface Message {
@@ -48,6 +50,7 @@ export default function DashboardInbox() {
   const [filter, setFilter] = useState<"all" | "needs_human" | "dm" | "story_reply" | "comment">("all");
   const [activeId, setActiveId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
+  const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [reply, setReply] = useState("");
   const [sending, setSending] = useState(false);
@@ -100,8 +103,21 @@ export default function DashboardInbox() {
         .eq("conversation_id", activeId)
         .order("created_at");
       setMessages((data ?? []) as any);
-      // mark read
       await supabase.from("chatbot_conversations").update({ unread_count: 0 }).eq("id", activeId);
+
+      const conv = convs.find((c) => c.id === activeId);
+      if (conv && store) {
+        const { data: prof } = await supabase
+          .from("customer_profiles")
+          .select("*")
+          .eq("store_id", store.id)
+          .eq("platform", conv.platform)
+          .eq("customer_psid", conv.customer_psid)
+          .maybeSingle();
+        setProfile(prof);
+      } else {
+        setProfile(null);
+      }
     })();
 
     const channel = supabase
@@ -243,6 +259,32 @@ export default function DashboardInbox() {
                 </div>
                 <Button variant="outline" size="sm" onClick={markResolved}>Mark resolved</Button>
               </div>
+
+              {(profile || (active.cart_draft && Object.keys(active.cart_draft).length > 0)) && (
+                <div className="border-b border-border bg-muted/30 px-4 py-2 text-xs space-y-1.5">
+                  {profile && (
+                    <div className="flex flex-wrap gap-1.5 items-center">
+                      {profile.name && <span className="font-medium">{profile.name}</span>}
+                      {profile.phone && <span className="text-muted-foreground">· {profile.phone}</span>}
+                      {profile.lifetime_orders > 0 && (
+                        <Badge variant="outline" className="h-4 px-1 text-[10px]">
+                          {profile.lifetime_orders} orders · ৳{Number(profile.lifetime_value || 0).toFixed(0)}
+                        </Badge>
+                      )}
+                      {(profile.behavior_tags ?? []).map((t: string) => (
+                        <Badge key={t} variant="secondary" className="h-4 px-1 text-[10px]">{t.replace(/_/g, " ")}</Badge>
+                      ))}
+                      {profile.last_sentiment && <Badge variant="outline" className="h-4 px-1 text-[10px]">{profile.last_sentiment}</Badge>}
+                    </div>
+                  )}
+                  {active.cart_draft && Object.keys(active.cart_draft).length > 0 && (
+                    <div className="text-muted-foreground">
+                      🛒 Cart draft: {[active.cart_draft.product_name, active.cart_draft.quantity && `×${active.cart_draft.quantity}`, active.cart_draft.name, active.cart_draft.phone, active.cart_draft.address].filter(Boolean).join(" · ")}
+                      {active.sales_stage && <span className="ml-2">· stage: <span className="font-medium">{active.sales_stage}</span></span>}
+                    </div>
+                  )}
+                </div>
+              )}
 
               <div ref={scrollRef} className="flex-1 overflow-auto p-4 space-y-3">
                 {messages.map((m) => (
