@@ -199,6 +199,9 @@ async function handleComment(supabase: any, settings: any, value: any, platformO
 
   const ai = await callBrain({
     store_id: settings.store_id,
+    conversation_id: conv.id,
+    customer_psid: fromId,
+    platform,
     text,
     source: "comment",
   });
