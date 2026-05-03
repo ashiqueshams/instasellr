@@ -204,12 +204,117 @@ export default function DashboardChatbot() {
       </div>
 
       <Tabs defaultValue="general">
-        <TabsList>
+        <TabsList className="flex-wrap h-auto">
           <TabsTrigger value="general">General</TabsTrigger>
+          <TabsTrigger value="brain">🧠 Brain</TabsTrigger>
+          <TabsTrigger value="discounts">Discounts</TabsTrigger>
           <TabsTrigger value="meta">Meta Connection</TabsTrigger>
-          <TabsTrigger value="rules">Auto-engage Rules</TabsTrigger>
-          <TabsTrigger value="test"><Sparkles className="h-3.5 w-3.5 mr-1" />Test the bot</TabsTrigger>
+          <TabsTrigger value="rules">Auto-engage</TabsTrigger>
+          <TabsTrigger value="test"><Sparkles className="h-3.5 w-3.5 mr-1" />Test</TabsTrigger>
         </TabsList>
+
+        {/* Brain */}
+        <TabsContent value="brain" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">AI Sales Brain</CardTitle>
+              <CardDescription>Personalizes replies, builds customer profiles, learns what converts.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between">
+                <Label>Brain enabled</Label>
+                <Switch checked={s.brain_enabled} onCheckedChange={(v) => setS({ ...s, brain_enabled: v })} />
+              </div>
+              <div className="flex items-center justify-between border-t pt-4">
+                <div>
+                  <Label>Conversation recovery</Label>
+                  <p className="text-xs text-muted-foreground mt-0.5">Send ONE gentle nudge to silent customers (within Meta's 24h window).</p>
+                </div>
+                <Switch checked={s.recovery_enabled} onCheckedChange={(v) => setS({ ...s, recovery_enabled: v })} />
+              </div>
+              {s.recovery_enabled && (
+                <div className="space-y-2">
+                  <Label>Send recovery after ({s.recovery_delay_hours}h of silence)</Label>
+                  <input type="range" min={1} max={20} value={s.recovery_delay_hours}
+                    onChange={(e) => setS({ ...s, recovery_delay_hours: Number(e.target.value) })} className="w-full" />
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Learned playbook {playbook && <Badge variant="outline" className="ml-2">v{playbook.version}</Badge>}</CardTitle>
+              <CardDescription>Auto-rewritten every Sunday based on what closes orders for YOUR store.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {playbook ? (
+                <>
+                  <p className="text-sm">{playbook.summary}</p>
+                  <p className="text-xs text-muted-foreground">Based on {playbook.sample_size} conversations · generated {new Date(playbook.generated_at).toLocaleDateString()}</p>
+                </>
+              ) : (
+                <p className="text-sm text-muted-foreground">No playbook yet. Once you have ~10 closed conversations, the brain will generate one.</p>
+              )}
+              <Button variant="outline" size="sm" onClick={retrain} disabled={retraining}>
+                {retraining && <Loader2 className="h-3.5 w-3.5 mr-2 animate-spin" />}
+                Retrain now
+              </Button>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Discounts */}
+        <TabsContent value="discounts" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Discount rules</CardTitle>
+              <CardDescription>Owner-set rails. Bot can offer discounts ONLY within these limits.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {rules && (
+                <>
+                  <div className="flex items-center justify-between">
+                    <Label>Allow bot to offer discounts</Label>
+                    <Switch checked={rules.is_active} onCheckedChange={(v) => setRules({ ...rules, is_active: v })} />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-2">
+                      <Label>Max discount %</Label>
+                      <Input type="number" min={0} max={50} value={rules.max_discount_percent}
+                        onChange={(e) => setRules({ ...rules, max_discount_percent: Number(e.target.value) })} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Min order value (৳)</Label>
+                      <Input type="number" min={0} value={rules.min_order_value}
+                        onChange={(e) => setRules({ ...rules, min_order_value: Number(e.target.value) })} />
+                    </div>
+                    <div className="space-y-2 col-span-2">
+                      <Label>Max uses per customer</Label>
+                      <Input type="number" min={1} value={rules.max_uses_per_customer}
+                        onChange={(e) => setRules({ ...rules, max_uses_per_customer: Number(e.target.value) })} />
+                    </div>
+                  </div>
+                  <div className="space-y-2 pt-2">
+                    <Label>Trigger signals</Label>
+                    {ALL_TRIGGERS.map((t) => (
+                      <label key={t.id} className="flex items-start gap-2 text-sm">
+                        <input type="checkbox" className="mt-1"
+                          checked={rules.trigger_signals.includes(t.id)}
+                          onChange={(e) => {
+                            const set = new Set(rules.trigger_signals);
+                            e.target.checked ? set.add(t.id) : set.delete(t.id);
+                            setRules({ ...rules, trigger_signals: Array.from(set) });
+                          }} />
+                        <span>{t.label}</span>
+                      </label>
+                    ))}
+                  </div>
+                </>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
 
         {/* General */}
         <TabsContent value="general" className="space-y-4">
