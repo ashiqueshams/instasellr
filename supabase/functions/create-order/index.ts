@@ -116,6 +116,7 @@ Deno.serve(async (req) => {
         referral_campaign_id: referralCampaignId,
         referral_code: referralCodeFinal,
         referral_commission_amount: referralCommission,
+        source: source === "chatbot" ? "chatbot" : "storefront",
       })
       .select("id")
       .single();
