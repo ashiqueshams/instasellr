@@ -32,6 +32,28 @@ interface Settings {
   auto_thank_story_mentions: boolean;
   comment_filter_questions_only: boolean;
   escalation_threshold: number;
+  brain_enabled: boolean;
+  recovery_enabled: boolean;
+  recovery_delay_hours: number;
+}
+
+interface DiscountRules {
+  id?: string;
+  store_id: string;
+  is_active: boolean;
+  max_discount_percent: number;
+  min_order_value: number;
+  trigger_signals: string[];
+  max_uses_per_customer: number;
+}
+
+interface Playbook {
+  id: string;
+  version: number;
+  summary: string;
+  strategy: any;
+  sample_size: number;
+  generated_at: string;
 }
 
 const defaults = (storeId: string): Settings => ({
@@ -51,7 +73,26 @@ const defaults = (storeId: string): Settings => ({
   auto_thank_story_mentions: false,
   comment_filter_questions_only: true,
   escalation_threshold: 0.6,
+  brain_enabled: true,
+  recovery_enabled: false,
+  recovery_delay_hours: 4,
 });
+
+const discountDefaults = (storeId: string): DiscountRules => ({
+  store_id: storeId,
+  is_active: false,
+  max_discount_percent: 10,
+  min_order_value: 0,
+  trigger_signals: ["price_objection", "about_to_leave"],
+  max_uses_per_customer: 1,
+});
+
+const ALL_TRIGGERS = [
+  { id: "price_objection", label: "Price objection (customer says it's expensive)" },
+  { id: "about_to_leave", label: "About to leave (silent / hesitant)" },
+  { id: "repeat_customer", label: "Repeat customer" },
+  { id: "high_value_cart", label: "High-value cart" },
+];
 
 export default function DashboardChatbot() {
   const { store } = useStore();
