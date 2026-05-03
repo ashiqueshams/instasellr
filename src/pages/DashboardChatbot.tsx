@@ -128,19 +128,30 @@ export default function DashboardChatbot() {
   const save = async () => {
     if (!s || !store) return;
     setSaving(true);
-    const payload = { ...s, store_id: store.id };
     const { data, error } = await supabase
       .from("chatbot_settings")
-      .upsert(payload, { onConflict: "store_id" })
+      .upsert({ ...s, store_id: store.id }, { onConflict: "store_id" })
       .select()
       .single();
-    setSaving(false);
-    if (error) {
-      toast.error(error.message);
-    } else {
-      setS(data as any);
-      toast.success("Settings saved");
+    if (rules) {
+      await supabase
+        .from("chatbot_discount_rules")
+        .upsert({ ...rules, store_id: store.id }, { onConflict: "store_id" });
     }
+    setSaving(false);
+    if (error) toast.error(error.message);
+    else { setS(data as any); toast.success("Settings saved"); }
+  };
+
+  const retrain = async () => {
+    if (!store) return;
+    setRetraining(true);
+    const { error } = await supabase.functions.invoke("chatbot-learn", { body: { store_id: store.id } });
+    setRetraining(false);
+    if (error) { toast.error(error.message); return; }
+    toast.success("Retraining started — refresh in a moment");
+    const { data: pbData } = await supabase.from("chatbot_playbook").select("*").eq("store_id", store.id).eq("is_active", true).order("version", { ascending: false }).limit(1).maybeSingle();
+    setPlaybook(pbData as any);
   };
 
   const webhookUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/meta-messenger-webhook`;
