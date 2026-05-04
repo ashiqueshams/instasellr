@@ -607,6 +607,8 @@ function buildSystemPrompt(args: {
   salesStage: string;
   discountRules: any;
   playbookStrategy: any;
+  categories: string[];
+  hasMultipleImages: boolean;
 }) {
   const toneMap: Record<string, string> = {
     formal: "Formal, polite Bangla. Use 'apni'.",
