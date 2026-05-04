@@ -91,6 +91,45 @@ async function handleMessage(supabase: any, settings: any, msg: any, platformObj
   const senderId = msg.sender?.id;
   if (!senderId) return;
 
+  // ---------- Postback ("See more" carousel button) ----------
+  if (msg.postback?.payload) {
+    try {
+      const payload = JSON.parse(msg.postback.payload);
+      if (payload.action === "see_more") {
+        const platform = platformObj === "instagram" ? "instagram" : "facebook";
+        const { data: conv } = await supabase
+          .from("chatbot_conversations")
+          .select("*")
+          .eq("store_id", settings.store_id)
+          .eq("platform", platform)
+          .eq("customer_psid", senderId)
+          .order("last_message_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+          if (conv) {
+            const ai = await callBrain({
+              store_id: settings.store_id,
+              conversation_id: conv.id,
+              customer_psid: senderId,
+              platform,
+              source: "dm",
+              pagination: { query: payload.query, page: payload.page },
+            });
+            if (ai?.cards?.length) {
+              await sendCarousel(settings, senderId, ai.cards, ai.more_available, ai.pagination_query, ai.next_page);
+              await supabase
+                .from("chatbot_conversations")
+                .update({ last_carousel_page: payload.page, last_carousel_query: payload.query })
+                .eq("id", conv.id);
+            } else if (ai?.reply) {
+              await sendDM(settings, senderId, ai.reply);
+            }
+          }
+        return;
+      }
+    } catch { /* ignore malformed payload */ }
+  }
+
   const isStoryReply = !!msg.message?.reply_to?.story;
   const isStoryMention = msg.message?.attachments?.some((a: any) => a.type === "story_mention");
   const source = isStoryMention ? "story_mention" : isStoryReply ? "story_reply" : "dm";
