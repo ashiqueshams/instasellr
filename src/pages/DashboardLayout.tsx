@@ -9,6 +9,7 @@ const navItems = [
   { label: "Orders", icon: ShoppingCart, path: "/dashboard" },
   { label: "Inbox", icon: Inbox, path: "/dashboard/inbox" },
   { label: "Chatbot", icon: Bot, path: "/dashboard/chatbot" },
+  { label: "Customers", icon: Users, path: "/dashboard/customers" },
   { label: "Overview", icon: LayoutDashboard, path: "/dashboard/overview" },
   { label: "Products", icon: Package, path: "/dashboard/products" },
   { label: "Bundles", icon: Layers, path: "/dashboard/bundles" },
