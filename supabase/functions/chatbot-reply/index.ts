@@ -192,6 +192,8 @@ Deno.serve(async (req) => {
       salesStage,
       discountRules,
       playbookStrategy: playbook?.strategy ?? null,
+      categories: allCategories,
+      hasMultipleImages: (body.image_urls?.length ?? 0) > 1,
     });
 
     const recentTurns = history.map((h) => ({
