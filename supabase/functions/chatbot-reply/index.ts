@@ -25,6 +25,24 @@ interface ReplyInput {
   source?: "dm" | "story_reply" | "comment" | "story_mention";
   context?: string;
   test_mode?: boolean;             // dashboard test panel — skip writes / order creation
+  simulate_out_of_stock?: boolean; // test-mode helper: pretend matched products are OOS
+  pagination?: {                   // "See more" postback
+    query: { kind: "category" | "tags" | "all"; value?: string };
+    page: number;
+  };
+}
+
+const CARDS_PAGE_SIZE = 10;
+
+interface ProductCard {
+  id: string;
+  name: string;
+  price: number;
+  compare_at_price: number | null;
+  image_url: string | null;
+  category: string | null;
+  in_stock: boolean;
+  tagline: string | null;
 }
 
 Deno.serve(async (req) => {
