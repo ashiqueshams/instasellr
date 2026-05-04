@@ -1,149 +1,187 @@
-# AI Sales Brain — Build Plan
+
+
+# Bot Vision + Catalog Cards + Customers Tab — Build Plan
 
 ## What you picked
-
-- **Order placement**: Confirm-only (bot collects → summary → "confirm" → pending order in dashboard)
-- **Memory**: Per-customer profile + behavior signals + store-wide learning loop + sentiment/intent tagging
-- **Discounts**: Within owner-set rules (max %, min order, trigger conditions)
-- **Outreach**: Cart/conversation recovery (single nudge inside Meta's 24h window)
-
----
-
-## 1. Database (one migration)
-
-`**customer_profiles**` — one row per (store, customer_psid). Auto-built/updated by the bot.
-
-- name, phone, address, city, preferred_language
-- Meta ID if DM is from Meta(Instagram, facebook)
-- lifetime_orders, lifetime_value, last_order_at
-- behavior_tags `text[]` — `price_sensitive`, `fast_converter`, `image_first`, `browser`, `complainer`, `repeat_buyer`
-- preferred_categories, preferred_price_range, preferred_size, preferred_color
-- conversion_factors `jsonb` — `{ converted_with_discount: 2, converted_with_fast_reply: 4, abandoned: 1 }`
-- last_sentiment, last_intent, last_seen_product_id
-- silent_since (for recovery), recovery_sent_at
-
-`**chatbot_conversations**` — add: `current_intent`, `cart_draft jsonb` (items being collected), `sales_stage` (browsing/considering/objection/collecting_info/confirming/won/lost), `feedback_text`, `feedback_sentiment`
-
-`**chatbot_messages**` — add: `sentiment` (positive/neutral/negative/frustrated/excited), `intent` (price/material/objection/ready_to_buy/feedback/complaint/greeting/other)
-
-`**chatbot_discount_rules**` — owner-controlled rails
-
-- max_discount_percent, min_order_value
-- trigger_signals `text[]` — `price_objection`, `about_to_leave`, `repeat_customer`, `high_value_cart`
-- max_uses_per_customer, is_active
-
-`**chatbot_playbook**` — store-wide learned strategies (rewritten weekly by learning loop)
-
-- store_id, version, strategy `jsonb` (best openers, objection handlers, discount triggers that worked), generated_at, sample_size
-
-`**chatbot_learning_events**` — every won/lost outcome with the conversation snapshot, used as training data for the weekly playbook rewrite.
-
-All tables: RLS scoped to store owner.
+- **Carousels**: 10 cards + "See more" postback button (paginates next 10)
+- **Out-of-stock fallback**: same category + ±30% price band → suggest 3 alternatives
+- **Customers tab**: searchable list + profile drawer (history + orders)
+- **Test panel**: must support all of the above (multi-image upload, see returned cards, click "See more", trigger fallback)
 
 ---
 
-## 2. Edge functions
+## 1. Vision: multi-image product recognition
 
-### `chatbot-reply` (rewritten — the brain)
+**Today**: bot accepts `image_urls[]` but the prompt only nudges "identify the product". No explicit multi-product handling.
 
-On every incoming message:
+**New behavior**:
+- Accept up to 5 images per message (Messenger sends each attachment; webhook batches them into one call already)
+- Tell the model: "Each image may be a DIFFERENT product. Identify each separately. Match each to catalog by visual similarity (color, pattern, silhouette, category). Low confidence → say so, don't guess."
+- New tool field: `matched_product_ids: string[]` (array, replaces single `matched_product_id`)
+- Per-image confidence in `image_matches: [{image_index, product_id, confidence}]` so dashboard can show what matched what
 
-1. Load: settings, products, FAQs, delivery, **customer_profile, conversation history (last 20 msgs), active playbook, discount rules**
-2. One AI call (Gemini 2.5 Flash) using **structured tool calling** with one mega-tool returning:
-  - `sentiment`, `intent`, `detected_language`
-  - `reply` (in customer's language, tone-adapted to profile)
-  - `sales_stage_update`
-  - `cart_draft_update` — items/qty bot extracted
-  - `customer_profile_update` — name, phone, address, behavior signals it noticed
-  - `feedback_extracted` — passive feedback detection (no asking)
-  - `should_offer_discount` + `discount_percent` (clamped to rules)
-  - `should_request_confirmation` (when cart_draft has all 4 fields → bot sends summary)
-  - `should_create_order` (only when customer says confirm/হ্যাঁ/ok/done after summary)
-  - `confidence`, `should_escalate`
-3. Apply updates: write profile, conversation, message tags
-4. If `should_create_order` → call internal `create-order` with collected cart + customer info, mark conversation `won`, log learning_event
-5. If escalated or low confidence → mark `needs_human`
-
-System prompt is built from: tone settings + active playbook strategy + this customer's profile + discount rules + product catalog + FAQ + delivery. So every reply is personalized.
-
-### `chatbot-recovery` (new, scheduled)
-
-- Runs every 30 min via pg_cron
-- Finds conversations where `sales_stage IN (collecting_info, considering)`, last customer message 2–18h ago, no recovery_sent_at, still inside Meta 24h window
-- Generates ONE personalized nudge via AI ("Apu, ekhono ki kichu jiggesh korar ache? 💕") tuned to their profile (offer discount if they're `price_sensitive` and rules allow)
-- Sends DM, logs as `out` message, sets `recovery_sent_at`
-
-### `chatbot-learn` (new, scheduled weekly)
-
-- Runs Sunday 2am via pg_cron
-- For each store: pulls last 7 days of `chatbot_learning_events` (won + lost)
-- Sends to Gemini 2.5 Pro with prompt: "Analyze these conversations. What openers, objection responses, and discount timings led to wins vs losses? Output a strategy JSON."
-- Saves new row in `chatbot_playbook` (version++). Brain auto-uses latest version next reply.
-- Skipped if <10 events (not enough signal yet).
-
-### `meta-messenger-webhook` (small patch)
-
-- After saving incoming message, also update `customer_profiles.silent_since = null` and `last_message_at`
-- On outbound from owner (manual reply in inbox) → log as learning signal
+**Model**: keep `google/gemini-2.5-flash` — it handles multi-image well and is cheap. Catalog already includes `image_url` per product so the model can compare.
 
 ---
 
-## 3. Dashboard UI
+## 2. Product cards in chat
 
-### `DashboardChatbot.tsx` — add 3 tabs (existing FAQ/Settings stay)
+**Messenger generic template** (carousel of cards with image, title, subtitle, buttons):
 
-- **Brain** — toggle AI brain on/off, view current playbook version + summary ("This week your bot learned: customers convert 34% better when you mention free Inside-Dhaka delivery early"), force-rerun learning button
-- **Discount rules** — form for max %, min order, trigger checkboxes, max uses per customer
-- **Recovery** — toggle on/off, preview the nudge template, view recovery stats (sent / converted)
+```json
+{
+  "attachment": {
+    "type": "template",
+    "payload": {
+      "template_type": "generic",
+      "elements": [
+        { "title": "Cotton Kurti", "subtitle": "৳1,200", "image_url": "...",
+          "buttons": [
+            { "type": "postback", "title": "Order this", "payload": "ORDER:<product_id>" },
+            { "type": "web_url", "title": "View", "url": "https://store/p/..." }
+          ]
+        }
+      ]
+    }
+  }
+}
+```
 
-### `DashboardInbox.tsx` — enhance per conversation
+**When bot sends cards** (new tool field `send_product_cards: string[]` of product IDs):
+- Customer asks "shirt গুলো দেখান" / "show all kurtis" / category / "kichu suggest korun"
+- Bot recognizes products from images
+- Out-of-stock fallback (sends 3 similar)
+- "See more" postback
 
-- Customer profile sidebar: name, phone, lifetime value, behavior tags (chips), last sentiment, preferred categories
-- Each message shows sentiment emoji + intent chip
-- Cart draft panel when bot is collecting — owner sees what bot has so far, can intervene
-- "Won by AI" / "Lost" badges on closed conversations
+**Server logic** (`chatbot-reply` returns):
+```ts
+{
+  reply: "Apu egulo achhe 💕",
+  product_cards: [{ id, name, price, image_url, in_stock }],
+  pagination: { category: "kurti", offset: 10, total: 47, has_more: true } | null
+}
+```
 
-### `DashboardOrders.tsx` — small badge
+**Webhook** (`meta-messenger-webhook`) takes `product_cards` and sends:
+1. Text reply (`reply`)
+2. Generic template carousel with up to 10 elements
+3. If `pagination.has_more` → quick-reply button "আরও দেখুন (See more)" with payload `MORE:<category>:<offset>`
 
-- Orders created by bot show a 🤖 "AI-closed" pill so you can see the bot's revenue contribution
+**Postback handling** (new in webhook):
+- `MORE:kurti:10` → re-call `chatbot-reply` with synthetic context "show next 10 in category kurti, offset 10"
+- `ORDER:<product_id>` → seeds `cart_draft.product_id` and bot asks for name/phone/address naturally
 
 ---
 
-## 4. Order creation safety
+## 3. Out-of-stock fallback
 
-- Bot only calls `create-order` after explicit confirm in last user message
-- Order goes in as `pending` with `source: 'chatbot'` (new column on orders) — your existing approval flow still gates dispatch
-- Pricing always re-validated server-side in `create-order` (already the case) — bot can't fake prices
-- Discount, if applied, validated against `chatbot_discount_rules` server-side before order insert
+In `chatbot-reply`, BEFORE calling the model, build a `candidates` array per intent:
+- If model identifies a product that has `stock_quantity <= 0` OR no match found for an explicit ask → server-side query:
+  ```sql
+  SELECT * FROM products
+  WHERE store_id = ? AND is_active AND stock_quantity > 0
+    AND category = ?
+    AND price BETWEEN target * 0.7 AND target * 1.3
+  ORDER BY ABS(price - target) LIMIT 3
+  ```
+- Pass `fallback_suggestions: [...]` into the system prompt
+- Model says: "Apu, ei product ta ekhon out of stock 😔 But same category te egulo achhe — apnar pochhondo hote pare:" and sets `send_product_cards` to the 3 IDs
 
----
-
-## 5. Learning loop — concretely
-
-Every closed conversation logs:
-
-- snapshot (last 10 msgs), outcome (won/lost), order value if won, behavior tags at time of close, was discount offered, time-to-first-reply
-
-Weekly job aggregates → AI rewrites playbook → next week's replies use new strategy. Bot literally gets smarter every Sunday for each store independently.
-
----
-
-## 6. What I will NOT touch
-
-- Existing storefront, checkout UI, Pathao, pixel tracking, reviews, referrals
-- Meta webhook verification & token handling (already working)
-- The existing FAQ/settings UI (additive only)
+Done deterministically in code, not left to the model to invent.
 
 ---
 
-## 7. Build order
+## 4. Category / collection requests
 
-1. Migration (all new tables + column adds)
-2. Rewrite `chatbot-reply` brain
-3. Update `meta-messenger-webhook` (profile updates + learning event logging)
-4. Build `chatbot-recovery` + `chatbot-learn` + cron schedules
-5. Wire `DashboardInbox` profile sidebar + cart draft panel
-6. Add Brain / Discount rules / Recovery tabs to `DashboardChatbot`
-7. Add 🤖 badge on orders + `source` column
+New intent in tool enum: `browse_category`.
+- Model extracts `requested_category: string` (e.g. "kurti", "saree", "winter")
+- Server queries: `SELECT * FROM products WHERE store_id=? AND is_active AND (category ILIKE %X% OR name ILIKE %X%) ORDER BY stock_quantity DESC, created_at DESC`
+- Returns first 10 as cards + sets `pagination` if total > 10
+- "See more" postback paginates server-side using offset
 
-Approve and I'll ship it end-to-end in one pass.
+This stays out of the LLM — pure SQL, fast and reliable.
+
+---
+
+## 5. Customers tab in dashboard
+
+New page `src/pages/DashboardCustomers.tsx`, route `/dashboard/customers`:
+
+**List view** (table):
+| Customer | Phone | Lifetime orders | Lifetime value | Last seen | Behavior tags | Last sentiment |
+
+- Search box: name / phone / psid
+- Filter chips: behavior tag (price_sensitive, fast_converter, browser, repeat_buyer…), platform (instagram/messenger), has_order (yes/no)
+- Sort: most recent / highest value / most orders
+- Click row → drawer
+
+**Profile drawer** (right-side `Sheet`):
+- Header: avatar (initial), name, phone, platform badge
+- Stats cards: lifetime orders / value / first-seen / last-seen
+- Behavior tag chips
+- Preferences (size, color, categories, language)
+- AI notes / cart_draft preview if active
+- **Conversation history** tab: full message thread with sentiment chips per message
+- **Orders** tab: list of orders linked by phone or psid (`source = chatbot` gets 🤖 badge)
+- Action: "Open conversation in Inbox" → links to `/dashboard/inbox?conv=<id>`
+
+Sidebar nav: add "Customers" link with `Users` icon between Inbox and Chatbot.
+
+---
+
+## 6. Test panel upgrades (`DashboardChatbot` Test tab)
+
+Today's test panel sends one text message. Upgrade to:
+- Multi-image upload (drag/drop up to 5 images, preview thumbnails)
+- Show returned `product_cards` as a mini carousel below the bot reply (same visual as Messenger)
+- "See more" button visible & functional (calls `chatbot-reply` again with offset)
+- Display detected: language / sentiment / intent / matched product IDs / fallback used / pagination state
+- Toggle: "simulate out of stock for this product" so owner can verify fallback without changing inventory
+- Conversation persists in test session (so multi-turn confirm flow can be tested), but `test_mode=true` still skips DB writes & order creation
+
+---
+
+## 7. Schema changes (small)
+
+```sql
+-- Track pagination context per conversation so "See more" works after async messages
+ALTER TABLE chatbot_conversations
+  ADD COLUMN last_browse_context jsonb DEFAULT '{}'::jsonb;
+-- shape: { category: 'kurti', offset: 10, total: 47, last_at: timestamp }
+
+-- Optional: image-match audit (helps tune accuracy)
+ALTER TABLE chatbot_messages
+  ADD COLUMN image_matches jsonb DEFAULT '[]'::jsonb;
+-- shape: [{ image_index: 0, product_id: 'uuid', confidence: 0.82 }]
+```
+
+No new tables needed.
+
+---
+
+## 8. Build order
+
+1. **Migration** — add the 2 columns
+2. **`chatbot-reply` upgrades**:
+   - Multi-image prompt rewrite + `matched_product_ids` + `image_matches`
+   - Server-side category browse query + pagination
+   - Server-side out-of-stock fallback query
+   - New tool fields: `send_product_cards`, `requested_category`, `pagination_request`
+   - Return `product_cards` + `pagination` in response
+3. **`meta-messenger-webhook` upgrades**:
+   - Render generic-template carousel (up to 10)
+   - Send "See more" quick-reply when `has_more`
+   - Handle `MORE:` and `ORDER:` postbacks
+4. **`DashboardCustomers.tsx`** — list + filters + drawer with history & orders
+5. **`DashboardLayout`** sidebar — add Customers link
+6. **`DashboardChatbot` Test tab** — multi-image upload, card preview, "See more" button, simulate-OOS toggle
+
+---
+
+## What I will NOT touch
+- Existing storefront, checkout, courier, onboarding wizard
+- Order creation logic (just the seed-from-postback)
+- Discount rules, recovery, learning loop (already shipped)
+
+Approve and I'll ship the migration + all 6 changes in one pass.
+
