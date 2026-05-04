@@ -106,10 +106,13 @@ export type Database = {
           feedback_sentiment: string | null
           feedback_text: string | null
           id: string
+          last_carousel_page: number
+          last_carousel_query: Json
           last_message_at: string
           last_message_preview: string | null
           platform: string
           sales_stage: string
+          sent_product_ids: string[]
           source: string
           status: string
           store_id: string
@@ -126,10 +129,13 @@ export type Database = {
           feedback_sentiment?: string | null
           feedback_text?: string | null
           id?: string
+          last_carousel_page?: number
+          last_carousel_query?: Json
           last_message_at?: string
           last_message_preview?: string | null
           platform?: string
           sales_stage?: string
+          sent_product_ids?: string[]
           source?: string
           status?: string
           store_id: string
@@ -146,10 +152,13 @@ export type Database = {
           feedback_sentiment?: string | null
           feedback_text?: string | null
           id?: string
+          last_carousel_page?: number
+          last_carousel_query?: Json
           last_message_at?: string
           last_message_preview?: string | null
           platform?: string
           sales_stage?: string
+          sent_product_ids?: string[]
           source?: string
           status?: string
           store_id?: string
@@ -785,11 +794,13 @@ export type Database = {
           is_active: boolean | null
           material: string | null
           name: string
+          popularity_score: number
           price: number
           product_type: string
           stock_quantity: number | null
           store_id: string
           tagline: string | null
+          tags: string[]
           weight: number | null
         }
         Insert: {
@@ -806,11 +817,13 @@ export type Database = {
           is_active?: boolean | null
           material?: string | null
           name: string
+          popularity_score?: number
           price?: number
           product_type?: string
           stock_quantity?: number | null
           store_id: string
           tagline?: string | null
+          tags?: string[]
           weight?: number | null
         }
         Update: {
@@ -827,11 +840,13 @@ export type Database = {
           is_active?: boolean | null
           material?: string | null
           name?: string
+          popularity_score?: number
           price?: number
           product_type?: string
           stock_quantity?: number | null
           store_id?: string
           tagline?: string | null
+          tags?: string[]
           weight?: number | null
         }
         Relationships: [
