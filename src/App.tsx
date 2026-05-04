@@ -19,6 +19,7 @@ import DashboardReviews from "./pages/DashboardReviews";
 import DashboardChatbot from "./pages/DashboardChatbot";
 import DashboardChatbotFAQs from "./pages/DashboardChatbotFAQs";
 import DashboardInbox from "./pages/DashboardInbox";
+import DashboardCustomers from "./pages/DashboardCustomers";
 import Onboarding from "./pages/Onboarding";
 import Auth from "./pages/Auth";
 import AuthGuard from "./components/AuthGuard";
