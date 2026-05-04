@@ -394,6 +394,42 @@ Deno.serve(async (req) => {
       }
     }
 
+    // ---------- Build product cards ----------
+    const cardIntent = args.card_intent ?? null;
+    const matchedIds: string[] = Array.isArray(args.matched_product_ids)
+      ? args.matched_product_ids.filter((x: any) => typeof x === "string")
+      : args.matched_product_id
+        ? [args.matched_product_id]
+        : [];
+
+    let cardsResult: { cards: ProductCard[]; more: boolean; nextPage?: number; query?: any; isFallback?: boolean } = {
+      cards: [],
+      more: false,
+    };
+
+    if (cardIntent && cardIntent.kind && cardIntent.kind !== "none") {
+      cardsResult = buildCardsFromIntent({
+        intent: cardIntent,
+        matchedIds,
+        products: products ?? [],
+        simulateOOS: !!body.simulate_out_of_stock,
+      });
+    }
+
+    // Persist pagination state on conversation (for non-test sessions)
+    if (!body.test_mode && body.conversation_id && cardsResult.query) {
+      await supabase
+        .from("chatbot_conversations")
+        .update({
+          last_carousel_query: cardsResult.query,
+          last_carousel_page: 1,
+          sent_product_ids: Array.from(
+            new Set([...(conversation?.sent_product_ids ?? []), ...cardsResult.cards.map((c) => c.id)]),
+          ),
+        })
+        .eq("id", body.conversation_id);
+    }
+
     return json({
       reply: args.reply,
       public_comment_reply: args.public_comment_reply ?? "",
@@ -408,6 +444,12 @@ Deno.serve(async (req) => {
       should_request_confirmation: !!args.should_request_confirmation,
       order_created_id: createdOrderId,
       matched_product_id: args.matched_product_id || null,
+      matched_product_ids: matchedIds,
+      cards: cardsResult.cards,
+      cards_are_fallback: !!cardsResult.isFallback,
+      more_available: cardsResult.more,
+      pagination_query: cardsResult.query ?? null,
+      next_page: cardsResult.nextPage ?? null,
       confidence: Number(args.confidence ?? 0),
       should_escalate: escalate,
       auto_send: !escalate,
