@@ -163,16 +163,19 @@ export default function DashboardChatbot() {
     setTimeout(() => setCopied(false), 1500);
   };
 
-  const runTest = async () => {
+  const runTest = async (pagination?: { query: any; page: number }) => {
     if (!store) return;
     setTestRunning(true);
-    setTestResult(null);
+    if (!pagination) { setTestResult(null); setAllCards([]); }
     const { data, error } = await supabase.functions.invoke("chatbot-reply", {
       body: {
         store_id: store.id,
-        text: testInput,
-        image_urls: testImageUrl ? [testImageUrl] : [],
+        text: pagination ? "" : testInput,
+        image_urls: pagination ? [] : testImageUrls,
         source: "dm",
+        test_mode: true,
+        simulate_out_of_stock: simulateOOS,
+        pagination,
       },
     });
     setTestRunning(false);
@@ -181,6 +184,24 @@ export default function DashboardChatbot() {
       return;
     }
     setTestResult(data);
+    if (pagination) {
+      setAllCards((prev) => [...prev, ...((data as any)?.cards ?? [])]);
+    } else {
+      setAllCards(((data as any)?.cards ?? []));
+    }
+  };
+
+  const handleTestFiles = async (files: FileList | null) => {
+    if (!files?.length || !store) return;
+    const uploaded: string[] = [];
+    for (const f of Array.from(files).slice(0, 5)) {
+      const path = `chatbot-test/${store.id}/${Date.now()}-${f.name}`;
+      const { error } = await supabase.storage.from("images").upload(path, f, { upsert: true });
+      if (error) { toast.error(error.message); continue; }
+      const { data } = supabase.storage.from("images").getPublicUrl(path);
+      uploaded.push(data.publicUrl);
+    }
+    setTestImageUrls((prev) => [...prev, ...uploaded]);
   };
 
   if (loading || !s) {
