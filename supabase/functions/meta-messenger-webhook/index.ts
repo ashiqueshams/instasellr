@@ -367,3 +367,64 @@ async function sendPrivateReply(settings: any, commentId: string, text: string) 
     }),
   });
 }
+
+async function sendCarousel(
+  settings: any,
+  recipientId: string,
+  cards: any[],
+  moreAvailable: boolean,
+  paginationQuery: any,
+  nextPage: number | null,
+) {
+  if (!cards?.length) return;
+  const elements = cards.slice(0, 10).map((c: any) => ({
+    title: `${c.name} — ৳${c.price}${c.in_stock ? "" : " (out of stock)"}`,
+    subtitle: c.tagline || c.category || "",
+    image_url: c.image_url || undefined,
+    buttons: [
+      {
+        type: "postback",
+        title: c.in_stock ? "Order this" : "Notify me",
+        payload: JSON.stringify({ action: "select_product", product_id: c.id }),
+      },
+    ],
+  }));
+
+  const url = `${GRAPH_BASE}/me/messages?access_token=${settings.meta_page_access_token}`;
+  await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      recipient: { id: recipientId },
+      messaging_type: "RESPONSE",
+      message: {
+        attachment: {
+          type: "template",
+          payload: { template_type: "generic", elements },
+        },
+      },
+    }),
+  });
+
+  if (moreAvailable && nextPage != null && paginationQuery) {
+    // Send a quick-reply with "See more" button
+    await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        recipient: { id: recipientId },
+        messaging_type: "RESPONSE",
+        message: {
+          text: "Aro dekhben? 👇",
+          quick_replies: [
+            {
+              content_type: "text",
+              title: "See more",
+              payload: JSON.stringify({ action: "see_more", query: paginationQuery, page: nextPage }),
+            },
+          ],
+        },
+      }),
+    });
+  }
+}
