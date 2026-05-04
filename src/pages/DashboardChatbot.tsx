@@ -605,7 +605,6 @@ export default function DashboardChatbot() {
                 </div>
               )}
             </CardContent>
-            </CardContent>
           </Card>
         </TabsContent>
       </Tabs>
