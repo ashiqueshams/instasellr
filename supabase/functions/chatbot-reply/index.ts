@@ -695,3 +695,144 @@ CORE RULES:
 - NEVER make up prices/materials/delivery info that isn't in the knowledge above.
 - Respond ONLY via the respond function. Always.`;
 }
+
+// =================== Card builders ===================
+
+function toCard(p: any, simulateOOS: boolean): ProductCard {
+  const inStock = simulateOOS
+    ? false
+    : p.stock_quantity == null
+      ? true
+      : p.stock_quantity > 0;
+  return {
+    id: p.id,
+    name: p.name,
+    price: Number(p.price ?? 0),
+    compare_at_price: p.compare_at_price ? Number(p.compare_at_price) : null,
+    image_url: p.image_url ?? null,
+    category: p.category ?? null,
+    in_stock: inStock,
+    tagline: p.tagline ?? null,
+  };
+}
+
+function rankProducts(products: any[]): any[] {
+  return [...products].sort((a, b) => {
+    const aStock = (a.stock_quantity == null || a.stock_quantity > 0) ? 1 : 0;
+    const bStock = (b.stock_quantity == null || b.stock_quantity > 0) ? 1 : 0;
+    if (aStock !== bStock) return bStock - aStock;
+    return Number(b.popularity_score ?? 0) - Number(a.popularity_score ?? 0);
+  });
+}
+
+function buildCardsFromIntent(opts: {
+  intent: { kind: string; category?: string; tags?: string[]; anchor_product_id?: string };
+  matchedIds: string[];
+  products: any[];
+  simulateOOS: boolean;
+}): { cards: ProductCard[]; more: boolean; nextPage?: number; query?: any; isFallback?: boolean } {
+  const { intent, matchedIds, products, simulateOOS } = opts;
+  const byId = new Map(products.map((p) => [p.id, p]));
+
+  if (intent.kind === "matched") {
+    const matched = matchedIds.map((id) => byId.get(id)).filter(Boolean);
+    if (!matched.length) return { cards: [], more: false };
+
+    // If any matched is OOS (or simulate), append alternatives
+    const cards: ProductCard[] = [];
+    let isFallback = false;
+    for (const p of matched) {
+      const card = toCard(p, simulateOOS);
+      cards.push(card);
+      if (!card.in_stock) {
+        isFallback = true;
+        const alts = findAlternatives(p, products, simulateOOS, 3);
+        for (const a of alts) {
+          if (!cards.find((c) => c.id === a.id)) cards.push(toCard(a, simulateOOS));
+        }
+      }
+    }
+    return { cards: cards.slice(0, CARDS_PAGE_SIZE), more: false, isFallback };
+  }
+
+  if (intent.kind === "alternatives") {
+    const anchor = intent.anchor_product_id ? byId.get(intent.anchor_product_id) : null;
+    const alts = anchor
+      ? findAlternatives(anchor, products, simulateOOS, CARDS_PAGE_SIZE)
+      : rankProducts(products).slice(0, CARDS_PAGE_SIZE);
+    return { cards: alts.map((p) => toCard(p, simulateOOS)), more: false, isFallback: true };
+  }
+
+  // Browse-style: category / tags / all → paginate
+  const filtered = filterProducts(products, intent);
+  const ranked = rankProducts(filtered);
+  return paginate(ranked, 0, simulateOOS, intent);
+}
+
+function buildCards(opts: {
+  kind: "browse";
+  products: any[];
+  query: { kind: "category" | "tags" | "all"; value?: string };
+  page: number;
+  simulateOOS: boolean;
+}): { cards: ProductCard[]; more: boolean; nextPage?: number; query?: any } {
+  const intent = {
+    kind: opts.query.kind,
+    category: opts.query.kind === "category" ? opts.query.value : undefined,
+    tags: opts.query.kind === "tags" && opts.query.value ? [opts.query.value] : undefined,
+  };
+  const filtered = filterProducts(opts.products, intent);
+  const ranked = rankProducts(filtered);
+  return paginate(ranked, opts.page, opts.simulateOOS, opts.query);
+}
+
+function filterProducts(products: any[], intent: { kind: string; category?: string; tags?: string[] }): any[] {
+  if (intent.kind === "all") return products;
+  if (intent.kind === "category" && intent.category) {
+    const c = intent.category.toLowerCase();
+    return products.filter((p) => (p.category ?? "").toLowerCase() === c);
+  }
+  if (intent.kind === "tags" && intent.tags?.length) {
+    const wants = intent.tags.map((t) => t.toLowerCase());
+    return products.filter((p) => {
+      const hay = [...(p.tags ?? []), p.name, p.category, p.description ?? ""]
+        .join(" ")
+        .toLowerCase();
+      return wants.some((t) => hay.includes(t));
+    });
+  }
+  return [];
+}
+
+function paginate(
+  ranked: any[],
+  page: number,
+  simulateOOS: boolean,
+  query: any,
+): { cards: ProductCard[]; more: boolean; nextPage?: number; query?: any } {
+  const start = page * CARDS_PAGE_SIZE;
+  const slice = ranked.slice(start, start + CARDS_PAGE_SIZE);
+  const more = ranked.length > start + CARDS_PAGE_SIZE;
+  return {
+    cards: slice.map((p) => toCard(p, simulateOOS)),
+    more,
+    nextPage: more ? page + 1 : undefined,
+    query,
+  };
+}
+
+function findAlternatives(anchor: any, products: any[], simulateOOS: boolean, limit: number): any[] {
+  const price = Number(anchor.price ?? 0);
+  const minP = price * 0.7;
+  const maxP = price * 1.3;
+  return rankProducts(
+    products.filter((p) => {
+      if (p.id === anchor.id) return false;
+      if (anchor.category && p.category && p.category.toLowerCase() !== anchor.category.toLowerCase()) return false;
+      const inStock = p.stock_quantity == null ? true : p.stock_quantity > 0;
+      if (!inStock || simulateOOS) return false;
+      const pp = Number(p.price ?? 0);
+      return pp >= minP && pp <= maxP;
+    }),
+  ).slice(0, limit);
+}
