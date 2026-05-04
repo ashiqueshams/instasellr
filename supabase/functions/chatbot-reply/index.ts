@@ -503,7 +503,33 @@ const BRAIN_TOOL = {
         },
         reply: { type: "string", description: "Reply in customer's language. Short, like a real Messenger reply (1-3 sentences)." },
         public_comment_reply: { type: "string", description: "1-line public comment reply (only when source=comment), else empty." },
-        matched_product_id: { type: "string", description: "UUID of product the customer is asking about, or empty." },
+        matched_product_id: { type: "string", description: "UUID of the SINGLE product the customer is most likely asking about (or first if multiple). Empty if none." },
+        matched_product_ids: {
+          type: "array",
+          items: { type: "string" },
+          description: "UUIDs of ALL products you recognized in this message (especially when customer sends multiple screenshots). Empty if none.",
+        },
+        card_intent: {
+          type: "object",
+          description: "Tells the system to send product carousel cards. Use whenever the customer references specific products, asks about a category/collection, or needs alternatives.",
+          properties: {
+            kind: {
+              type: "string",
+              enum: [
+                "none",            // no cards needed (small talk, FAQ, info-only)
+                "matched",         // send cards for matched_product_ids (image/name match)
+                "category",        // browse a category — send all in that category, paginated
+                "tags",            // browse by tag/keyword (e.g. "red kurti")
+                "alternatives",    // matched products are OOS or unsure — suggest similar
+                "all",             // customer asked to see "everything" / "collection"
+              ],
+            },
+            category: { type: "string", description: "Category name to browse (when kind=category)." },
+            tags: { type: "array", items: { type: "string" }, description: "Tag/keyword filters (when kind=tags)." },
+            anchor_product_id: { type: "string", description: "Reference product for 'alternatives' (use OOS or unsure match)." },
+          },
+          additionalProperties: false,
+        },
         cart_draft_update: {
           type: "object",
           description: "Fields the bot extracted/updated for the in-progress order. Omit fields that didn't change.",
