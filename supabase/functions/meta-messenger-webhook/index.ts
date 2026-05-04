@@ -91,6 +91,45 @@ async function handleMessage(supabase: any, settings: any, msg: any, platformObj
   const senderId = msg.sender?.id;
   if (!senderId) return;
 
+  // ---------- Postback ("See more" carousel button) ----------
+  if (msg.postback?.payload) {
+    try {
+      const payload = JSON.parse(msg.postback.payload);
+      if (payload.action === "see_more") {
+        const platform = platformObj === "instagram" ? "instagram" : "facebook";
+        const { data: conv } = await supabase
+          .from("chatbot_conversations")
+          .select("*")
+          .eq("store_id", settings.store_id)
+          .eq("platform", platform)
+          .eq("customer_psid", senderId)
+          .order("last_message_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+          if (conv) {
+            const ai = await callBrain({
+              store_id: settings.store_id,
+              conversation_id: conv.id,
+              customer_psid: senderId,
+              platform,
+              source: "dm",
+              pagination: { query: payload.query, page: payload.page },
+            });
+            if (ai?.cards?.length) {
+              await sendCarousel(settings, senderId, ai.cards, ai.more_available, ai.pagination_query, ai.next_page);
+              await supabase
+                .from("chatbot_conversations")
+                .update({ last_carousel_page: payload.page, last_carousel_query: payload.query })
+                .eq("id", conv.id);
+            } else if (ai?.reply) {
+              await sendDM(settings, senderId, ai.reply);
+            }
+          }
+        return;
+      }
+    } catch { /* ignore malformed payload */ }
+  }
+
   const isStoryReply = !!msg.message?.reply_to?.story;
   const isStoryMention = msg.message?.attachments?.some((a: any) => a.type === "story_mention");
   const source = isStoryMention ? "story_mention" : isStoryReply ? "story_reply" : "dm";
@@ -155,12 +194,16 @@ async function handleMessage(supabase: any, settings: any, msg: any, platformObj
     return;
   }
 
-  await sendDM(settings, senderId, ai.reply);
+  if (ai.reply) await sendDM(settings, senderId, ai.reply);
+  if (ai.cards?.length) {
+    await sendCarousel(settings, senderId, ai.cards, ai.more_available, ai.pagination_query, ai.next_page);
+  }
   await supabase.from("chatbot_messages").insert({
     conversation_id: conv.id,
     direction: "out",
     sender: "ai",
     text: ai.reply,
+    attachments: ai.cards?.length ? ai.cards.map((c: any) => ({ type: "card", ...c })) : [],
     detected_language: ai.detected_language,
     matched_product_id: ai.matched_product_id,
     confidence_score: ai.confidence,
@@ -323,4 +366,65 @@ async function sendPrivateReply(settings: any, commentId: string, text: string) 
       message: { text },
     }),
   });
+}
+
+async function sendCarousel(
+  settings: any,
+  recipientId: string,
+  cards: any[],
+  moreAvailable: boolean,
+  paginationQuery: any,
+  nextPage: number | null,
+) {
+  if (!cards?.length) return;
+  const elements = cards.slice(0, 10).map((c: any) => ({
+    title: `${c.name} — ৳${c.price}${c.in_stock ? "" : " (out of stock)"}`,
+    subtitle: c.tagline || c.category || "",
+    image_url: c.image_url || undefined,
+    buttons: [
+      {
+        type: "postback",
+        title: c.in_stock ? "Order this" : "Notify me",
+        payload: JSON.stringify({ action: "select_product", product_id: c.id }),
+      },
+    ],
+  }));
+
+  const url = `${GRAPH_BASE}/me/messages?access_token=${settings.meta_page_access_token}`;
+  await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      recipient: { id: recipientId },
+      messaging_type: "RESPONSE",
+      message: {
+        attachment: {
+          type: "template",
+          payload: { template_type: "generic", elements },
+        },
+      },
+    }),
+  });
+
+  if (moreAvailable && nextPage != null && paginationQuery) {
+    // Send a quick-reply with "See more" button
+    await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        recipient: { id: recipientId },
+        messaging_type: "RESPONSE",
+        message: {
+          text: "Aro dekhben? 👇",
+          quick_replies: [
+            {
+              content_type: "text",
+              title: "See more",
+              payload: JSON.stringify({ action: "see_more", query: paginationQuery, page: nextPage }),
+            },
+          ],
+        },
+      }),
+    });
+  }
 }

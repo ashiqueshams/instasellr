@@ -106,9 +106,11 @@ export default function DashboardChatbot() {
 
   // test panel
   const [testInput, setTestInput] = useState("price?");
-  const [testImageUrl, setTestImageUrl] = useState("");
+  const [testImageUrls, setTestImageUrls] = useState<string[]>([]);
   const [testRunning, setTestRunning] = useState(false);
   const [testResult, setTestResult] = useState<any>(null);
+  const [simulateOOS, setSimulateOOS] = useState(false);
+  const [allCards, setAllCards] = useState<any[]>([]);
 
   useEffect(() => {
     if (!store) return;
@@ -161,16 +163,19 @@ export default function DashboardChatbot() {
     setTimeout(() => setCopied(false), 1500);
   };
 
-  const runTest = async () => {
+  const runTest = async (pagination?: { query: any; page: number }) => {
     if (!store) return;
     setTestRunning(true);
-    setTestResult(null);
+    if (!pagination) { setTestResult(null); setAllCards([]); }
     const { data, error } = await supabase.functions.invoke("chatbot-reply", {
       body: {
         store_id: store.id,
-        text: testInput,
-        image_urls: testImageUrl ? [testImageUrl] : [],
+        text: pagination ? "" : testInput,
+        image_urls: pagination ? [] : testImageUrls,
         source: "dm",
+        test_mode: true,
+        simulate_out_of_stock: simulateOOS,
+        pagination,
       },
     });
     setTestRunning(false);
@@ -179,6 +184,24 @@ export default function DashboardChatbot() {
       return;
     }
     setTestResult(data);
+    if (pagination) {
+      setAllCards((prev) => [...prev, ...((data as any)?.cards ?? [])]);
+    } else {
+      setAllCards(((data as any)?.cards ?? []));
+    }
+  };
+
+  const handleTestFiles = async (files: FileList | null) => {
+    if (!files?.length || !store) return;
+    const uploaded: string[] = [];
+    for (const f of Array.from(files).slice(0, 5)) {
+      const path = `chatbot-test/${store.id}/${Date.now()}-${f.name}`;
+      const { error } = await supabase.storage.from("images").upload(path, f, { upsert: true });
+      if (error) { toast.error(error.message); continue; }
+      const { data } = supabase.storage.from("images").getPublicUrl(path);
+      uploaded.push(data.publicUrl);
+    }
+    setTestImageUrls((prev) => [...prev, ...uploaded]);
   };
 
   if (loading || !s) {
@@ -495,34 +518,90 @@ export default function DashboardChatbot() {
                 <Textarea
                   value={testInput}
                   onChange={(e) => setTestInput(e.target.value)}
-                  placeholder="price? / koto / দাম কত / Dhaka delivery koto?"
+                  placeholder="price? / koto / saree gulo dekhan / show me kurti"
                 />
               </div>
               <div className="space-y-2">
-                <Label>Optional: customer screenshot URL</Label>
+                <Label>Customer screenshots (multi-upload supported)</Label>
                 <Input
-                  value={testImageUrl}
-                  onChange={(e) => setTestImageUrl(e.target.value)}
-                  placeholder="https://..."
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={(e) => handleTestFiles(e.target.files)}
                 />
+                {testImageUrls.length > 0 && (
+                  <div className="flex gap-2 flex-wrap">
+                    {testImageUrls.map((u, i) => (
+                      <div key={i} className="relative">
+                        <img src={u} alt="" className="w-16 h-16 object-cover rounded border" />
+                        <button
+                          onClick={() => setTestImageUrls((p) => p.filter((_, j) => j !== i))}
+                          className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground rounded-full w-4 h-4 text-xs flex items-center justify-center"
+                        >×</button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
-              <Button onClick={runTest} disabled={testRunning}>
+              <div className="flex items-center justify-between border-t pt-3">
+                <div>
+                  <Label className="text-sm">Simulate out-of-stock</Label>
+                  <p className="text-xs text-muted-foreground">Pretend matched products are OOS to test fallback alternatives.</p>
+                </div>
+                <Switch checked={simulateOOS} onCheckedChange={setSimulateOOS} />
+              </div>
+              <Button onClick={() => runTest()} disabled={testRunning}>
                 {testRunning ? <Loader2 className="h-4 w-4 animate-spin" /> : <MessageSquare className="h-4 w-4" />}
                 Run test
               </Button>
 
               {testResult && (
                 <div className="mt-4 rounded-lg border bg-muted/40 p-4 space-y-3">
-                  <div className="text-sm whitespace-pre-wrap"><strong>Reply:</strong> {testResult.reply || "(empty)"}</div>
+                  {testResult.reply && (
+                    <div className="text-sm whitespace-pre-wrap"><strong>Reply:</strong> {testResult.reply}</div>
+                  )}
                   {testResult.public_comment_reply && (
                     <div className="text-sm"><strong>Public comment:</strong> {testResult.public_comment_reply}</div>
                   )}
                   <div className="flex flex-wrap gap-2 text-xs">
-                    <Badge variant="outline">lang: {testResult.detected_language}</Badge>
-                    <Badge variant="outline">intent: {testResult.intent}</Badge>
+                    {testResult.detected_language && <Badge variant="outline">lang: {testResult.detected_language}</Badge>}
+                    {testResult.intent && <Badge variant="outline">intent: {testResult.intent}</Badge>}
                     <Badge variant="outline">confidence: {Math.round((testResult.confidence ?? 0) * 100)}%</Badge>
+                    {testResult.cards_are_fallback && <Badge variant="secondary">Showing alternatives</Badge>}
                     {testResult.should_escalate && <Badge variant="destructive">Needs Human</Badge>}
                   </div>
+
+                  {allCards.length > 0 && (
+                    <div className="space-y-2">
+                      <p className="text-xs uppercase text-muted-foreground tracking-wide">Product cards ({allCards.length})</p>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                        {allCards.map((c) => (
+                          <div key={c.id} className="border rounded-md p-2 bg-background text-xs">
+                            {c.image_url ? (
+                              <img src={c.image_url} alt={c.name} className="w-full aspect-square object-cover rounded mb-1.5" />
+                            ) : (
+                              <div className="w-full aspect-square bg-muted rounded mb-1.5" />
+                            )}
+                            <div className="font-medium line-clamp-1">{c.name}</div>
+                            <div className="flex items-center justify-between mt-0.5">
+                              <span>৳{c.price}</span>
+                              {!c.in_stock && <Badge variant="destructive" className="text-[10px] px-1 py-0">OOS</Badge>}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      {testResult.more_available && testResult.pagination_query && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => runTest({ query: testResult.pagination_query, page: testResult.next_page })}
+                          disabled={testRunning}
+                        >
+                          See more
+                        </Button>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
             </CardContent>

@@ -25,6 +25,24 @@ interface ReplyInput {
   source?: "dm" | "story_reply" | "comment" | "story_mention";
   context?: string;
   test_mode?: boolean;             // dashboard test panel — skip writes / order creation
+  simulate_out_of_stock?: boolean; // test-mode helper: pretend matched products are OOS
+  pagination?: {                   // "See more" postback
+    query: { kind: "category" | "tags" | "all"; value?: string };
+    page: number;
+  };
+}
+
+const CARDS_PAGE_SIZE = 10;
+
+interface ProductCard {
+  id: string;
+  name: string;
+  price: number;
+  compare_at_price: number | null;
+  image_url: string | null;
+  category: string | null;
+  in_stock: boolean;
+  tagline: string | null;
 }
 
 Deno.serve(async (req) => {
@@ -54,7 +72,7 @@ Deno.serve(async (req) => {
       supabase.from("chatbot_settings").select("*").eq("store_id", body.store_id).maybeSingle(),
       supabase
         .from("products")
-        .select("id,name,price,compare_at_price,description,tagline,category,material,care_instructions,stock_quantity,is_active,image_url")
+        .select("id,name,price,compare_at_price,description,tagline,category,material,care_instructions,stock_quantity,is_active,image_url,tags,popularity_score")
         .eq("store_id", body.store_id)
         .eq("is_active", true),
       supabase.from("chatbot_faqs").select("*").eq("store_id", body.store_id).eq("is_active", true),
@@ -126,8 +144,35 @@ Deno.serve(async (req) => {
       category: p.category,
       material: p.material,
       care: p.care_instructions,
+      tags: p.tags ?? [],
       in_stock: p.stock_quantity == null ? true : p.stock_quantity > 0,
     }));
+
+    const allCategories = Array.from(
+      new Set((products ?? []).map((p: any) => (p.category || "").trim()).filter(Boolean)),
+    );
+
+    // ---------- Pagination shortcut ("See more" postback) ----------
+    if (body.pagination) {
+      const cards = buildCards({
+        kind: "browse",
+        products: products ?? [],
+        query: body.pagination.query,
+        page: body.pagination.page,
+        simulateOOS: !!body.simulate_out_of_stock,
+      });
+      return json({
+        reply: cards.cards.length ? "" : "Aro kichu nei apu! 💕",
+        cards: cards.cards,
+        more_available: cards.more,
+        pagination_query: body.pagination.query,
+        next_page: body.pagination.page + 1,
+        confidence: 1,
+        should_escalate: false,
+        auto_send: true,
+      });
+    }
+
 
     const faqList = (faqs ?? []).map((f) => ({ q: f.question, a: f.answer, keywords: f.keywords }));
     const deliveryList = (delivery ?? []).map((d) => ({ label: d.label, cost: Number(d.cost) }));
@@ -147,6 +192,8 @@ Deno.serve(async (req) => {
       salesStage,
       discountRules,
       playbookStrategy: playbook?.strategy ?? null,
+      categories: allCategories,
+      hasMultipleImages: (body.image_urls?.length ?? 0) > 1,
     });
 
     const recentTurns = history.map((h) => ({
@@ -347,6 +394,42 @@ Deno.serve(async (req) => {
       }
     }
 
+    // ---------- Build product cards ----------
+    const cardIntent = args.card_intent ?? null;
+    const matchedIds: string[] = Array.isArray(args.matched_product_ids)
+      ? args.matched_product_ids.filter((x: any) => typeof x === "string")
+      : args.matched_product_id
+        ? [args.matched_product_id]
+        : [];
+
+    let cardsResult: { cards: ProductCard[]; more: boolean; nextPage?: number; query?: any; isFallback?: boolean } = {
+      cards: [],
+      more: false,
+    };
+
+    if (cardIntent && cardIntent.kind && cardIntent.kind !== "none") {
+      cardsResult = buildCardsFromIntent({
+        intent: cardIntent,
+        matchedIds,
+        products: products ?? [],
+        simulateOOS: !!body.simulate_out_of_stock,
+      });
+    }
+
+    // Persist pagination state on conversation (for non-test sessions)
+    if (!body.test_mode && body.conversation_id && cardsResult.query) {
+      await supabase
+        .from("chatbot_conversations")
+        .update({
+          last_carousel_query: cardsResult.query,
+          last_carousel_page: 1,
+          sent_product_ids: Array.from(
+            new Set([...(conversation?.sent_product_ids ?? []), ...cardsResult.cards.map((c) => c.id)]),
+          ),
+        })
+        .eq("id", body.conversation_id);
+    }
+
     return json({
       reply: args.reply,
       public_comment_reply: args.public_comment_reply ?? "",
@@ -361,6 +444,12 @@ Deno.serve(async (req) => {
       should_request_confirmation: !!args.should_request_confirmation,
       order_created_id: createdOrderId,
       matched_product_id: args.matched_product_id || null,
+      matched_product_ids: matchedIds,
+      cards: cardsResult.cards,
+      cards_are_fallback: !!cardsResult.isFallback,
+      more_available: cardsResult.more,
+      pagination_query: cardsResult.query ?? null,
+      next_page: cardsResult.nextPage ?? null,
       confidence: Number(args.confidence ?? 0),
       should_escalate: escalate,
       auto_send: !escalate,
@@ -414,7 +503,33 @@ const BRAIN_TOOL = {
         },
         reply: { type: "string", description: "Reply in customer's language. Short, like a real Messenger reply (1-3 sentences)." },
         public_comment_reply: { type: "string", description: "1-line public comment reply (only when source=comment), else empty." },
-        matched_product_id: { type: "string", description: "UUID of product the customer is asking about, or empty." },
+        matched_product_id: { type: "string", description: "UUID of the SINGLE product the customer is most likely asking about (or first if multiple). Empty if none." },
+        matched_product_ids: {
+          type: "array",
+          items: { type: "string" },
+          description: "UUIDs of ALL products you recognized in this message (especially when customer sends multiple screenshots). Empty if none.",
+        },
+        card_intent: {
+          type: "object",
+          description: "Tells the system to send product carousel cards. Use whenever the customer references specific products, asks about a category/collection, or needs alternatives.",
+          properties: {
+            kind: {
+              type: "string",
+              enum: [
+                "none",            // no cards needed (small talk, FAQ, info-only)
+                "matched",         // send cards for matched_product_ids (image/name match)
+                "category",        // browse a category — send all in that category, paginated
+                "tags",            // browse by tag/keyword (e.g. "red kurti")
+                "alternatives",    // matched products are OOS or unsure — suggest similar
+                "all",             // customer asked to see "everything" / "collection"
+              ],
+            },
+            category: { type: "string", description: "Category name to browse (when kind=category)." },
+            tags: { type: "array", items: { type: "string" }, description: "Tag/keyword filters (when kind=tags)." },
+            anchor_product_id: { type: "string", description: "Reference product for 'alternatives' (use OOS or unsure match)." },
+          },
+          additionalProperties: false,
+        },
         cart_draft_update: {
           type: "object",
           description: "Fields the bot extracted/updated for the in-progress order. Omit fields that didn't change.",
@@ -492,6 +607,8 @@ function buildSystemPrompt(args: {
   salesStage: string;
   discountRules: any;
   playbookStrategy: any;
+  categories: string[];
+  hasMultipleImages: boolean;
 }) {
   const toneMap: Record<string, string> = {
     formal: "Formal, polite Bangla. Use 'apni'.",
@@ -561,7 +678,11 @@ ${JSON.stringify(args.deliveryList)}
 
 CORE RULES:
 - "price?", "pp", "dp", "koto", "দাম কত", "kotoy" all mean "what is the price?". Always include ৳ price.
-- For images: identify the product from catalog. Low confidence → say so.
+- VISION: When the customer sends image(s) — possibly MULTIPLE screenshots of DIFFERENT products — identify EACH product separately from the catalog and list ALL of their UUIDs in matched_product_ids. Set card_intent.kind="matched". ${args.hasMultipleImages ? "The customer just sent MULTIPLE images — match each one independently." : ""}
+- CATEGORY/COLLECTION REQUESTS: when customer asks "show me sarees" / "kurti gulo dekhan" / "ki ki ache" / "all products" → set card_intent.kind="category" with the category, OR "all" if they want everything. Available categories: ${args.categories.join(", ") || "(none)"}.
+- TAG/KEYWORD REQUESTS: "red shari ache?" / "cotton kurti" → kind="tags" with tags=["red","saree"] etc.
+- OUT OF STOCK / NOT FOUND: if a requested item is not in catalog or out_of_stock=true → set card_intent.kind="alternatives" with anchor_product_id (the closest catalog match). System will pick same-category + similar-price replacements.
+- Keep the text reply short (1-3 sentences). The cards do the heavy lifting visually — don't re-list product names/prices in text when cards are being sent.
 - Replies are SHORT (1-3 sentences max). Like a real shop owner on Messenger.
 - ORDER FLOW: when customer shows buying intent, COLLECT one missing field at a time in a natural way (name → phone → full address). Once you have product + name + phone + address, send a SUMMARY ("Apu confirm korun: 1x Cotton Kurti, Rahim, 017xxx, Dhanmondi, total ৳1260 + delivery") and set should_request_confirmation=true.
 - Set should_create_order=true ONLY when the LATEST customer message is an explicit confirmation (hyan/yes/ok/confirm/done/হ্যাঁ/আচ্ছা) AFTER you sent the summary. Never auto-create.
@@ -573,4 +694,145 @@ CORE RULES:
 - Comments (source=comment): also set a 1-line public_comment_reply ("DM kore dilam apu! 💕").
 - NEVER make up prices/materials/delivery info that isn't in the knowledge above.
 - Respond ONLY via the respond function. Always.`;
+}
+
+// =================== Card builders ===================
+
+function toCard(p: any, simulateOOS: boolean): ProductCard {
+  const inStock = simulateOOS
+    ? false
+    : p.stock_quantity == null
+      ? true
+      : p.stock_quantity > 0;
+  return {
+    id: p.id,
+    name: p.name,
+    price: Number(p.price ?? 0),
+    compare_at_price: p.compare_at_price ? Number(p.compare_at_price) : null,
+    image_url: p.image_url ?? null,
+    category: p.category ?? null,
+    in_stock: inStock,
+    tagline: p.tagline ?? null,
+  };
+}
+
+function rankProducts(products: any[]): any[] {
+  return [...products].sort((a, b) => {
+    const aStock = (a.stock_quantity == null || a.stock_quantity > 0) ? 1 : 0;
+    const bStock = (b.stock_quantity == null || b.stock_quantity > 0) ? 1 : 0;
+    if (aStock !== bStock) return bStock - aStock;
+    return Number(b.popularity_score ?? 0) - Number(a.popularity_score ?? 0);
+  });
+}
+
+function buildCardsFromIntent(opts: {
+  intent: { kind: string; category?: string; tags?: string[]; anchor_product_id?: string };
+  matchedIds: string[];
+  products: any[];
+  simulateOOS: boolean;
+}): { cards: ProductCard[]; more: boolean; nextPage?: number; query?: any; isFallback?: boolean } {
+  const { intent, matchedIds, products, simulateOOS } = opts;
+  const byId = new Map(products.map((p) => [p.id, p]));
+
+  if (intent.kind === "matched") {
+    const matched = matchedIds.map((id) => byId.get(id)).filter(Boolean);
+    if (!matched.length) return { cards: [], more: false };
+
+    // If any matched is OOS (or simulate), append alternatives
+    const cards: ProductCard[] = [];
+    let isFallback = false;
+    for (const p of matched) {
+      const card = toCard(p, simulateOOS);
+      cards.push(card);
+      if (!card.in_stock) {
+        isFallback = true;
+        const alts = findAlternatives(p, products, simulateOOS, 3);
+        for (const a of alts) {
+          if (!cards.find((c) => c.id === a.id)) cards.push(toCard(a, simulateOOS));
+        }
+      }
+    }
+    return { cards: cards.slice(0, CARDS_PAGE_SIZE), more: false, isFallback };
+  }
+
+  if (intent.kind === "alternatives") {
+    const anchor = intent.anchor_product_id ? byId.get(intent.anchor_product_id) : null;
+    const alts = anchor
+      ? findAlternatives(anchor, products, simulateOOS, CARDS_PAGE_SIZE)
+      : rankProducts(products).slice(0, CARDS_PAGE_SIZE);
+    return { cards: alts.map((p) => toCard(p, simulateOOS)), more: false, isFallback: true };
+  }
+
+  // Browse-style: category / tags / all → paginate
+  const filtered = filterProducts(products, intent);
+  const ranked = rankProducts(filtered);
+  return paginate(ranked, 0, simulateOOS, intent);
+}
+
+function buildCards(opts: {
+  kind: "browse";
+  products: any[];
+  query: { kind: "category" | "tags" | "all"; value?: string };
+  page: number;
+  simulateOOS: boolean;
+}): { cards: ProductCard[]; more: boolean; nextPage?: number; query?: any } {
+  const intent = {
+    kind: opts.query.kind,
+    category: opts.query.kind === "category" ? opts.query.value : undefined,
+    tags: opts.query.kind === "tags" && opts.query.value ? [opts.query.value] : undefined,
+  };
+  const filtered = filterProducts(opts.products, intent);
+  const ranked = rankProducts(filtered);
+  return paginate(ranked, opts.page, opts.simulateOOS, opts.query);
+}
+
+function filterProducts(products: any[], intent: { kind: string; category?: string; tags?: string[] }): any[] {
+  if (intent.kind === "all") return products;
+  if (intent.kind === "category" && intent.category) {
+    const c = intent.category.toLowerCase();
+    return products.filter((p) => (p.category ?? "").toLowerCase() === c);
+  }
+  if (intent.kind === "tags" && intent.tags?.length) {
+    const wants = intent.tags.map((t) => t.toLowerCase());
+    return products.filter((p) => {
+      const hay = [...(p.tags ?? []), p.name, p.category, p.description ?? ""]
+        .join(" ")
+        .toLowerCase();
+      return wants.some((t) => hay.includes(t));
+    });
+  }
+  return [];
+}
+
+function paginate(
+  ranked: any[],
+  page: number,
+  simulateOOS: boolean,
+  query: any,
+): { cards: ProductCard[]; more: boolean; nextPage?: number; query?: any } {
+  const start = page * CARDS_PAGE_SIZE;
+  const slice = ranked.slice(start, start + CARDS_PAGE_SIZE);
+  const more = ranked.length > start + CARDS_PAGE_SIZE;
+  return {
+    cards: slice.map((p) => toCard(p, simulateOOS)),
+    more,
+    nextPage: more ? page + 1 : undefined,
+    query,
+  };
+}
+
+function findAlternatives(anchor: any, products: any[], simulateOOS: boolean, limit: number): any[] {
+  const price = Number(anchor.price ?? 0);
+  const minP = price * 0.7;
+  const maxP = price * 1.3;
+  return rankProducts(
+    products.filter((p) => {
+      if (p.id === anchor.id) return false;
+      if (anchor.category && p.category && p.category.toLowerCase() !== anchor.category.toLowerCase()) return false;
+      const inStock = p.stock_quantity == null ? true : p.stock_quantity > 0;
+      if (!inStock || simulateOOS) return false;
+      const pp = Number(p.price ?? 0);
+      return pp >= minP && pp <= maxP;
+    }),
+  ).slice(0, limit);
 }
