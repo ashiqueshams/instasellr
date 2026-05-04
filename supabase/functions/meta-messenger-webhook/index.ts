@@ -194,12 +194,16 @@ async function handleMessage(supabase: any, settings: any, msg: any, platformObj
     return;
   }
 
-  await sendDM(settings, senderId, ai.reply);
+  if (ai.reply) await sendDM(settings, senderId, ai.reply);
+  if (ai.cards?.length) {
+    await sendCarousel(settings, senderId, ai.cards, ai.more_available, ai.pagination_query, ai.next_page);
+  }
   await supabase.from("chatbot_messages").insert({
     conversation_id: conv.id,
     direction: "out",
     sender: "ai",
     text: ai.reply,
+    attachments: ai.cards?.length ? ai.cards.map((c: any) => ({ type: "card", ...c })) : [],
     detected_language: ai.detected_language,
     matched_product_id: ai.matched_product_id,
     confidence_score: ai.confidence,
