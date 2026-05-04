@@ -57,6 +57,7 @@ const App = () => (
             <Route path="courier" element={<DashboardCourier />} />
             <Route path="reviews" element={<DashboardReviews />} />
             <Route path="inbox" element={<DashboardInbox />} />
+            <Route path="customers" element={<DashboardCustomers />} />
             <Route path="chatbot" element={<DashboardChatbot />} />
             <Route path="chatbot/faqs" element={<DashboardChatbotFAQs />} />
             <Route path="settings" element={<DashboardSettings />} />
