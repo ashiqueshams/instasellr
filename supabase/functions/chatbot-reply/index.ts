@@ -72,7 +72,7 @@ Deno.serve(async (req) => {
       supabase.from("chatbot_settings").select("*").eq("store_id", body.store_id).maybeSingle(),
       supabase
         .from("products")
-        .select("id,name,price,compare_at_price,description,tagline,category,material,care_instructions,stock_quantity,is_active,image_url")
+        .select("id,name,price,compare_at_price,description,tagline,category,material,care_instructions,stock_quantity,is_active,image_url,tags,popularity_score")
         .eq("store_id", body.store_id)
         .eq("is_active", true),
       supabase.from("chatbot_faqs").select("*").eq("store_id", body.store_id).eq("is_active", true),
