@@ -106,9 +106,11 @@ export default function DashboardChatbot() {
 
   // test panel
   const [testInput, setTestInput] = useState("price?");
-  const [testImageUrl, setTestImageUrl] = useState("");
+  const [testImageUrls, setTestImageUrls] = useState<string[]>([]);
   const [testRunning, setTestRunning] = useState(false);
   const [testResult, setTestResult] = useState<any>(null);
+  const [simulateOOS, setSimulateOOS] = useState(false);
+  const [allCards, setAllCards] = useState<any[]>([]);
 
   useEffect(() => {
     if (!store) return;
