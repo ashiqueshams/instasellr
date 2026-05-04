@@ -144,8 +144,35 @@ Deno.serve(async (req) => {
       category: p.category,
       material: p.material,
       care: p.care_instructions,
+      tags: p.tags ?? [],
       in_stock: p.stock_quantity == null ? true : p.stock_quantity > 0,
     }));
+
+    const allCategories = Array.from(
+      new Set((products ?? []).map((p: any) => (p.category || "").trim()).filter(Boolean)),
+    );
+
+    // ---------- Pagination shortcut ("See more" postback) ----------
+    if (body.pagination) {
+      const cards = buildCards({
+        kind: "browse",
+        products: products ?? [],
+        query: body.pagination.query,
+        page: body.pagination.page,
+        simulateOOS: !!body.simulate_out_of_stock,
+      });
+      return json({
+        reply: cards.cards.length ? "" : "Aro kichu nei apu! 💕",
+        cards: cards.cards,
+        more_available: cards.more,
+        pagination_query: body.pagination.query,
+        next_page: body.pagination.page + 1,
+        confidence: 1,
+        should_escalate: false,
+        auto_send: true,
+      });
+    }
+
 
     const faqList = (faqs ?? []).map((f) => ({ q: f.question, a: f.answer, keywords: f.keywords }));
     const deliveryList = (delivery ?? []).map((d) => ({ label: d.label, cost: Number(d.cost) }));
