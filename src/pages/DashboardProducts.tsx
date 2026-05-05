@@ -273,6 +273,7 @@ function DashboardProducts() {
       emoji: form.emoji,
       color: form.color,
       category: form.category || null,
+      category_id: form.category_id || null,
       file_url: uploadedFile ? uploadedFile.name : null,
       image_url: imageUrl,
       is_active: true,
