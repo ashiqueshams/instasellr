@@ -402,7 +402,13 @@ function DashboardProducts() {
             <textarea placeholder="Description" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="col-span-2 rounded-lg bg-background px-3.5 py-3 text-sm border border-border outline-none focus:ring-2 focus:ring-primary/20 placeholder:text-muted-foreground resize-none h-24" />
             <input placeholder="Price *" type="number" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} className={inputClass} />
             <input placeholder="Compare-at price" type="number" value={form.compare_at_price} onChange={(e) => setForm({ ...form, compare_at_price: e.target.value })} className={inputClass} />
-            <input placeholder="Category" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} className={inputClass} />
+            <input placeholder="Category (label)" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} className={inputClass} />
+            <select value={form.category_id} onChange={(e) => setForm({ ...form, category_id: e.target.value })} className={`col-span-2 ${inputClass}`}>
+              <option value="">— No category group —</option>
+              {categoryList.map((c) => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+              ))}
+            </select>
 
             {/* Physical product fields */}
             {form.product_type === "physical" && (
