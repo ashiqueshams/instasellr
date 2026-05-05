@@ -20,6 +20,8 @@ export function mapProduct(p: any): Product {
     weight: p.weight ?? null,
     material: p.material ?? "",
     care_instructions: p.care_instructions ?? "",
+    category_id: p.category_id ?? null,
+    position: p.position ?? 0,
     created_at: p.created_at,
   };
 }
