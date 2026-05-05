@@ -7,6 +7,26 @@ import { useStore } from "@/hooks/use-store";
 import { uploadImage } from "@/lib/imageUpload";
 import { mapProduct } from "@/lib/mapProduct";
 import { Switch } from "@/components/ui/switch";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import CategoriesManager from "@/components/dashboard/CategoriesManager";
+
+export default function DashboardProductsPage() {
+  return (
+    <Tabs defaultValue="products" className="w-full">
+      <TabsList>
+        <TabsTrigger value="products">Products</TabsTrigger>
+        <TabsTrigger value="categories">Categories</TabsTrigger>
+      </TabsList>
+      <TabsContent value="products" className="mt-4">
+        <DashboardProducts />
+      </TabsContent>
+      <TabsContent value="categories" className="mt-4">
+        <CategoriesManager />
+      </TabsContent>
+    </Tabs>
+  );
+}
+
 
 const EMOJI_OPTIONS = ["🎨", "✨", "📝", "📦", "🎯", "💎", "🚀", "🔥", "📚", "🎵", "📸", "🛠️"];
 const COLOR_OPTIONS = ["#6C5CE7", "#00B894", "#E17055", "#0984E3", "#FDCB6E", "#E84393", "#636E72", "#2D3436"];
