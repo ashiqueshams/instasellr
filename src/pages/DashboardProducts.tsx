@@ -7,6 +7,26 @@ import { useStore } from "@/hooks/use-store";
 import { uploadImage } from "@/lib/imageUpload";
 import { mapProduct } from "@/lib/mapProduct";
 import { Switch } from "@/components/ui/switch";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import CategoriesManager from "@/components/dashboard/CategoriesManager";
+
+export default function DashboardProductsPage() {
+  return (
+    <Tabs defaultValue="products" className="w-full">
+      <TabsList>
+        <TabsTrigger value="products">Products</TabsTrigger>
+        <TabsTrigger value="categories">Categories</TabsTrigger>
+      </TabsList>
+      <TabsContent value="products" className="mt-4">
+        <DashboardProducts />
+      </TabsContent>
+      <TabsContent value="categories" className="mt-4">
+        <CategoriesManager />
+      </TabsContent>
+    </Tabs>
+  );
+}
+
 
 const EMOJI_OPTIONS = ["🎨", "✨", "📝", "📦", "🎯", "💎", "🚀", "🔥", "📚", "🎵", "📸", "🛠️"];
 const COLOR_OPTIONS = ["#6C5CE7", "#00B894", "#E17055", "#0984E3", "#FDCB6E", "#E84393", "#636E72", "#2D3436"];
@@ -29,6 +49,7 @@ interface ProductForm {
   emoji: string;
   color: string;
   category: string;
+  category_id: string;
   product_type: "digital" | "physical";
   stock_quantity: string;
   weight: string;
@@ -45,6 +66,7 @@ const emptyForm: ProductForm = {
   emoji: "🎨",
   color: "#6C5CE7",
   category: "",
+  category_id: "",
   product_type: "digital",
   stock_quantity: "",
   weight: "",
@@ -52,10 +74,11 @@ const emptyForm: ProductForm = {
   care_instructions: "",
 };
 
-export default function DashboardProducts() {
+function DashboardProducts() {
   const { toast } = useToast();
   const { store } = useStore();
   const [products, setProducts] = useState<Product[]>([]);
+  const [categoryList, setCategoryList] = useState<{ id: string; name: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -87,6 +110,9 @@ export default function DashboardProducts() {
       setLoading(false);
     };
     fetchProducts();
+    supabase.from("categories" as any).select("id,name").eq("store_id", store.id).order("position").then(({ data }) => {
+      setCategoryList((data as any) || []);
+    });
   }, [store]);
 
   const resetForm = () => {
@@ -111,6 +137,7 @@ export default function DashboardProducts() {
       emoji: product.emoji,
       color: product.color,
       category: product.category,
+      category_id: product.category_id || "",
       product_type: product.product_type || "digital",
       stock_quantity: product.stock_quantity != null ? String(product.stock_quantity) : "",
       weight: product.weight != null ? String(product.weight) : "",
@@ -250,6 +277,7 @@ export default function DashboardProducts() {
       emoji: form.emoji,
       color: form.color,
       category: form.category || null,
+      category_id: form.category_id || null,
       file_url: uploadedFile ? uploadedFile.name : null,
       image_url: imageUrl,
       is_active: true,
@@ -374,7 +402,13 @@ export default function DashboardProducts() {
             <textarea placeholder="Description" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="col-span-2 rounded-lg bg-background px-3.5 py-3 text-sm border border-border outline-none focus:ring-2 focus:ring-primary/20 placeholder:text-muted-foreground resize-none h-24" />
             <input placeholder="Price *" type="number" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} className={inputClass} />
             <input placeholder="Compare-at price" type="number" value={form.compare_at_price} onChange={(e) => setForm({ ...form, compare_at_price: e.target.value })} className={inputClass} />
-            <input placeholder="Category" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} className={inputClass} />
+            <input placeholder="Category (label)" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} className={inputClass} />
+            <select value={form.category_id} onChange={(e) => setForm({ ...form, category_id: e.target.value })} className={`col-span-2 ${inputClass}`}>
+              <option value="">— No category group —</option>
+              {categoryList.map((c) => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+              ))}
+            </select>
 
             {/* Physical product fields */}
             {form.product_type === "physical" && (

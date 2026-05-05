@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
-import { Product, Bundle, Store } from "@/data/sampleData";
+import { Product, Bundle, Store, Category } from "@/data/sampleData";
 import { supabase } from "@/integrations/supabase/client";
 import { mapProduct } from "@/lib/mapProduct";
 import { useParams } from "react-router-dom";
@@ -18,6 +18,7 @@ import HorizontalProductScroll from "@/components/storefront/HorizontalProductSc
 import SellerInfo from "@/components/storefront/SellerInfo";
 import ReviewsSection from "@/components/storefront/ReviewsSection";
 import TrackingScripts from "@/components/storefront/TrackingScripts";
+import CategoryCards from "@/components/storefront/CategoryCards";
 import { useReferral } from "@/hooks/use-referral";
 import { Tag } from "lucide-react";
 
@@ -26,11 +27,12 @@ export default function Storefront() {
   const [store, setStore] = useState<Store | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
   const [bundles, setBundles] = useState<(Bundle & { products: Product[] })[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [search, setSearch] = useState("");
   const [storeLinks, setStoreLinks] = useState<any[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [selectedBundle, setSelectedBundle] = useState<(Bundle & { products: Product[] }) | null>(null);
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
   const [showCheckout, setShowCheckout] = useState(false);
   const [showAllProducts, setShowAllProducts] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -119,6 +121,15 @@ export default function Storefront() {
         .order("position", { ascending: true }) as any);
       setStoreLinks(linksData || []);
 
+      // Fetch categories
+      const { data: catsData } = await (supabase
+        .from("categories" as any)
+        .select("*")
+        .eq("store_id", storeData.id)
+        .eq("is_active", true)
+        .order("position", { ascending: true }) as any);
+      setCategories((catsData as Category[]) || []);
+
       setLoading(false);
     };
     fetchStore();
@@ -133,11 +144,11 @@ export default function Storefront() {
           p.tagline.toLowerCase().includes(search.toLowerCase())
       );
     }
-    if (selectedCategory) {
-      result = result.filter((p) => (p.category?.trim() || "Other") === selectedCategory);
+    if (selectedCategoryId) {
+      result = result.filter((p) => p.category_id === selectedCategoryId);
     }
     return result;
-  }, [products, search, selectedCategory]);
+  }, [products, search, selectedCategoryId]);
 
   if (loading) {
     return (
@@ -173,8 +184,9 @@ export default function Storefront() {
         setSelectedProduct={setSelectedProduct}
         selectedBundle={selectedBundle}
         setSelectedBundle={setSelectedBundle}
-        selectedCategory={selectedCategory}
-        setSelectedCategory={setSelectedCategory}
+        selectedCategoryId={selectedCategoryId}
+        setSelectedCategoryId={setSelectedCategoryId}
+        categories={categories}
         showCheckout={showCheckout}
         setShowCheckout={setShowCheckout}
         showAllProducts={showAllProducts}
@@ -196,8 +208,9 @@ interface StorefrontContentProps {
   setSelectedProduct: (p: Product | null) => void;
   selectedBundle: (Bundle & { products: Product[] }) | null;
   setSelectedBundle: (b: (Bundle & { products: Product[] }) | null) => void;
-  selectedCategory: string | null;
-  setSelectedCategory: (c: string | null) => void;
+  selectedCategoryId: string | null;
+  setSelectedCategoryId: (c: string | null) => void;
+  categories: Category[];
   showCheckout: boolean;
   setShowCheckout: (v: boolean) => void;
   showAllProducts: boolean;
@@ -207,7 +220,7 @@ interface StorefrontContentProps {
 function StorefrontContent({
   store, products, filteredProducts, bundles, storeLinks, search, setSearch,
   selectedProduct, setSelectedProduct, selectedBundle, setSelectedBundle,
-  selectedCategory, setSelectedCategory,
+  selectedCategoryId, setSelectedCategoryId, categories,
   showCheckout, setShowCheckout,
   showAllProducts, setShowAllProducts,
 }: StorefrontContentProps) {
@@ -363,8 +376,32 @@ function StorefrontContent({
           {/* Custom links */}
           {storeLinks.length > 0 && <StorefrontLinks links={storeLinks} store={store} />}
 
+          {/* Category cards */}
+          {categories.length > 0 && (
+            <CategoryCards
+              categories={categories}
+              productCounts={products.reduce((acc, p) => {
+                if (p.category_id) acc[p.category_id] = (acc[p.category_id] || 0) + 1;
+                return acc;
+              }, {} as Record<string, number>)}
+              store={store}
+              selectedCategoryId={selectedCategoryId}
+              onSelectCategory={setSelectedCategoryId}
+            />
+          )}
+
+          {/* Filtered category results */}
+          {selectedCategoryId && (
+            <div>
+              <h3 className="font-heading font-semibold text-sm mb-3" style={{ color: store.text_color || undefined }}>
+                {categories.find(c => c.id === selectedCategoryId)?.name} ({filteredProducts.length})
+              </h3>
+              <ProductList products={filteredProducts} onSelectProduct={setSelectedProduct} layout={store.layout} cardStyle={store.card_style} store={store} />
+            </div>
+          )}
+
           {/* What's New - horizontal scroll */}
-          {newProducts.length > 0 && (
+          {!selectedCategoryId && newProducts.length > 0 && (
             <HorizontalProductScroll
               title="What's New"
               products={newProducts}
@@ -375,7 +412,7 @@ function StorefrontContent({
           )}
 
           {/* Most Popular - horizontal scroll */}
-          {popularProducts.length > 0 && (
+          {!selectedCategoryId && popularProducts.length > 0 && (
             <HorizontalProductScroll
               title="Most Popular"
               products={popularProducts}
@@ -383,6 +420,17 @@ function StorefrontContent({
               store={store}
               onSeeAll={() => setShowAllProducts(true)}
             />
+          )}
+
+          {/* All products grid */}
+          {!selectedCategoryId && products.length > 0 && (
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="font-heading font-semibold text-sm" style={{ color: store.text_color || undefined }}>All Products</h3>
+                <span className="text-xs text-muted-foreground">{products.length} items</span>
+              </div>
+              <ProductList products={products} onSelectProduct={setSelectedProduct} layout={store.layout} cardStyle={store.card_style} store={store} />
+            </div>
           )}
 
           {/* Reviews */}
