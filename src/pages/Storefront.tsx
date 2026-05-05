@@ -121,6 +121,15 @@ export default function Storefront() {
         .order("position", { ascending: true }) as any);
       setStoreLinks(linksData || []);
 
+      // Fetch categories
+      const { data: catsData } = await (supabase
+        .from("categories" as any)
+        .select("*")
+        .eq("store_id", storeData.id)
+        .eq("is_active", true)
+        .order("position", { ascending: true }) as any);
+      setCategories((catsData as Category[]) || []);
+
       setLoading(false);
     };
     fetchStore();
@@ -135,11 +144,11 @@ export default function Storefront() {
           p.tagline.toLowerCase().includes(search.toLowerCase())
       );
     }
-    if (selectedCategory) {
-      result = result.filter((p) => (p.category?.trim() || "Other") === selectedCategory);
+    if (selectedCategoryId) {
+      result = result.filter((p) => p.category_id === selectedCategoryId);
     }
     return result;
-  }, [products, search, selectedCategory]);
+  }, [products, search, selectedCategoryId]);
 
   if (loading) {
     return (
