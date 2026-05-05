@@ -208,8 +208,9 @@ interface StorefrontContentProps {
   setSelectedProduct: (p: Product | null) => void;
   selectedBundle: (Bundle & { products: Product[] }) | null;
   setSelectedBundle: (b: (Bundle & { products: Product[] }) | null) => void;
-  selectedCategory: string | null;
-  setSelectedCategory: (c: string | null) => void;
+  selectedCategoryId: string | null;
+  setSelectedCategoryId: (c: string | null) => void;
+  categories: Category[];
   showCheckout: boolean;
   setShowCheckout: (v: boolean) => void;
   showAllProducts: boolean;
@@ -219,7 +220,7 @@ interface StorefrontContentProps {
 function StorefrontContent({
   store, products, filteredProducts, bundles, storeLinks, search, setSearch,
   selectedProduct, setSelectedProduct, selectedBundle, setSelectedBundle,
-  selectedCategory, setSelectedCategory,
+  selectedCategoryId, setSelectedCategoryId, categories,
   showCheckout, setShowCheckout,
   showAllProducts, setShowAllProducts,
 }: StorefrontContentProps) {
