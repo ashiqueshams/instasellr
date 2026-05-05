@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
-import { Product, Bundle, Store } from "@/data/sampleData";
+import { Product, Bundle, Store, Category } from "@/data/sampleData";
 import { supabase } from "@/integrations/supabase/client";
 import { mapProduct } from "@/lib/mapProduct";
 import { useParams } from "react-router-dom";
@@ -18,6 +18,7 @@ import HorizontalProductScroll from "@/components/storefront/HorizontalProductSc
 import SellerInfo from "@/components/storefront/SellerInfo";
 import ReviewsSection from "@/components/storefront/ReviewsSection";
 import TrackingScripts from "@/components/storefront/TrackingScripts";
+import CategoryCards from "@/components/storefront/CategoryCards";
 import { useReferral } from "@/hooks/use-referral";
 import { Tag } from "lucide-react";
 
