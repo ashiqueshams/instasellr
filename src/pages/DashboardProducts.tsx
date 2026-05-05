@@ -110,6 +110,9 @@ function DashboardProducts() {
       setLoading(false);
     };
     fetchProducts();
+    supabase.from("categories" as any).select("id,name").eq("store_id", store.id).order("position").then(({ data }) => {
+      setCategoryList((data as any) || []);
+    });
   }, [store]);
 
   const resetForm = () => {
