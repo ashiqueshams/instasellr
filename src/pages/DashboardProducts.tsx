@@ -49,6 +49,7 @@ interface ProductForm {
   emoji: string;
   color: string;
   category: string;
+  category_id: string;
   product_type: "digital" | "physical";
   stock_quantity: string;
   weight: string;
@@ -65,6 +66,7 @@ const emptyForm: ProductForm = {
   emoji: "🎨",
   color: "#6C5CE7",
   category: "",
+  category_id: "",
   product_type: "digital",
   stock_quantity: "",
   weight: "",
