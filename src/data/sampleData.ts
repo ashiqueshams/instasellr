@@ -17,6 +17,18 @@ export interface Product {
   weight: number | null;
   material?: string;
   care_instructions?: string;
+  category_id?: string | null;
+  position?: number;
+  created_at: string;
+}
+
+export interface Category {
+  id: string;
+  store_id: string;
+  name: string;
+  image_url: string | null;
+  position: number;
+  is_active: boolean;
   created_at: string;
 }
 
