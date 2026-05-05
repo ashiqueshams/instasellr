@@ -133,6 +133,7 @@ function DashboardProducts() {
       emoji: product.emoji,
       color: product.color,
       category: product.category,
+      category_id: product.category_id || "",
       product_type: product.product_type || "digital",
       stock_quantity: product.stock_quantity != null ? String(product.stock_quantity) : "",
       weight: product.weight != null ? String(product.weight) : "",
