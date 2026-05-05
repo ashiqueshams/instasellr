@@ -184,8 +184,9 @@ export default function Storefront() {
         setSelectedProduct={setSelectedProduct}
         selectedBundle={selectedBundle}
         setSelectedBundle={setSelectedBundle}
-        selectedCategory={selectedCategory}
-        setSelectedCategory={setSelectedCategory}
+        selectedCategoryId={selectedCategoryId}
+        setSelectedCategoryId={setSelectedCategoryId}
+        categories={categories}
         showCheckout={showCheckout}
         setShowCheckout={setShowCheckout}
         showAllProducts={showAllProducts}
