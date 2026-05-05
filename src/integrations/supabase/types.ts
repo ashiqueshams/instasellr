@@ -94,6 +94,36 @@ export type Database = {
           },
         ]
       }
+      categories: {
+        Row: {
+          created_at: string
+          id: string
+          image_url: string | null
+          is_active: boolean
+          name: string
+          position: number
+          store_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          name: string
+          position?: number
+          store_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          name?: string
+          position?: number
+          store_id?: string
+        }
+        Relationships: []
+      }
       chatbot_conversations: {
         Row: {
           cart_draft: Json
@@ -783,6 +813,7 @@ export type Database = {
         Row: {
           care_instructions: string | null
           category: string | null
+          category_id: string | null
           color: string | null
           compare_at_price: number | null
           created_at: string
@@ -795,6 +826,7 @@ export type Database = {
           material: string | null
           name: string
           popularity_score: number
+          position: number
           price: number
           product_type: string
           stock_quantity: number | null
@@ -806,6 +838,7 @@ export type Database = {
         Insert: {
           care_instructions?: string | null
           category?: string | null
+          category_id?: string | null
           color?: string | null
           compare_at_price?: number | null
           created_at?: string
@@ -818,6 +851,7 @@ export type Database = {
           material?: string | null
           name: string
           popularity_score?: number
+          position?: number
           price?: number
           product_type?: string
           stock_quantity?: number | null
@@ -829,6 +863,7 @@ export type Database = {
         Update: {
           care_instructions?: string | null
           category?: string | null
+          category_id?: string | null
           color?: string | null
           compare_at_price?: number | null
           created_at?: string
@@ -841,6 +876,7 @@ export type Database = {
           material?: string | null
           name?: string
           popularity_score?: number
+          position?: number
           price?: number
           product_type?: string
           stock_quantity?: number | null
