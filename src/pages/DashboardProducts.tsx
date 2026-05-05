@@ -78,6 +78,7 @@ function DashboardProducts() {
   const { toast } = useToast();
   const { store } = useStore();
   const [products, setProducts] = useState<Product[]>([]);
+  const [categoryList, setCategoryList] = useState<{ id: string; name: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
