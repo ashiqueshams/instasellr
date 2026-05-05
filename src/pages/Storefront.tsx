@@ -376,8 +376,32 @@ function StorefrontContent({
           {/* Custom links */}
           {storeLinks.length > 0 && <StorefrontLinks links={storeLinks} store={store} />}
 
+          {/* Category cards */}
+          {categories.length > 0 && (
+            <CategoryCards
+              categories={categories}
+              productCounts={products.reduce((acc, p) => {
+                if (p.category_id) acc[p.category_id] = (acc[p.category_id] || 0) + 1;
+                return acc;
+              }, {} as Record<string, number>)}
+              store={store}
+              selectedCategoryId={selectedCategoryId}
+              onSelectCategory={setSelectedCategoryId}
+            />
+          )}
+
+          {/* Filtered category results */}
+          {selectedCategoryId && (
+            <div>
+              <h3 className="font-heading font-semibold text-sm mb-3" style={{ color: store.text_color || undefined }}>
+                {categories.find(c => c.id === selectedCategoryId)?.name} ({filteredProducts.length})
+              </h3>
+              <ProductList products={filteredProducts} onSelectProduct={setSelectedProduct} layout={store.layout} cardStyle={store.card_style} store={store} />
+            </div>
+          )}
+
           {/* What's New - horizontal scroll */}
-          {newProducts.length > 0 && (
+          {!selectedCategoryId && newProducts.length > 0 && (
             <HorizontalProductScroll
               title="What's New"
               products={newProducts}
@@ -388,7 +412,7 @@ function StorefrontContent({
           )}
 
           {/* Most Popular - horizontal scroll */}
-          {popularProducts.length > 0 && (
+          {!selectedCategoryId && popularProducts.length > 0 && (
             <HorizontalProductScroll
               title="Most Popular"
               products={popularProducts}
@@ -396,6 +420,17 @@ function StorefrontContent({
               store={store}
               onSeeAll={() => setShowAllProducts(true)}
             />
+          )}
+
+          {/* All products grid */}
+          {!selectedCategoryId && products.length > 0 && (
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="font-heading font-semibold text-sm" style={{ color: store.text_color || undefined }}>All Products</h3>
+                <span className="text-xs text-muted-foreground">{products.length} items</span>
+              </div>
+              <ProductList products={products} onSelectProduct={setSelectedProduct} layout={store.layout} cardStyle={store.card_style} store={store} />
+            </div>
           )}
 
           {/* Reviews */}
