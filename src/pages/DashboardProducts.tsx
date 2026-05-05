@@ -72,7 +72,7 @@ const emptyForm: ProductForm = {
   care_instructions: "",
 };
 
-export default function DashboardProducts() {
+function DashboardProducts() {
   const { toast } = useToast();
   const { store } = useStore();
   const [products, setProducts] = useState<Product[]>([]);
