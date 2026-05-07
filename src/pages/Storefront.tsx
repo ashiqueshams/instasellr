@@ -339,13 +339,103 @@ function StorefrontContent({
     );
   }
 
-  // Main storefront - App Store layout
+  const NEW_BADGE_DAYS = 30;
+  const isNew = (p: Product) => {
+    if (!p.created_at) return false;
+    return Date.now() - new Date(p.created_at).getTime() < NEW_BADGE_DAYS * 86400000;
+  };
+
   return (
     <div className="min-h-screen bg-white" style={{ fontFamily: `'${store.font_body}', sans-serif` }}>
       <div className="max-w-[480px] mx-auto px-5 py-8 pb-28">
         <div className="flex flex-col gap-6">
-          {/* Header with hero, logo, name, Shop All, info bar */}
-          <StoreHeader store={enrichedStore} onShopAll={() => setShowAllProducts(true)} />
+          <StoreHeader store={enrichedStore} />
+
+          <button
+            onClick={() => navigate(`/store/${store.slug}/search`)}
+            className="relative w-full text-left animate-fadeUp"
+          >
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+            <div className="w-full bg-card rounded-lg h-11 pl-10 pr-4 flex items-center text-sm font-body store-shadow text-muted-foreground">
+              Search products...
+            </div>
+          </button>
+
+          {referral && (
+            <div
+              className="rounded-2xl px-4 py-3 flex items-center gap-3 animate-fadeUp"
+              style={{ backgroundColor: store.accent_color + "12", border: `1px solid ${store.accent_color}30` }}
+            >
+              <div
+                className="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
+                style={{ backgroundColor: store.accent_color + "20" }}
+              >
+                <Tag className="w-4 h-4" style={{ color: store.accent_color }} />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-heading font-semibold text-sm" style={{ color: store.text_color || undefined }}>
+                  {referral.discount_percent}% off via {referral.influencer_name}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Discount auto-applied at checkout · Code <span className="font-mono">{referral.code}</span>
+                </p>
+              </div>
+            </div>
+          )}
+
+          {bundles.map((bundle) => (
+            <BundleCard key={bundle.id} bundle={bundle} products={bundle.products} accentColor={store.accent_color} onBuyBundle={() => setSelectedBundle(bundle)} />
+          ))}
+
+          {storeLinks.length > 0 && <StorefrontLinks links={storeLinks} store={store} />}
+
+          {categories.length > 0 && (
+            <CategoryCards
+              categories={categories}
+              productCounts={products.reduce((acc, p) => {
+                if (p.category_id) acc[p.category_id] = (acc[p.category_id] || 0) + 1;
+                return acc;
+              }, {} as Record<string, number>)}
+              store={store}
+              selectedCategoryId={selectedCategoryId}
+              onSelectCategory={setSelectedCategoryId}
+            />
+          )}
+
+          {selectedCategoryId && (
+            <div>
+              <h3 className="font-heading font-semibold text-sm mb-3" style={{ color: store.text_color || undefined }}>
+                {categories.find(c => c.id === selectedCategoryId)?.name} ({filteredProducts.length})
+              </h3>
+              <ProductList products={filteredProducts} onSelectProduct={setSelectedProduct} layout={store.layout} cardStyle={store.card_style} store={store} isNew={isNew} />
+            </div>
+          )}
+
+          {!selectedCategoryId && shuffledProducts.length > 0 && (
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="font-heading font-semibold text-sm" style={{ color: store.text_color || undefined }}>All Products</h3>
+                <span className="text-xs text-muted-foreground">{shuffledProducts.length} items</span>
+              </div>
+              <ProductList products={shuffledProducts} onSelectProduct={setSelectedProduct} layout={store.layout} cardStyle={store.card_style} store={store} isNew={isNew} />
+            </div>
+          )}
+
+          <ReviewsSection store={store} />
+          <SellerInfo store={store} />
+
+          {store.footer_image_url && (
+            <div className="w-full rounded-2xl overflow-hidden">
+              <img src={store.footer_image_url} alt="Footer" className="w-full h-48 object-cover" />
+            </div>
+          )}
+        </div>
+      </div>
+
+      <CartButton store={store} />
+      <CartDrawer store={store} onCheckout={() => setShowCheckout(true)} />
+    </div>
+  );
 
           {/* Referral banner */}
           {referral && (
