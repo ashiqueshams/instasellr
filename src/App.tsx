@@ -39,6 +39,7 @@ const App = () => (
           <Route path="/auth" element={<Auth />} />
           <Route path="/onboarding" element={<Onboarding />} />
           <Route path="/store/:slug" element={<Storefront />} />
+          <Route path="/store/:slug/search" element={<StorefrontSearch />} />
           <Route
             path="/dashboard"
             element={
