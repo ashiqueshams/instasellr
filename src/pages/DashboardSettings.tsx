@@ -295,6 +295,9 @@ export default function DashboardSettings() {
           <ChevronRight className="w-4 h-4 text-muted-foreground" />
         </Link>
 
+        {/* Custom Domain */}
+        <CustomDomainCard />
+
         {/* Basic Info */}
         <div className="bg-card rounded-xl p-5 store-shadow space-y-4">
           <p className="font-heading font-semibold text-sm text-foreground">Basic Info</p>
