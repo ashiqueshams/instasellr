@@ -436,6 +436,7 @@ function StorefrontContent({
       <CartDrawer store={store} onCheckout={() => setShowCheckout(true)} />
     </div>
   );
+}
 
           {/* Referral banner */}
           {referral && (
