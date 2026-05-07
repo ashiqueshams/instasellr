@@ -3,7 +3,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useStore } from "@/hooks/use-store";
 import { supabase } from "@/integrations/supabase/client";
 import { uploadImage } from "@/lib/imageUpload";
-import { Loader2, X, ImageIcon, Upload, BarChart3, ChevronRight } from "lucide-react";
+import { Loader2, X, ImageIcon, Upload, BarChart3, ChevronRight, Globe, Copy, Check } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const FONT_OPTIONS = [
