@@ -20,7 +20,8 @@ import ReviewsSection from "@/components/storefront/ReviewsSection";
 import TrackingScripts from "@/components/storefront/TrackingScripts";
 import CategoryCards from "@/components/storefront/CategoryCards";
 import { useReferral } from "@/hooks/use-referral";
-import { Tag } from "lucide-react";
+import { Tag, Search } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 export default function Storefront() {
   const { slug } = useParams<{ slug: string }>();
