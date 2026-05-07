@@ -23,6 +23,7 @@ interface StoreData {
   text_color: string | null;
   social_links_color: string | null;
   social_links: Record<string, string>;
+  custom_domain: string | null;
 }
 
 export function useStore() {
@@ -62,6 +63,7 @@ export function useStore() {
           text_color: (data as any).text_color || null,
           social_links_color: (data as any).social_links_color || null,
           social_links: (data.social_links as Record<string, string>) || {},
+          custom_domain: (data as any).custom_domain || null,
         });
       } else if (!error || error.code === "PGRST116") {
         const slug = user.email?.split("@")[0]?.replace(/[^a-z0-9]/gi, "-") || "my-store";
@@ -101,6 +103,7 @@ export function useStore() {
             text_color: (newStore as any).text_color || null,
             social_links_color: (newStore as any).social_links_color || null,
             social_links: (newStore.social_links as Record<string, string>) || {},
+            custom_domain: (newStore as any).custom_domain || null,
           });
         }
       }

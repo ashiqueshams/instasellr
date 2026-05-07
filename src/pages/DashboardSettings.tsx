@@ -470,20 +470,28 @@ export default function DashboardSettings() {
   );
 }
 
-const NAMESERVERS = ["ns1.lovable.app", "ns2.lovable.app"];
-const A_RECORD_IP = "185.158.133.1";
-const TXT_RECORD_NAME = "_lovable";
+interface DnsRecord {
+  type: string;
+  name: string;
+  value: string;
+}
 
 function CustomDomainCard() {
   const { toast } = useToast();
-  const [domain, setDomain] = useState<string>(() => localStorage.getItem("custom_domain") || "");
-  const [saved, setSaved] = useState<string>(() => localStorage.getItem("custom_domain") || "");
-  const [mode, setMode] = useState<"nameservers" | "records">(
-    () => (localStorage.getItem("custom_domain_mode") as any) || "nameservers"
-  );
+  const { store, setStore } = useStore();
+  const [domain, setDomain] = useState<string>("");
+  const [saving, setSaving] = useState(false);
+  const [dnsRecords, setDnsRecords] = useState<DnsRecord[]>([]);
   const [copied, setCopied] = useState<string | null>(null);
 
-  const verifyToken = `lovable_verify=${saved || "your-domain"}`;
+  // Initialize domain from store context
+  useEffect(() => {
+    if (store?.custom_domain) {
+      setDomain(store.custom_domain);
+    }
+  }, [store?.custom_domain]);
+
+  const savedDomain = store?.custom_domain || null;
 
   const copy = (val: string, key: string) => {
     navigator.clipboard.writeText(val);
@@ -491,13 +499,63 @@ function CustomDomainCard() {
     setTimeout(() => setCopied(null), 1500);
   };
 
-  const save = () => {
+  const save = async () => {
+    if (!store) return;
+
     const clean = domain.trim().toLowerCase().replace(/^https?:\/\//, "").replace(/\/$/, "");
-    if (!clean) return;
-    localStorage.setItem("custom_domain", clean);
-    localStorage.setItem("custom_domain_mode", mode);
-    setSaved(clean);
-    toast({ title: "Domain saved", description: "Now configure DNS at your registrar." });
+    if (!clean) {
+      toast({ title: "Please enter a domain", variant: "destructive" });
+      return;
+    }
+
+    setSaving(true);
+
+    try {
+      // 1. Save domain to Supabase
+      const { error: updateError } = await supabase
+        .from("stores")
+        .update({ custom_domain: clean } as any)
+        .eq("id", store.id);
+
+      if (updateError) {
+        throw new Error(updateError.message);
+      }
+
+      // 2. Call the Supabase Edge Function to register domain with Vercel
+      const { data: fnData, error: fnError } = await supabase.functions.invoke("add-vercel-domain", {
+        body: { domain: clean, storeId: store.id },
+      });
+
+      if (fnError) {
+        throw new Error(fnError.message || "Failed to register domain with Vercel");
+      }
+
+      // 3. Update local store context
+      setStore({ ...store, custom_domain: clean });
+
+      // 4. Set DNS records from response (Vercel returns verification records)
+      if (fnData?.dnsRecords && Array.isArray(fnData.dnsRecords)) {
+        setDnsRecords(fnData.dnsRecords);
+      } else if (fnData?.verification) {
+        // Handle Vercel's verification array format
+        const records: DnsRecord[] = fnData.verification.map((v: any) => ({
+          type: v.type,
+          name: v.domain,
+          value: v.value,
+        }));
+        setDnsRecords(records);
+      }
+
+      toast({ title: "Domain saved", description: "Configure DNS at your registrar using the records below." });
+    } catch (err: any) {
+      toast({
+        title: "Failed to save domain",
+        description: err.message || "Something went wrong",
+        variant: "destructive",
+      });
+    } finally {
+      setSaving(false);
+    }
   };
 
   const inputCls = "h-11 w-full rounded-lg bg-background px-3.5 text-[16px] sm:text-sm font-body border border-border outline-none focus:ring-2 focus:ring-primary/20";
@@ -508,8 +566,15 @@ function CustomDomainCard() {
         <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
           <Globe className="w-5 h-5" />
         </div>
-        <div>
-          <p className="font-heading font-semibold text-sm text-foreground">Custom Domain</p>
+        <div className="flex-1">
+          <div className="flex items-center gap-2">
+            <p className="font-heading font-semibold text-sm text-foreground">Custom Domain</p>
+            {savedDomain && (
+              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-yellow-100 text-yellow-800">
+                Pending DNS
+              </span>
+            )}
+          </div>
           <p className="text-xs text-muted-foreground font-body">
             Connect your own domain to point at this store.
           </p>
@@ -526,60 +591,55 @@ function CustomDomainCard() {
         />
       </div>
 
-      <div>
-        <label className="text-xs text-muted-foreground font-body mb-1.5 block">Setup method</label>
-        <div className="grid grid-cols-2 gap-2">
-          <button
-            onClick={() => setMode("nameservers")}
-            className={`h-10 rounded-lg text-sm font-medium transition-all ${mode === "nameservers" ? "bg-primary text-primary-foreground" : "bg-background border border-border text-muted-foreground"}`}
-          >
-            Nameservers (easiest)
-          </button>
-          <button
-            onClick={() => setMode("records")}
-            className={`h-10 rounded-lg text-sm font-medium transition-all ${mode === "records" ? "bg-primary text-primary-foreground" : "bg-background border border-border text-muted-foreground"}`}
-          >
-            DNS records
-          </button>
-        </div>
-      </div>
-
       <button
         onClick={save}
-        className="h-10 w-full rounded-lg bg-primary text-primary-foreground font-heading font-semibold text-sm hover:brightness-110 active:scale-[0.98] transition-all"
+        disabled={saving}
+        className="h-10 w-full rounded-lg bg-primary text-primary-foreground font-heading font-semibold text-sm hover:brightness-110 active:scale-[0.98] transition-all disabled:opacity-50 flex items-center justify-center gap-2"
       >
+        {saving && <Loader2 className="w-4 h-4 animate-spin" />}
         Save domain
       </button>
 
-      {saved && (
+      {(savedDomain || dnsRecords.length > 0) && (
         <div className="rounded-lg bg-muted/40 p-3 space-y-3">
-          {mode === "nameservers" ? (
-            <>
-              <p className="text-xs font-semibold text-foreground">
-                Set these nameservers at your domain registrar
-              </p>
-              <p className="text-[11px] text-muted-foreground">
-                Log into your domain dashboard (GoDaddy, Namecheap, etc.) → DNS / Nameservers → replace with the two below. Propagation can take up to 24 hours.
-              </p>
-              {NAMESERVERS.map((ns) => (
-                <div key={ns} className="flex items-center justify-between bg-background rounded px-3 py-2 border border-border">
-                  <code className="text-xs font-mono">{ns}</code>
-                  <button onClick={() => copy(ns, ns)} className="text-muted-foreground hover:text-foreground">
-                    {copied === ns ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-                  </button>
-                </div>
-              ))}
-            </>
+          <p className="text-xs font-semibold text-foreground">Add these DNS records at your registrar</p>
+          <p className="text-[11px] text-muted-foreground">
+            Log into your domain dashboard (GoDaddy, Namecheap, Cloudflare, etc.) and add these records. Propagation can take up to 24 hours.
+          </p>
+
+          {dnsRecords.length > 0 ? (
+            dnsRecords.map((record, idx) => (
+              <DnsRow
+                key={`${record.type}-${record.name}-${idx}`}
+                type={record.type}
+                name={record.name}
+                value={record.value}
+                onCopy={() => copy(record.value, `record-${idx}`)}
+                copied={copied === `record-${idx}`}
+              />
+            ))
           ) : (
             <>
-              <p className="text-xs font-semibold text-foreground">Add these DNS records</p>
-              <DnsRow type="A" name="@" value={A_RECORD_IP} onCopy={() => copy(A_RECORD_IP, "a1")} copied={copied === "a1"} />
-              <DnsRow type="A" name="www" value={A_RECORD_IP} onCopy={() => copy(A_RECORD_IP, "a2")} copied={copied === "a2"} />
-              <DnsRow type="TXT" name={TXT_RECORD_NAME} value={verifyToken} onCopy={() => copy(verifyToken, "txt")} copied={copied === "txt"} />
+              {/* Default records if Edge Function hasn't returned yet */}
+              <DnsRow
+                type="A"
+                name="@"
+                value="76.76.21.21"
+                onCopy={() => copy("76.76.21.21", "a-root")}
+                copied={copied === "a-root"}
+              />
+              <DnsRow
+                type="CNAME"
+                name="www"
+                value="cname.vercel-dns.com"
+                onCopy={() => copy("cname.vercel-dns.com", "cname-www")}
+                copied={copied === "cname-www"}
+              />
             </>
           )}
+
           <p className="text-[11px] text-muted-foreground pt-1">
-            Once DNS resolves, <strong>{saved}</strong> will load this store. SSL is provisioned automatically.
+            Once DNS resolves, <strong>{savedDomain || domain}</strong> will load this store. SSL is provisioned automatically.
           </p>
         </div>
       )}
