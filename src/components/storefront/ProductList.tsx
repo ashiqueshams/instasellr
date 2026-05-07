@@ -53,6 +53,13 @@ export default function ProductList({ products, onSelectProduct, layout = "grid"
               </div>
             )}
 
+            {/* NEW badge */}
+            {isNew?.(product) && (
+              <div className="absolute top-2 right-2 text-[10px] font-bold px-2 py-0.5 rounded-full text-white" style={{ backgroundColor: accentColor }}>
+                NEW
+              </div>
+            )}
+
             {/* Discount badge */}
             {product.compare_at_price && product.compare_at_price > product.price && (
               <div className="absolute top-2 left-2 bg-destructive text-destructive-foreground text-[10px] font-bold px-2 py-0.5 rounded-full">
