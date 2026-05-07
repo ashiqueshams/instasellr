@@ -226,6 +226,7 @@ function StorefrontContent({
   showAllProducts, setShowAllProducts,
 }: StorefrontContentProps) {
 
+  const navigate = useNavigate();
   const { campaign: referral } = useReferral(store.id);
   const [avgRating, setAvgRating] = useState<number | null>(null);
   const [reviewCount, setReviewCount] = useState(0);
