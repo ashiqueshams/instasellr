@@ -469,3 +469,134 @@ export default function DashboardSettings() {
     </div>
   );
 }
+
+const NAMESERVERS = ["ns1.lovable.app", "ns2.lovable.app"];
+const A_RECORD_IP = "185.158.133.1";
+const TXT_RECORD_NAME = "_lovable";
+
+function CustomDomainCard() {
+  const { toast } = useToast();
+  const [domain, setDomain] = useState<string>(() => localStorage.getItem("custom_domain") || "");
+  const [saved, setSaved] = useState<string>(() => localStorage.getItem("custom_domain") || "");
+  const [mode, setMode] = useState<"nameservers" | "records">(
+    () => (localStorage.getItem("custom_domain_mode") as any) || "nameservers"
+  );
+  const [copied, setCopied] = useState<string | null>(null);
+
+  const verifyToken = `lovable_verify=${saved || "your-domain"}`;
+
+  const copy = (val: string, key: string) => {
+    navigator.clipboard.writeText(val);
+    setCopied(key);
+    setTimeout(() => setCopied(null), 1500);
+  };
+
+  const save = () => {
+    const clean = domain.trim().toLowerCase().replace(/^https?:\/\//, "").replace(/\/$/, "");
+    if (!clean) return;
+    localStorage.setItem("custom_domain", clean);
+    localStorage.setItem("custom_domain_mode", mode);
+    setSaved(clean);
+    toast({ title: "Domain saved", description: "Now configure DNS at your registrar." });
+  };
+
+  const inputCls = "h-11 w-full rounded-lg bg-background px-3.5 text-[16px] sm:text-sm font-body border border-border outline-none focus:ring-2 focus:ring-primary/20";
+
+  return (
+    <div className="bg-card rounded-xl p-5 store-shadow space-y-4">
+      <div className="flex items-center gap-3">
+        <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+          <Globe className="w-5 h-5" />
+        </div>
+        <div>
+          <p className="font-heading font-semibold text-sm text-foreground">Custom Domain</p>
+          <p className="text-xs text-muted-foreground font-body">
+            Connect your own domain to point at this store.
+          </p>
+        </div>
+      </div>
+
+      <div>
+        <label className="text-xs text-muted-foreground font-body mb-1 block">Your domain</label>
+        <input
+          value={domain}
+          onChange={(e) => setDomain(e.target.value)}
+          placeholder="yourbrand.com"
+          className={inputCls}
+        />
+      </div>
+
+      <div>
+        <label className="text-xs text-muted-foreground font-body mb-1.5 block">Setup method</label>
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            onClick={() => setMode("nameservers")}
+            className={`h-10 rounded-lg text-sm font-medium transition-all ${mode === "nameservers" ? "bg-primary text-primary-foreground" : "bg-background border border-border text-muted-foreground"}`}
+          >
+            Nameservers (easiest)
+          </button>
+          <button
+            onClick={() => setMode("records")}
+            className={`h-10 rounded-lg text-sm font-medium transition-all ${mode === "records" ? "bg-primary text-primary-foreground" : "bg-background border border-border text-muted-foreground"}`}
+          >
+            DNS records
+          </button>
+        </div>
+      </div>
+
+      <button
+        onClick={save}
+        className="h-10 w-full rounded-lg bg-primary text-primary-foreground font-heading font-semibold text-sm hover:brightness-110 active:scale-[0.98] transition-all"
+      >
+        Save domain
+      </button>
+
+      {saved && (
+        <div className="rounded-lg bg-muted/40 p-3 space-y-3">
+          {mode === "nameservers" ? (
+            <>
+              <p className="text-xs font-semibold text-foreground">
+                Set these nameservers at your domain registrar
+              </p>
+              <p className="text-[11px] text-muted-foreground">
+                Log into your domain dashboard (GoDaddy, Namecheap, etc.) → DNS / Nameservers → replace with the two below. Propagation can take up to 24 hours.
+              </p>
+              {NAMESERVERS.map((ns) => (
+                <div key={ns} className="flex items-center justify-between bg-background rounded px-3 py-2 border border-border">
+                  <code className="text-xs font-mono">{ns}</code>
+                  <button onClick={() => copy(ns, ns)} className="text-muted-foreground hover:text-foreground">
+                    {copied === ns ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                  </button>
+                </div>
+              ))}
+            </>
+          ) : (
+            <>
+              <p className="text-xs font-semibold text-foreground">Add these DNS records</p>
+              <DnsRow type="A" name="@" value={A_RECORD_IP} onCopy={() => copy(A_RECORD_IP, "a1")} copied={copied === "a1"} />
+              <DnsRow type="A" name="www" value={A_RECORD_IP} onCopy={() => copy(A_RECORD_IP, "a2")} copied={copied === "a2"} />
+              <DnsRow type="TXT" name={TXT_RECORD_NAME} value={verifyToken} onCopy={() => copy(verifyToken, "txt")} copied={copied === "txt"} />
+            </>
+          )}
+          <p className="text-[11px] text-muted-foreground pt-1">
+            Once DNS resolves, <strong>{saved}</strong> will load this store. SSL is provisioned automatically.
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function DnsRow({ type, name, value, onCopy, copied }: { type: string; name: string; value: string; onCopy: () => void; copied: boolean }) {
+  return (
+    <div className="flex items-center justify-between bg-background rounded px-3 py-2 border border-border gap-2">
+      <div className="flex-1 min-w-0">
+        <p className="text-[10px] text-muted-foreground">{type} · {name}</p>
+        <code className="text-xs font-mono truncate block">{value}</code>
+      </div>
+      <button onClick={onCopy} className="text-muted-foreground hover:text-foreground shrink-0">
+        {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+      </button>
+    </div>
+  );
+}
