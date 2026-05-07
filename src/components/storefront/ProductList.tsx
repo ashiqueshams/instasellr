@@ -7,9 +7,10 @@ interface ProductListProps {
   layout?: string;
   cardStyle?: string;
   store?: Store;
+  isNew?: (p: Product) => boolean;
 }
 
-export default function ProductList({ products, onSelectProduct, layout = "grid", cardStyle = "card", store }: ProductListProps) {
+export default function ProductList({ products, onSelectProduct, layout = "grid", cardStyle = "card", store, isNew }: ProductListProps) {
   const textColor = store?.text_color || undefined;
   const accentColor = store?.accent_color || "#ff4545";
 
