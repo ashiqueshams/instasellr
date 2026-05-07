@@ -7,9 +7,10 @@ interface ProductListProps {
   layout?: string;
   cardStyle?: string;
   store?: Store;
+  isNew?: (p: Product) => boolean;
 }
 
-export default function ProductList({ products, onSelectProduct, layout = "grid", cardStyle = "card", store }: ProductListProps) {
+export default function ProductList({ products, onSelectProduct, layout = "grid", cardStyle = "card", store, isNew }: ProductListProps) {
   const textColor = store?.text_color || undefined;
   const accentColor = store?.accent_color || "#ff4545";
 
@@ -49,6 +50,13 @@ export default function ProductList({ products, onSelectProduct, layout = "grid"
             {product.product_type === "physical" && product.stock_quantity === 0 && (
               <div className="absolute inset-0 bg-background/60 flex items-center justify-center">
                 <span className="bg-destructive text-destructive-foreground text-xs font-semibold px-3 py-1 rounded-full">Out of Stock</span>
+              </div>
+            )}
+
+            {/* NEW badge */}
+            {isNew?.(product) && (
+              <div className="absolute top-2 right-2 text-[10px] font-bold px-2 py-0.5 rounded-full text-white" style={{ backgroundColor: accentColor }}>
+                NEW
               </div>
             )}
 

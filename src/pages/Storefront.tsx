@@ -20,7 +20,8 @@ import ReviewsSection from "@/components/storefront/ReviewsSection";
 import TrackingScripts from "@/components/storefront/TrackingScripts";
 import CategoryCards from "@/components/storefront/CategoryCards";
 import { useReferral } from "@/hooks/use-referral";
-import { Tag } from "lucide-react";
+import { Tag, Search } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 export default function Storefront() {
   const { slug } = useParams<{ slug: string }>();
@@ -225,6 +226,7 @@ function StorefrontContent({
   showAllProducts, setShowAllProducts,
 }: StorefrontContentProps) {
 
+  const navigate = useNavigate();
   const { campaign: referral } = useReferral(store.id);
   const [avgRating, setAvgRating] = useState<number | null>(null);
   const [reviewCount, setReviewCount] = useState(0);
@@ -253,14 +255,15 @@ function StorefrontContent({
     _reviewCount: reviewCount,
   };
 
-  // New products (most recent 8)
-  const newProducts = useMemo(() => products.slice(0, 8), [products]);
-
-  // "Most popular" - products sorted by price descending as a proxy
-  const popularProducts = useMemo(
-    () => [...products].sort((a, b) => b.price - a.price).slice(0, 8),
-    [products]
-  );
+  // Shuffle products randomly (stable per session)
+  const shuffledProducts = useMemo(() => {
+    const arr = [...products];
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  }, [products]);
 
   // Scroll to top on view change
   useEffect(() => {
@@ -337,15 +340,28 @@ function StorefrontContent({
     );
   }
 
-  // Main storefront - App Store layout
+  const NEW_BADGE_DAYS = 30;
+  const isNew = (p: Product) => {
+    if (!p.created_at) return false;
+    return Date.now() - new Date(p.created_at).getTime() < NEW_BADGE_DAYS * 86400000;
+  };
+
   return (
     <div className="min-h-screen bg-white" style={{ fontFamily: `'${store.font_body}', sans-serif` }}>
       <div className="max-w-[480px] mx-auto px-5 py-8 pb-28">
         <div className="flex flex-col gap-6">
-          {/* Header with hero, logo, name, Shop All, info bar */}
-          <StoreHeader store={enrichedStore} onShopAll={() => setShowAllProducts(true)} />
+          <StoreHeader store={enrichedStore} />
 
-          {/* Referral banner */}
+          <button
+            onClick={() => navigate(`/store/${store.slug}/search`)}
+            className="relative w-full text-left animate-fadeUp"
+          >
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+            <div className="w-full bg-card rounded-lg h-11 pl-10 pr-4 flex items-center text-sm font-body store-shadow text-muted-foreground">
+              Search products...
+            </div>
+          </button>
+
           {referral && (
             <div
               className="rounded-2xl px-4 py-3 flex items-center gap-3 animate-fadeUp"
@@ -368,15 +384,12 @@ function StorefrontContent({
             </div>
           )}
 
-          {/* Bundles */}
           {bundles.map((bundle) => (
             <BundleCard key={bundle.id} bundle={bundle} products={bundle.products} accentColor={store.accent_color} onBuyBundle={() => setSelectedBundle(bundle)} />
           ))}
 
-          {/* Custom links */}
           {storeLinks.length > 0 && <StorefrontLinks links={storeLinks} store={store} />}
 
-          {/* Category cards */}
           {categories.length > 0 && (
             <CategoryCards
               categories={categories}
@@ -390,53 +403,26 @@ function StorefrontContent({
             />
           )}
 
-          {/* Filtered category results */}
           {selectedCategoryId && (
             <div>
               <h3 className="font-heading font-semibold text-sm mb-3" style={{ color: store.text_color || undefined }}>
                 {categories.find(c => c.id === selectedCategoryId)?.name} ({filteredProducts.length})
               </h3>
-              <ProductList products={filteredProducts} onSelectProduct={setSelectedProduct} layout={store.layout} cardStyle={store.card_style} store={store} />
+              <ProductList products={filteredProducts} onSelectProduct={setSelectedProduct} layout={store.layout} cardStyle={store.card_style} store={store} isNew={isNew} />
             </div>
           )}
 
-          {/* What's New - horizontal scroll */}
-          {!selectedCategoryId && newProducts.length > 0 && (
-            <HorizontalProductScroll
-              title="What's New"
-              products={newProducts}
-              onSelectProduct={setSelectedProduct}
-              store={store}
-              onSeeAll={() => setShowAllProducts(true)}
-            />
-          )}
-
-          {/* Most Popular - horizontal scroll */}
-          {!selectedCategoryId && popularProducts.length > 0 && (
-            <HorizontalProductScroll
-              title="Most Popular"
-              products={popularProducts}
-              onSelectProduct={setSelectedProduct}
-              store={store}
-              onSeeAll={() => setShowAllProducts(true)}
-            />
-          )}
-
-          {/* All products grid */}
-          {!selectedCategoryId && products.length > 0 && (
+          {!selectedCategoryId && shuffledProducts.length > 0 && (
             <div>
               <div className="flex items-center justify-between mb-3">
                 <h3 className="font-heading font-semibold text-sm" style={{ color: store.text_color || undefined }}>All Products</h3>
-                <span className="text-xs text-muted-foreground">{products.length} items</span>
+                <span className="text-xs text-muted-foreground">{shuffledProducts.length} items</span>
               </div>
-              <ProductList products={products} onSelectProduct={setSelectedProduct} layout={store.layout} cardStyle={store.card_style} store={store} />
+              <ProductList products={shuffledProducts} onSelectProduct={setSelectedProduct} layout={store.layout} cardStyle={store.card_style} store={store} isNew={isNew} />
             </div>
           )}
 
-          {/* Reviews */}
           <ReviewsSection store={store} />
-
-          {/* Seller Information */}
           <SellerInfo store={store} />
 
           {store.footer_image_url && (

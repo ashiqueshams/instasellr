@@ -18,7 +18,7 @@ export default function CategoryCards({ categories, productCounts, store, select
       <h3 className="font-heading font-semibold text-sm mb-3" style={{ color: textColor }}>
         Shop by Category
       </h3>
-      <div className="grid grid-cols-3 gap-2.5">
+      <div className="flex gap-2.5 overflow-x-auto -mx-5 px-5 pb-1 snap-x snap-mandatory scrollbar-hide" style={{ scrollbarWidth: "none" }}>
         {categories.map((c) => {
           const isSelected = selectedCategoryId === c.id;
           const count = productCounts[c.id] || 0;
@@ -26,7 +26,7 @@ export default function CategoryCards({ categories, productCounts, store, select
             <button
               key={c.id}
               onClick={() => onSelectCategory(isSelected ? null : c.id)}
-              className="relative rounded-xl overflow-hidden aspect-square group transition-all duration-200 hover:shadow-lg"
+              className="relative rounded-xl overflow-hidden w-28 h-28 flex-shrink-0 snap-start group transition-all duration-200 hover:shadow-lg"
               style={{ outline: isSelected ? `2.5px solid ${accentColor}` : "none", outlineOffset: "-1px" }}
             >
               {c.image_url ? (
