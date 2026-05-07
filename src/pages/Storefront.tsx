@@ -254,14 +254,15 @@ function StorefrontContent({
     _reviewCount: reviewCount,
   };
 
-  // New products (most recent 8)
-  const newProducts = useMemo(() => products.slice(0, 8), [products]);
-
-  // "Most popular" - products sorted by price descending as a proxy
-  const popularProducts = useMemo(
-    () => [...products].sort((a, b) => b.price - a.price).slice(0, 8),
-    [products]
-  );
+  // Shuffle products randomly (stable per session)
+  const shuffledProducts = useMemo(() => {
+    const arr = [...products];
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  }, [products]);
 
   // Scroll to top on view change
   useEffect(() => {
