@@ -55,10 +55,10 @@ export default function StorefrontReviews() {
     if (!s) { setLoading(false); return; }
     setStore(s as any);
     const { data } = await (supabase
-      .from("reviews")
+      .from("reviews" as any)
       .select("id,customer_name,rating,review_text,created_at,owner_response,owner_response_at,is_visible")
       .eq("store_id", s.id)
-      .eq("is_visible" as any, true)
+      .eq("is_visible", true)
       .order("created_at", { ascending: false }) as any);
     setReviews((data || []) as Review[]);
     setLoading(false);
