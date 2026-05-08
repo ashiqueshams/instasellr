@@ -90,12 +90,24 @@ export default function StoreHeader({ store, onShopAll, onInfoClick, onRatingCli
 
         {/* Name, tagline, Shop All button */}
         <div className="flex-1 min-w-0">
-          <h1
-            className="font-heading font-bold text-lg leading-tight"
-            style={{ fontFamily: `'${store.font_heading}', sans-serif`, color: store.text_color || undefined }}
-          >
-            {store.name}
-          </h1>
+          <div className="flex items-center gap-1.5">
+            <h1
+              className="font-heading font-bold text-lg leading-tight truncate"
+              style={{ fontFamily: `'${store.font_heading}', sans-serif`, color: store.text_color || undefined }}
+            >
+              {store.name}
+            </h1>
+            {onInfoClick && (
+              <button
+                type="button"
+                onClick={onInfoClick}
+                aria-label="Seller information"
+                className="shrink-0 text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <Info className="w-4 h-4" />
+              </button>
+            )}
+          </div>
           <p
             className="text-xs mt-0.5 leading-relaxed text-muted-foreground line-clamp-2"
           >
