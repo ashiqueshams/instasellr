@@ -438,9 +438,6 @@ function StorefrontContent({
             </div>
           )}
 
-          <ReviewsSection store={store} />
-          <SellerInfo store={store} />
-
           {store.footer_image_url && (
             <div className="w-full rounded-2xl overflow-hidden">
               <img src={store.footer_image_url} alt="Footer" className="w-full h-48 object-cover" />
@@ -448,6 +445,12 @@ function StorefrontContent({
           )}
         </div>
       </div>
+
+      <Sheet open={infoOpen} onOpenChange={setInfoOpen}>
+        <SheetContent side="bottom" className="rounded-t-2xl max-h-[85vh] overflow-y-auto">
+          <SellerInfo store={store} />
+        </SheetContent>
+      </Sheet>
 
       <CartButton store={store} />
       <CartDrawer store={store} onCheckout={() => setShowCheckout(true)} />
