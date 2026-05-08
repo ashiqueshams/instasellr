@@ -22,6 +22,7 @@ export function mapProduct(p: any): Product {
     care_instructions: p.care_instructions ?? "",
     category_id: p.category_id ?? null,
     position: p.position ?? 0,
+    is_popular: p.is_popular ?? false,
     created_at: p.created_at,
   };
 }

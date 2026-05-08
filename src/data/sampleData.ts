@@ -19,6 +19,7 @@ export interface Product {
   care_instructions?: string;
   category_id?: string | null;
   position?: number;
+  is_popular?: boolean;
   created_at: string;
 }
 
