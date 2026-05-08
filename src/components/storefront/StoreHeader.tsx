@@ -142,12 +142,17 @@ export default function StoreHeader({ store, onShopAll, onInfoClick, onRatingCli
   );
 }
 
-function InfoStat({ label, value, subtext }: { label: string; value: string; subtext?: string }) {
+function InfoStat({ label, value, subtext, onClick }: { label: string; value: string; subtext?: string; onClick?: () => void }) {
+  const Comp: any = onClick ? "button" : "div";
   return (
-    <div className="flex flex-col items-center text-center px-2">
+    <Comp
+      type={onClick ? "button" : undefined}
+      onClick={onClick}
+      className={`flex flex-col items-center text-center px-2 ${onClick ? "cursor-pointer hover:opacity-70 transition-opacity" : ""}`}
+    >
       <span className="text-[10px] font-medium text-muted-foreground tracking-wide">{label}</span>
       <span className="text-sm font-bold font-heading mt-0.5">{value}</span>
       {subtext && <span className="text-[9px] text-muted-foreground">{subtext}</span>}
-    </div>
+    </Comp>
   );
 }
