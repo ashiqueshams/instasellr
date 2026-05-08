@@ -9,6 +9,7 @@ import { mapProduct } from "@/lib/mapProduct";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import CategoriesManager from "@/components/dashboard/CategoriesManager";
+import PopularManager from "@/components/dashboard/PopularManager";
 
 export default function DashboardProductsPage() {
   return (
@@ -16,12 +17,16 @@ export default function DashboardProductsPage() {
       <TabsList>
         <TabsTrigger value="products">Products</TabsTrigger>
         <TabsTrigger value="categories">Categories</TabsTrigger>
+        <TabsTrigger value="popular">Most Popular</TabsTrigger>
       </TabsList>
       <TabsContent value="products" className="mt-4">
         <DashboardProducts />
       </TabsContent>
       <TabsContent value="categories" className="mt-4">
         <CategoriesManager />
+      </TabsContent>
+      <TabsContent value="popular" className="mt-4">
+        <PopularManager />
       </TabsContent>
     </Tabs>
   );
