@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
-import { Star, MessageSquare, Send } from "lucide-react";
+import { Star, MessageSquare, Send, Eye, EyeOff } from "lucide-react";
 import { useStore } from "@/hooks/use-store";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 
 interface Review {
@@ -16,6 +17,7 @@ interface Review {
   created_at: string;
   owner_response: string | null;
   owner_response_at: string | null;
+  is_visible: boolean;
 }
 
 export default function DashboardReviews() {
@@ -98,7 +100,7 @@ export default function DashboardReviews() {
                   <p className="text-xs text-muted-foreground">{review.customer_email}</p>
                 </div>
                 <div className="text-right">
-                  <div className="flex gap-0.5">
+                  <div className="flex gap-0.5 justify-end">
                     {[1, 2, 3, 4, 5].map((s) => (
                       <Star
                         key={s}
@@ -111,6 +113,19 @@ export default function DashboardReviews() {
                     {new Date(review.created_at).toLocaleDateString()}
                   </p>
                 </div>
+              </div>
+
+              <div className="flex items-center gap-2 mb-3 px-3 py-2 rounded-lg bg-muted/40 border border-border">
+                {review.is_visible ? <Eye className="w-3.5 h-3.5 text-foreground" /> : <EyeOff className="w-3.5 h-3.5 text-muted-foreground" />}
+                <span className="text-xs flex-1">{review.is_visible ? "Visible on storefront reviews page" : "Hidden from storefront"}</span>
+                <Switch
+                  checked={review.is_visible}
+                  onCheckedChange={async (val) => {
+                    const { error } = await (supabase.from("reviews").update({ is_visible: val } as any).eq("id", review.id) as any);
+                    if (error) { toast.error("Failed to update"); return; }
+                    setReviews((prev) => prev.map((r) => r.id === review.id ? { ...r, is_visible: val } : r));
+                  }}
+                />
               </div>
 
               {review.review_text && (

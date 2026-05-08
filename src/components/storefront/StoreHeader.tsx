@@ -1,9 +1,11 @@
 import { Store } from "@/data/sampleData";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, Info } from "lucide-react";
 
 interface StoreHeaderProps {
   store: Store;
   onShopAll?: () => void;
+  onInfoClick?: () => void;
+  onRatingClick?: () => void;
 }
 
 const socialIcons: Record<string, React.ReactNode> = {
@@ -62,7 +64,7 @@ export function SocialIcons({ store, className = "" }: { store: Store; className
   );
 }
 
-export default function StoreHeader({ store, onShopAll }: StoreHeaderProps) {
+export default function StoreHeader({ store, onShopAll, onInfoClick, onRatingClick }: StoreHeaderProps) {
   return (
     <div className="animate-fadeUp">
       {/* Hero banner */}
@@ -88,12 +90,24 @@ export default function StoreHeader({ store, onShopAll }: StoreHeaderProps) {
 
         {/* Name, tagline, Shop All button */}
         <div className="flex-1 min-w-0">
-          <h1
-            className="font-heading font-bold text-lg leading-tight"
-            style={{ fontFamily: `'${store.font_heading}', sans-serif`, color: store.text_color || undefined }}
-          >
-            {store.name}
-          </h1>
+          <div className="flex items-center gap-1.5">
+            <h1
+              className="font-heading font-bold text-lg leading-tight truncate"
+              style={{ fontFamily: `'${store.font_heading}', sans-serif`, color: store.text_color || undefined }}
+            >
+              {store.name}
+            </h1>
+            {onInfoClick && (
+              <button
+                type="button"
+                onClick={onInfoClick}
+                aria-label="Seller information"
+                className="shrink-0 text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <Info className="w-4 h-4" />
+              </button>
+            )}
+          </div>
           <p
             className="text-xs mt-0.5 leading-relaxed text-muted-foreground line-clamp-2"
           >
@@ -119,6 +133,7 @@ export default function StoreHeader({ store, onShopAll }: StoreHeaderProps) {
           label="RATING"
           value={(store as any)._avgRating ? `${(store as any)._avgRating.toFixed(1)} ★` : "—"}
           subtext={(store as any)._reviewCount > 0 ? `${(store as any)._reviewCount} review${(store as any)._reviewCount !== 1 ? "s" : ""}` : undefined}
+          onClick={onRatingClick}
         />
         <div className="w-px h-8 bg-border/50" />
         <InfoStat label="SHIPPING" value={(store as any)._hasPhysical ? "Available" : "Instant"} />
@@ -127,12 +142,17 @@ export default function StoreHeader({ store, onShopAll }: StoreHeaderProps) {
   );
 }
 
-function InfoStat({ label, value, subtext }: { label: string; value: string; subtext?: string }) {
+function InfoStat({ label, value, subtext, onClick }: { label: string; value: string; subtext?: string; onClick?: () => void }) {
+  const Comp: any = onClick ? "button" : "div";
   return (
-    <div className="flex flex-col items-center text-center px-2">
+    <Comp
+      type={onClick ? "button" : undefined}
+      onClick={onClick}
+      className={`flex flex-col items-center text-center px-2 ${onClick ? "cursor-pointer hover:opacity-70 transition-opacity" : ""}`}
+    >
       <span className="text-[10px] font-medium text-muted-foreground tracking-wide">{label}</span>
       <span className="text-sm font-bold font-heading mt-0.5">{value}</span>
       {subtext && <span className="text-[9px] text-muted-foreground">{subtext}</span>}
-    </div>
+    </Comp>
   );
 }

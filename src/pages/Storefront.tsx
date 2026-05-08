@@ -16,7 +16,7 @@ import CartButton from "@/components/storefront/CartButton";
 import CheckoutPage from "@/components/storefront/CheckoutPage";
 import HorizontalProductScroll from "@/components/storefront/HorizontalProductScroll";
 import SellerInfo from "@/components/storefront/SellerInfo";
-import ReviewsSection from "@/components/storefront/ReviewsSection";
+import { Sheet, SheetContent } from "@/components/ui/sheet";
 import TrackingScripts from "@/components/storefront/TrackingScripts";
 import CategoryCards from "@/components/storefront/CategoryCards";
 import { useReferral } from "@/hooks/use-referral";
@@ -346,11 +346,18 @@ function StorefrontContent({
     return Date.now() - new Date(p.created_at).getTime() < NEW_BADGE_DAYS * 86400000;
   };
 
+  const popularProducts = useMemo(() => products.filter((p) => p.is_popular), [products]);
+  const [infoOpen, setInfoOpen] = useState(false);
+
   return (
     <div className="min-h-screen bg-white" style={{ fontFamily: `'${store.font_body}', sans-serif` }}>
       <div className="max-w-[480px] mx-auto px-5 py-8 pb-28">
         <div className="flex flex-col gap-6">
-          <StoreHeader store={enrichedStore} />
+          <StoreHeader
+            store={enrichedStore}
+            onInfoClick={() => setInfoOpen(true)}
+            onRatingClick={() => navigate(`/store/${store.slug}/reviews`)}
+          />
 
           <button
             onClick={() => navigate(`/store/${store.slug}/search`)}
@@ -403,6 +410,15 @@ function StorefrontContent({
             />
           )}
 
+          {!selectedCategoryId && popularProducts.length >= 3 && (
+            <HorizontalProductScroll
+              title="Most Popular"
+              products={popularProducts}
+              onSelectProduct={setSelectedProduct}
+              store={store}
+            />
+          )}
+
           {selectedCategoryId && (
             <div>
               <h3 className="font-heading font-semibold text-sm mb-3" style={{ color: store.text_color || undefined }}>
@@ -422,9 +438,6 @@ function StorefrontContent({
             </div>
           )}
 
-          <ReviewsSection store={store} />
-          <SellerInfo store={store} />
-
           {store.footer_image_url && (
             <div className="w-full rounded-2xl overflow-hidden">
               <img src={store.footer_image_url} alt="Footer" className="w-full h-48 object-cover" />
@@ -432,6 +445,12 @@ function StorefrontContent({
           )}
         </div>
       </div>
+
+      <Sheet open={infoOpen} onOpenChange={setInfoOpen}>
+        <SheetContent side="bottom" className="rounded-t-2xl max-h-[85vh] overflow-y-auto">
+          <SellerInfo store={store} />
+        </SheetContent>
+      </Sheet>
 
       <CartButton store={store} />
       <CartDrawer store={store} onCheckout={() => setShowCheckout(true)} />

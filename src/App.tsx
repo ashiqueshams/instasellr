@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Storefront from "./pages/Storefront";
 import StorefrontSearch from "./pages/StorefrontSearch";
+import StorefrontReviews from "./pages/StorefrontReviews";
 import DashboardLayout from "./pages/DashboardLayout";
 import DashboardOverview from "./pages/DashboardOverview";
 import DashboardProducts from "./pages/DashboardProducts";
@@ -40,6 +41,7 @@ const App = () => (
           <Route path="/onboarding" element={<Onboarding />} />
           <Route path="/store/:slug" element={<Storefront />} />
           <Route path="/store/:slug/search" element={<StorefrontSearch />} />
+          <Route path="/store/:slug/reviews" element={<StorefrontReviews />} />
           <Route
             path="/dashboard"
             element={
