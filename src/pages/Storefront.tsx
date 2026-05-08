@@ -353,7 +353,11 @@ function StorefrontContent({
     <div className="min-h-screen bg-white" style={{ fontFamily: `'${store.font_body}', sans-serif` }}>
       <div className="max-w-[480px] mx-auto px-5 py-8 pb-28">
         <div className="flex flex-col gap-6">
-          <StoreHeader store={enrichedStore} />
+          <StoreHeader
+            store={enrichedStore}
+            onInfoClick={() => setInfoOpen(true)}
+            onRatingClick={() => navigate(`/store/${store.slug}/reviews`)}
+          />
 
           <button
             onClick={() => navigate(`/store/${store.slug}/search`)}
@@ -403,6 +407,15 @@ function StorefrontContent({
               store={store}
               selectedCategoryId={selectedCategoryId}
               onSelectCategory={setSelectedCategoryId}
+            />
+          )}
+
+          {!selectedCategoryId && popularProducts.length >= 3 && (
+            <HorizontalProductScroll
+              title="Most Popular"
+              products={popularProducts}
+              onSelectProduct={setSelectedProduct}
+              store={store}
             />
           )}
 
