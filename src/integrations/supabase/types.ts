@@ -823,6 +823,7 @@ export type Database = {
           id: string
           image_url: string | null
           is_active: boolean | null
+          is_popular: boolean
           material: string | null
           name: string
           popularity_score: number
@@ -848,6 +849,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_active?: boolean | null
+          is_popular?: boolean
           material?: string | null
           name: string
           popularity_score?: number
@@ -873,6 +875,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_active?: boolean | null
+          is_popular?: boolean
           material?: string | null
           name?: string
           popularity_score?: number
@@ -1002,6 +1005,7 @@ export type Database = {
           customer_email: string
           customer_name: string
           id: string
+          is_visible: boolean
           owner_response: string | null
           owner_response_at: string | null
           rating: number
@@ -1013,6 +1017,7 @@ export type Database = {
           customer_email: string
           customer_name: string
           id?: string
+          is_visible?: boolean
           owner_response?: string | null
           owner_response_at?: string | null
           rating: number
@@ -1024,6 +1029,7 @@ export type Database = {
           customer_email?: string
           customer_name?: string
           id?: string
+          is_visible?: boolean
           owner_response?: string | null
           owner_response_at?: string | null
           rating?: number
