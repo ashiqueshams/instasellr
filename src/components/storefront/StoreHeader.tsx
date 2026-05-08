@@ -133,6 +133,7 @@ export default function StoreHeader({ store, onShopAll, onInfoClick, onRatingCli
           label="RATING"
           value={(store as any)._avgRating ? `${(store as any)._avgRating.toFixed(1)} ★` : "—"}
           subtext={(store as any)._reviewCount > 0 ? `${(store as any)._reviewCount} review${(store as any)._reviewCount !== 1 ? "s" : ""}` : undefined}
+          onClick={onRatingClick}
         />
         <div className="w-px h-8 bg-border/50" />
         <InfoStat label="SHIPPING" value={(store as any)._hasPhysical ? "Available" : "Instant"} />
