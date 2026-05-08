@@ -346,6 +346,9 @@ function StorefrontContent({
     return Date.now() - new Date(p.created_at).getTime() < NEW_BADGE_DAYS * 86400000;
   };
 
+  const popularProducts = useMemo(() => products.filter((p) => p.is_popular), [products]);
+  const [infoOpen, setInfoOpen] = useState(false);
+
   return (
     <div className="min-h-screen bg-white" style={{ fontFamily: `'${store.font_body}', sans-serif` }}>
       <div className="max-w-[480px] mx-auto px-5 py-8 pb-28">
