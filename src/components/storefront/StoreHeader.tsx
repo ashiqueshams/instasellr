@@ -1,9 +1,11 @@
 import { Store } from "@/data/sampleData";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, Info } from "lucide-react";
 
 interface StoreHeaderProps {
   store: Store;
   onShopAll?: () => void;
+  onInfoClick?: () => void;
+  onRatingClick?: () => void;
 }
 
 const socialIcons: Record<string, React.ReactNode> = {
