@@ -16,7 +16,7 @@ import CartButton from "@/components/storefront/CartButton";
 import CheckoutPage from "@/components/storefront/CheckoutPage";
 import HorizontalProductScroll from "@/components/storefront/HorizontalProductScroll";
 import SellerInfo from "@/components/storefront/SellerInfo";
-import ReviewsSection from "@/components/storefront/ReviewsSection";
+import { Sheet, SheetContent } from "@/components/ui/sheet";
 import TrackingScripts from "@/components/storefront/TrackingScripts";
 import CategoryCards from "@/components/storefront/CategoryCards";
 import { useReferral } from "@/hooks/use-referral";
