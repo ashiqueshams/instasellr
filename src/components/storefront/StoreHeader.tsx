@@ -64,7 +64,7 @@ export function SocialIcons({ store, className = "" }: { store: Store; className
   );
 }
 
-export default function StoreHeader({ store, onShopAll }: StoreHeaderProps) {
+export default function StoreHeader({ store, onShopAll, onInfoClick, onRatingClick }: StoreHeaderProps) {
   return (
     <div className="animate-fadeUp">
       {/* Hero banner */}
