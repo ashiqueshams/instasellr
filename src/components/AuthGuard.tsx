@@ -45,20 +45,23 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    (async () => {
-      const { data } = await supabase
-        .from("stores")
-        .select("onboarding_completed")
-        .eq("user_id", user.id)
-        .maybeSingle();
+(async () => {
+  const { data } = await supabase
+    .from("stores")
+    .select("onboarding_completed, onboarding_step")
+    .eq("user_id", user.id)
+    .maybeSingle();
 
-      // If no store yet, or onboarding not completed → send to wizard
-      if (!data || !(data as any).onboarding_completed) {
-        navigate("/onboarding", { replace: true });
-        return;
-      }
-      setChecking(false);
-    })();
+  const isComplete =
+    (data as any)?.onboarding_completed === true ||
+    Number((data as any)?.onboarding_step) >= 6;
+
+  if (!data || !isComplete) {
+    navigate("/onboarding", { replace: true });
+    return;
+  }
+  setChecking(false);
+})();
   }, [user, loading, navigate, location.pathname]);
 
   if (loading || checking) {
