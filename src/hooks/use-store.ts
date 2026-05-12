@@ -33,11 +33,14 @@ export function useStore() {
   useEffect(() => {
     if (!user) return;
 
-    const fetchOrCreateStore = async () => {
+    const fetchStore = async () => {
       const { data, error } = await supabase
         .from("stores")
         .select("*")
         .eq("user_id", user.id)
+        .order("onboarding_completed", { ascending: false })
+        .order("created_at", { ascending: false })
+        .limit(1)
         .maybeSingle();
 
       if (data) {
@@ -63,51 +66,12 @@ export function useStore() {
           social_links_color: (data as any).social_links_color || null,
           social_links: (data.social_links as Record<string, string>) || {},
         });
-      } else if (!error || error.code === "PGRST116") {
-        const slug = user.email?.split("@")[0]?.replace(/[^a-z0-9]/gi, "-") || "my-store";
-        const displayName = user.user_metadata?.display_name || user.email || "My Store";
-        const initials = displayName.slice(0, 2).toUpperCase();
-
-        const { data: newStore, error: createError } = await supabase
-          .from("stores")
-          .insert({
-            user_id: user.id,
-            slug,
-            name: displayName,
-            avatar_initials: initials,
-          })
-          .select()
-          .single();
-
-        if (newStore) {
-          setStore({
-            id: newStore.id,
-            slug: newStore.slug,
-            name: newStore.name,
-            bio: newStore.bio || "",
-            avatar_initials: newStore.avatar_initials || "",
-            accent_color: newStore.accent_color || "#ff4545",
-            font_heading: newStore.font_heading || "Syne",
-            font_body: newStore.font_body || "Manrope",
-            layout: newStore.layout || "list",
-            logo_url: newStore.logo_url || null,
-            banner_url: newStore.banner_url || null,
-            theme: newStore.theme || "light",
-            background_color: newStore.background_color || null,
-            banner_mode: (newStore as any).banner_mode || "strip",
-            card_style: (newStore as any).card_style || "card",
-            social_position: (newStore as any).social_position || "below_products",
-            footer_image_url: (newStore as any).footer_image_url || null,
-            text_color: (newStore as any).text_color || null,
-            social_links_color: (newStore as any).social_links_color || null,
-            social_links: (newStore.social_links as Record<string, string>) || {},
-          });
-        }
       }
+
       setLoading(false);
     };
 
-    fetchOrCreateStore();
+    fetchStore();
   }, [user]);
 
   return { store, loading, setStore };
