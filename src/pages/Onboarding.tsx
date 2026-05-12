@@ -37,6 +37,22 @@ export interface OnboardingData {
 
 const TOTAL_STEPS = 6; // 1..6 (Welcome is step 0)
 
+// Finds an available slug by appending a random suffix until unique
+async function findAvailableSlug(baseSlug: string, excludeId?: string): Promise<string> {
+  let candidate = baseSlug;
+  while (true) {
+    const query = supabase
+      .from("stores")
+      .select("id")
+      .eq("slug", candidate);
+    if (excludeId) (query as any).neq("id", excludeId);
+    const { data } = await query.maybeSingle();
+    if (!data) return candidate; // slug is free
+    const suffix = Math.random().toString(36).slice(2, 6);
+    candidate = `${baseSlug}-${suffix}`;
+  }
+}
+
 export default function Onboarding() {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
@@ -114,11 +130,14 @@ export default function Onboarding() {
         const displayName = user.user_metadata?.display_name || user.email?.split("@")[0] || "My Store";
         const initials = displayName.slice(0, 2).toUpperCase();
 
+        // ✅ Find a slug that isn't already taken before inserting
+        const uniqueSlug = await findAvailableSlug(baseSlug);
+
         const { data: created, error } = await supabase
           .from("stores")
           .insert({
             user_id: user.id,
-            slug: baseSlug,
+            slug: uniqueSlug,
             name: displayName,
             avatar_initials: initials,
           } as any)
@@ -169,7 +188,7 @@ export default function Onboarding() {
       .replace(/-+/g, "-")
       .replace(/^-|-$/g, "");
 
-    // Slug uniqueness check
+    // Slug uniqueness check (excluding current store)
     const { data: clash } = await supabase
       .from("stores")
       .select("id")
