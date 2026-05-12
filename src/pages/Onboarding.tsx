@@ -121,36 +121,41 @@ export default function Onboarding() {
           accentColor: existing.accent_color || "#ff4545",
         }));
       } else {
-        // Create skeleton store
-        const baseSlug = (user.email?.split("@")[0] || "my-store")
-          .toLowerCase()
-          .replace(/[^a-z0-9]/g, "-")
-          .replace(/-+/g, "-")
-          .replace(/^-|-$/g, "");
-        const displayName = user.user_metadata?.display_name || user.email?.split("@")[0] || "My Store";
-        const initials = displayName.slice(0, 2).toUpperCase();
+  // Create skeleton store with a guaranteed unique slug
+  const baseSlug = (user.email?.split("@")[0] || "my-store")
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
+  const displayName = user.user_metadata?.display_name || user.email?.split("@")[0] || "My Store";
+  const initials = displayName.slice(0, 2).toUpperCase();
 
-        // ✅ Find a slug that isn't already taken before inserting
-        const uniqueSlug = await findAvailableSlug(baseSlug);
+  // Find a free slug first
+  let candidateSlug = baseSlug;
+  while (true) {
+    const { data: taken } = await supabase
+      .from("stores")
+      .select("id")
+      .eq("slug", candidateSlug)
+      .maybeSingle();
+    if (!taken) break;
+    candidateSlug = `${baseSlug}-${Math.random().toString(36).slice(2, 6)}`;
+  }
 
-        const { data: created, error } = await supabase
-          .from("stores")
-          .insert({
-            user_id: user.id,
-            slug: uniqueSlug,
-            name: displayName,
-            avatar_initials: initials,
-          } as any)
-          .select()
-          .single();
+  const { data: created, error } = await supabase
+    .from("stores")
+    .insert({ user_id: user.id, slug: candidateSlug, name: displayName, avatar_initials: initials } as any)
+    .select()
+    .single();
 
-        if (error || !created) {
-          toast({ title: "Couldn't start onboarding", description: error?.message, variant: "destructive" });
-          return;
-        }
-        setStoreId(created.id);
-        setData((d) => ({ ...d, storeName: created.name, slug: created.slug }));
-      }
+  if (error || !created) {
+    toast({ title: "Couldn't start onboarding", description: error?.message, variant: "destructive" });
+    setLoading(false); // ← was missing, caused infinite spinner
+    return;
+  }
+  setStoreId(created.id);
+  setData((d) => ({ ...d, storeName: created.name, slug: created.slug }));
+}
 
       setLoading(false);
     })();
