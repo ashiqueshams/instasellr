@@ -13,12 +13,10 @@ export function useAuth() {
       setUser(session?.user ?? null);
       setLoading(false);
     });
-
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
       setLoading(false);
     });
-
     return () => subscription.unsubscribe();
   }, []);
 
@@ -33,35 +31,40 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (loading) return;
+
     if (!user) {
       navigate("/auth", { replace: true });
       return;
     }
 
-    // Check onboarding status — but only when actually entering the dashboard
-    // (don't run this check while already on /onboarding)
+    // Don't run this check while already on /onboarding
     if (location.pathname.startsWith("/onboarding")) {
       setChecking(false);
       return;
     }
 
-(async () => {
-  const { data } = await supabase
-    .from("stores")
-    .select("onboarding_completed, onboarding_step")
-    .eq("user_id", user.id)
-    .maybeSingle();
+    (async () => {
+      const { data } = await supabase
+        .from("stores")
+        .select("onboarding_completed, onboarding_step")
+        .eq("user_id", user.id)
+        .order("onboarding_completed", { ascending: false })
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
 
-  const isComplete =
-    (data as any)?.onboarding_completed === true ||
-    Number((data as any)?.onboarding_step) >= 6;
+      // Accept either onboarding_completed = true OR onboarding_step >= 6
+      const isComplete =
+        (data as any)?.onboarding_completed === true ||
+        Number((data as any)?.onboarding_step) >= 6;
 
-  if (!data || !isComplete) {
-    navigate("/onboarding", { replace: true });
-    return;
-  }
-  setChecking(false);
-})();
+      if (!data || !isComplete) {
+        navigate("/onboarding", { replace: true });
+        return;
+      }
+
+      setChecking(false);
+    })();
   }, [user, loading, navigate, location.pathname]);
 
   if (loading || checking) {
