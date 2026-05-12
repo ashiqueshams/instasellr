@@ -270,6 +270,15 @@ function StorefrontContent({
     window.scrollTo(0, 0);
   }, [selectedProduct, selectedBundle, showCheckout, showAllProducts]);
 
+  // ✅ Moved above early returns to fix React hooks violation (error #300)
+  const NEW_BADGE_DAYS = 30;
+  const isNew = (p: Product) => {
+    if (!p.created_at) return false;
+    return Date.now() - new Date(p.created_at).getTime() < NEW_BADGE_DAYS * 86400000;
+  };
+  const popularProducts = useMemo(() => products.filter((p) => p.is_popular), [products]);
+  const [infoOpen, setInfoOpen] = useState(false);
+
   // Detail / checkout views
   if (showCheckout) {
     return (
@@ -339,15 +348,6 @@ function StorefrontContent({
       </div>
     );
   }
-
-  const NEW_BADGE_DAYS = 30;
-  const isNew = (p: Product) => {
-    if (!p.created_at) return false;
-    return Date.now() - new Date(p.created_at).getTime() < NEW_BADGE_DAYS * 86400000;
-  };
-
-  const popularProducts = useMemo(() => products.filter((p) => p.is_popular), [products]);
-  const [infoOpen, setInfoOpen] = useState(false);
 
   return (
     <div className="min-h-screen bg-white" style={{ fontFamily: `'${store.font_body}', sans-serif` }}>
