@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Send, Loader2, ChevronDown, Clock, Globe, HelpCircle, CheckCircle2, Truck, Search, X } from "lucide-react";
+import { Send, Loader2, ChevronDown, Clock, Globe, HelpCircle, CheckCircle2, Truck, Search, X, ChevronUp } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useStore } from "@/hooks/use-store";
 
@@ -66,6 +66,7 @@ export default function DashboardOrders() {
   const [selectedPaymentMethods, setSelectedPaymentMethods] = useState<string[]>([]);
   const [selectedTimeRange, setSelectedTimeRange] = useState("all");
   const [sortBy, setSortBy] = useState<"recent" | "amount-high" | "amount-low">("recent");
+  const [showFilters, setShowFilters] = useState(false);
 
   const { toast } = useToast();
   const { store } = useStore();
@@ -294,7 +295,7 @@ export default function DashboardOrders() {
       <h1 className="font-heading font-bold text-3xl text-foreground mb-6">Orders</h1>
 
       {/* Search Bar */}
-      <div className="relative mb-5">
+      <div className="relative mb-4">
         <Search className="absolute left-3 top-3.5 w-5 h-5 text-muted-foreground" />
         <input
           type="text"
@@ -305,98 +306,143 @@ export default function DashboardOrders() {
         />
       </div>
 
-      {/* Filters Row */}
-      <div className="mb-6 space-y-3">
-        {/* Status Filters */}
-        <div>
-          <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2.5">
-            Status
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {ALL_STATUSES.map((status) => (
-              <button
-                key={status}
-                onClick={() => toggleStatus(status)}
-                className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${
-                  selectedStatuses.includes(status)
-                    ? "bg-primary text-primary-foreground border border-primary"
-                    : "bg-muted/50 text-muted-foreground border border-border hover:border-primary/50"
-                }`}
-              >
-                {status}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Payment Method Filters */}
-        <div>
-          <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2.5">
-            Payment Method
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {PAYMENT_METHODS.map((method) => (
-              <button
-                key={method}
-                onClick={() => togglePaymentMethod(method)}
-                className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all capitalize ${
-                  selectedPaymentMethods.includes(method)
-                    ? "bg-primary text-primary-foreground border border-primary"
-                    : "bg-muted/50 text-muted-foreground border border-border hover:border-primary/50"
-                }`}
-              >
-                {method}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Time Range & Sort Row */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2.5 block">
-              Time Range
-            </label>
-            <select
-              value={selectedTimeRange}
-              onChange={(e) => setSelectedTimeRange(e.target.value)}
-              className="w-full px-3 py-2 rounded-lg border border-border bg-card text-foreground text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+      {/* Compact Filters Bar */}
+      <div className="mb-6 flex flex-wrap items-center gap-2">
+        {/* Active filter pills */}
+        {selectedStatuses.map((status) => (
+          <div key={status} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/10 border border-primary/30 text-xs font-medium text-foreground">
+            <span className="capitalize">{status}</span>
+            <button
+              onClick={() => toggleStatus(status)}
+              className="hover:opacity-70"
             >
-              {TIME_RANGES.map((range) => (
-                <option key={range.id} value={range.id}>
-                  {range.label}
-                </option>
-              ))}
-            </select>
+              <X className="w-3 h-3" />
+            </button>
           </div>
-
-          <div>
-            <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2.5 block">
-              Sort By
-            </label>
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as any)}
-              className="w-full px-3 py-2 rounded-lg border border-border bg-card text-foreground text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+        ))}
+        {selectedPaymentMethods.map((method) => (
+          <div key={method} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-500/10 border border-blue-500/30 text-xs font-medium text-foreground">
+            <span className="capitalize">{method}</span>
+            <button
+              onClick={() => togglePaymentMethod(method)}
+              className="hover:opacity-70"
             >
-              <option value="recent">Most Recent</option>
-              <option value="amount-high">Highest Amount</option>
-              <option value="amount-low">Lowest Amount</option>
-            </select>
+              <X className="w-3 h-3" />
+            </button>
           </div>
-        </div>
+        ))}
+        {selectedTimeRange !== "all" && (
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-xs font-medium text-foreground">
+            <span>{TIME_RANGES.find(r => r.id === selectedTimeRange)?.label}</span>
+            <button
+              onClick={() => setSelectedTimeRange("all")}
+              className="hover:opacity-70"
+            >
+              <X className="w-3 h-3" />
+            </button>
+          </div>
+        )}
+
+        {/* Toggle Filters Button */}
+        <button
+          onClick={() => setShowFilters(!showFilters)}
+          className="inline-flex items-center gap-1.5 ml-auto px-3 py-1.5 rounded-lg text-xs font-semibold text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all border border-border"
+        >
+          {showFilters ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+          Filters
+        </button>
 
         {/* Clear Filters Button */}
         {hasActiveFilters && (
           <button
             onClick={clearFilters}
-            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold text-muted-foreground hover:text-primary hover:bg-muted/50 transition-all border border-border"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-muted-foreground hover:text-primary hover:bg-muted/50 transition-all border border-border"
           >
             <X className="w-3.5 h-3.5" />
-            Clear filters
+            Clear
           </button>
         )}
       </div>
+
+      {/* Expandable Filters Panel */}
+      {showFilters && (
+        <div className="mb-6 p-4 rounded-xl border border-border bg-muted/30 space-y-4 animate-in fade-in slide-in-from-top-2 duration-200">
+          {/* Status Filters */}
+          <div>
+            <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Status</div>
+            <div className="flex flex-wrap gap-1.5">
+              {ALL_STATUSES.map((status) => (
+                <button
+                  key={status}
+                  onClick={() => toggleStatus(status)}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all capitalize ${
+                    selectedStatuses.includes(status)
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted text-muted-foreground hover:bg-muted/70"
+                  }`}
+                >
+                  {status}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Payment Method Filters */}
+          <div>
+            <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Payment</div>
+            <div className="flex flex-wrap gap-1.5">
+              {PAYMENT_METHODS.map((method) => (
+                <button
+                  key={method}
+                  onClick={() => togglePaymentMethod(method)}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all capitalize ${
+                    selectedPaymentMethods.includes(method)
+                      ? "bg-blue-500 text-white"
+                      : "bg-muted text-muted-foreground hover:bg-muted/70"
+                  }`}
+                >
+                  {method}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Time Range & Sort */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1.5 block">
+                Time
+              </label>
+              <select
+                value={selectedTimeRange}
+                onChange={(e) => setSelectedTimeRange(e.target.value)}
+                className="w-full px-3 py-2 rounded-lg border border-border bg-card text-foreground text-xs font-medium focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+              >
+                {TIME_RANGES.map((range) => (
+                  <option key={range.id} value={range.id}>
+                    {range.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1.5 block">
+                Sort
+              </label>
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as any)}
+                className="w-full px-3 py-2 rounded-lg border border-border bg-card text-foreground text-xs font-medium focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+              >
+                <option value="recent">Most Recent</option>
+                <option value="amount-high">Highest</option>
+                <option value="amount-low">Lowest</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Results Counter */}
       <div className="mb-4 text-sm text-muted-foreground">
