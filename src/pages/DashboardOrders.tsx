@@ -294,75 +294,78 @@ export default function DashboardOrders() {
     <div>
       <h1 className="font-heading font-bold text-3xl text-foreground mb-6">Orders</h1>
 
-      {/* Search Bar */}
-      <div className="relative mb-4">
-        <Search className="absolute left-3 top-3.5 w-5 h-5 text-muted-foreground" />
-        <input
-          type="text"
-          placeholder="Search by name, email, phone, or order ID…"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full pl-10 pr-4 py-3 rounded-xl border border-border bg-card text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
-        />
-      </div>
-
-      {/* Compact Filters Bar */}
-      <div className="mb-6 flex flex-wrap items-center gap-2">
-        {/* Active filter pills */}
-        {selectedStatuses.map((status) => (
-          <div key={status} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/10 border border-primary/30 text-xs font-medium text-foreground">
-            <span className="capitalize">{status}</span>
-            <button
-              onClick={() => toggleStatus(status)}
-              className="hover:opacity-70"
-            >
-              <X className="w-3 h-3" />
-            </button>
-          </div>
-        ))}
-        {selectedPaymentMethods.map((method) => (
-          <div key={method} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-500/10 border border-blue-500/30 text-xs font-medium text-foreground">
-            <span className="capitalize">{method}</span>
-            <button
-              onClick={() => togglePaymentMethod(method)}
-              className="hover:opacity-70"
-            >
-              <X className="w-3 h-3" />
-            </button>
-          </div>
-        ))}
-        {selectedTimeRange !== "all" && (
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-xs font-medium text-foreground">
-            <span>{TIME_RANGES.find(r => r.id === selectedTimeRange)?.label}</span>
-            <button
-              onClick={() => setSelectedTimeRange("all")}
-              className="hover:opacity-70"
-            >
-              <X className="w-3 h-3" />
-            </button>
-          </div>
-        )}
-
-        {/* Toggle Filters Button */}
+      {/* Search & Filter Bar */}
+      <div className="relative mb-4 flex gap-2">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-3.5 w-5 h-5 text-muted-foreground" />
+          <input
+            type="text"
+            placeholder="Search by name, email, phone, or order ID…"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-10 pr-4 py-3 rounded-xl border border-border bg-card text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+          />
+        </div>
+        
         <button
           onClick={() => setShowFilters(!showFilters)}
-          className="inline-flex items-center gap-1.5 ml-auto px-3 py-1.5 rounded-lg text-xs font-semibold text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all border border-border"
+          className="inline-flex items-center gap-1.5 px-4 py-3 rounded-xl text-xs font-semibold text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all border border-border bg-card whitespace-nowrap"
         >
-          {showFilters ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+          {showFilters ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
           Filters
         </button>
-
-        {/* Clear Filters Button */}
-        {hasActiveFilters && (
-          <button
-            onClick={clearFilters}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-muted-foreground hover:text-primary hover:bg-muted/50 transition-all border border-border"
-          >
-            <X className="w-3.5 h-3.5" />
-            Clear
-          </button>
-        )}
       </div>
+
+      {/* Active Filters Bar */}
+      {(selectedStatuses.length > 0 || selectedPaymentMethods.length > 0 || selectedTimeRange !== "all") && (
+        <div className="mb-4 flex flex-wrap items-center gap-2">
+          {/* Active filter pills */}
+          {selectedStatuses.map((status) => (
+            <div key={status} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/10 border border-primary/30 text-xs font-medium text-foreground">
+              <span className="capitalize">{status}</span>
+              <button
+                onClick={() => toggleStatus(status)}
+                className="hover:opacity-70"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </div>
+          ))}
+          {selectedPaymentMethods.map((method) => (
+            <div key={method} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-500/10 border border-blue-500/30 text-xs font-medium text-foreground">
+              <span className="capitalize">{method}</span>
+              <button
+                onClick={() => togglePaymentMethod(method)}
+                className="hover:opacity-70"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </div>
+          ))}
+          {selectedTimeRange !== "all" && (
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-xs font-medium text-foreground">
+              <span>{TIME_RANGES.find(r => r.id === selectedTimeRange)?.label}</span>
+              <button
+                onClick={() => setSelectedTimeRange("all")}
+                className="hover:opacity-70"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </div>
+          )}
+
+          {/* Clear Filters Button */}
+          {hasActiveFilters && (
+            <button
+              onClick={clearFilters}
+              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold text-muted-foreground hover:text-primary hover:bg-muted/50 transition-all border border-border"
+            >
+              <X className="w-3.5 h-3.5" />
+              Clear
+            </button>
+          )}
+        </div>
+      )}
 
       {/* Expandable Filters Panel */}
       {showFilters && (
