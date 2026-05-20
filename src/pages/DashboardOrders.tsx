@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Send, Loader2, ChevronDown, Clock, Globe, HelpCircle, CheckCircle2, Truck } from "lucide-react";
+import { Send, Loader2, ChevronDown, Clock, Globe, HelpCircle, CheckCircle2, Truck, Search, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useStore } from "@/hooks/use-store";
 
@@ -26,6 +26,14 @@ interface OrderWithProduct {
 
 const STATUS_OPTIONS = ["pending", "approved", "dispatched"];
 const PAID_STATUS_OPTIONS = ["paid", "dispatched"];
+const ALL_STATUSES = ["pending", "approved", "paid", "dispatched"];
+const PAYMENT_METHODS = ["cod", "bkash", "nagad", "stripe"];
+const TIME_RANGES = [
+  { id: "all", label: "All time" },
+  { id: "today", label: "Today" },
+  { id: "week", label: "This week" },
+  { id: "month", label: "This month" },
+];
 
 const shortCode = (id: string, name: string) => {
   const prefix = (name || "ORD").replace(/[^a-zA-Z]/g, "").slice(0, 3).toUpperCase() || "ORD";
@@ -36,9 +44,12 @@ const shortCode = (id: string, name: string) => {
 const statusIcon = (status: string) => {
   switch (status) {
     case "paid":
-    case "approved": return <CheckCircle2 className="w-3.5 h-3.5 text-green-600" />;
-    case "dispatched": return <Truck className="w-3.5 h-3.5 text-purple-600" />;
-    default: return <HelpCircle className="w-3.5 h-3.5 text-amber-500" />;
+    case "approved":
+      return <CheckCircle2 className="w-3.5 h-3.5 text-green-600" />;
+    case "dispatched":
+      return <Truck className="w-3.5 h-3.5 text-purple-600" />;
+    default:
+      return <HelpCircle className="w-3.5 h-3.5 text-amber-500" />;
   }
 };
 
@@ -48,6 +59,14 @@ export default function DashboardOrders() {
   const [resending, setResending] = useState<string | null>(null);
   const [dispatching, setDispatching] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<string | null>(null);
+  
+  // Search & filter states
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
+  const [selectedPaymentMethods, setSelectedPaymentMethods] = useState<string[]>([]);
+  const [selectedTimeRange, setSelectedTimeRange] = useState("all");
+  const [sortBy, setSortBy] = useState<"recent" | "amount-high" | "amount-low">("recent");
+
   const { toast } = useToast();
   const { store } = useStore();
 
@@ -59,7 +78,9 @@ export default function DashboardOrders() {
   const fetchOrders = async () => {
     const { data, error } = await supabase
       .from("orders")
-      .select("id, customer_name, customer_email, customer_phone, amount, status, created_at, download_count, pathao_consignment_id, shipping_address, shipping_city, recipient_city_id, recipient_zone_id, recipient_area_id, payment_method, order_items, products(name)")
+      .select(
+        "id, customer_name, customer_email, customer_phone, amount, status, created_at, download_count, pathao_consignment_id, shipping_address, shipping_city, recipient_city_id, recipient_zone_id, recipient_area_id, payment_method, order_items, products(name)"
+      )
       .eq("store_id", store!.id)
       .order("created_at", { ascending: false });
 
@@ -96,7 +117,11 @@ export default function DashboardOrders() {
     }
     const { error } = await supabase.from("orders").update({ status: newStatus }).eq("id", order.id);
     if (error) {
-      toast({ title: "Failed to update status", description: error.message, variant: "destructive" });
+      toast({
+        title: "Failed to update status",
+        description: error.message,
+        variant: "destructive",
+      });
     } else {
       setOrders((prev) => prev.map((o) => (o.id === order.id ? { ...o, status: newStatus } : o)));
       toast({ title: `Order ${newStatus}` });
@@ -107,11 +132,13 @@ export default function DashboardOrders() {
     if (!order.recipient_city_id || !order.recipient_zone_id || !order.recipient_area_id) {
       toast({
         title: "Missing address data",
-        description: "This order doesn't have Pathao-compatible address data. Cannot dispatch via Pathao.",
+        description:
+          "This order doesn't have Pathao-compatible address data. Cannot dispatch via Pathao.",
         variant: "destructive",
       });
       const { error } = await supabase.from("orders").update({ status: "dispatched" }).eq("id", order.id);
-      if (!error) setOrders((prev) => prev.map((o) => (o.id === order.id ? { ...o, status: "dispatched" } : o)));
+      if (!error)
+        setOrders((prev) => prev.map((o) => (o.id === order.id ? { ...o, status: "dispatched" } : o)));
       return;
     }
     setDispatching(order.id);
@@ -138,11 +165,18 @@ export default function DashboardOrders() {
       setOrders((prev) =>
         prev.map((o) =>
           o.id === order.id
-            ? { ...o, status: "dispatched", pathao_consignment_id: consignmentId ? String(consignmentId) : o.pathao_consignment_id }
+            ? {
+                ...o,
+                status: "dispatched",
+                pathao_consignment_id: consignmentId ? String(consignmentId) : o.pathao_consignment_id,
+              }
             : o
         )
       );
-      toast({ title: "Order dispatched!", description: consignmentId ? `Consignment: ${consignmentId}` : undefined });
+      toast({
+        title: "Order dispatched!",
+        description: consignmentId ? `Consignment: ${consignmentId}` : undefined,
+      });
     } catch (err: any) {
       toast({ title: "Dispatch failed", description: err.message, variant: "destructive" });
     }
@@ -152,7 +186,9 @@ export default function DashboardOrders() {
   const handleResend = async (orderId: string) => {
     setResending(orderId);
     try {
-      const { error } = await supabase.functions.invoke("resend-order-email", { body: { order_id: orderId } });
+      const { error } = await supabase.functions.invoke("resend-order-email", {
+        body: { order_id: orderId },
+      });
       if (error) throw error;
       toast({ title: "Email sent!", description: "Download link resent to customer." });
     } catch (err: any) {
@@ -175,19 +211,220 @@ export default function DashboardOrders() {
     return [{ name: order.product_name, quantity: 1, price: order.amount }];
   };
 
+  // Filter logic
+  const getTimeRangeStart = () => {
+    const now = new Date();
+    switch (selectedTimeRange) {
+      case "today":
+        return new Date(now.setHours(0, 0, 0, 0));
+      case "week":
+        return new Date(now.setDate(now.getDate() - now.getDay()));
+      case "month":
+        return new Date(now.setDate(1));
+      default:
+        return null;
+    }
+  };
+
+  const filteredOrders = orders
+    .filter((order) => {
+      // Search filter
+      const query = searchQuery.toLowerCase();
+      const matchesSearch =
+        !query ||
+        order.customer_name.toLowerCase().includes(query) ||
+        order.customer_email.toLowerCase().includes(query) ||
+        shortCode(order.id, order.customer_name).toLowerCase().includes(query) ||
+        order.customer_phone?.includes(query);
+
+      // Status filter
+      const matchesStatus = selectedStatuses.length === 0 || selectedStatuses.includes(order.status);
+
+      // Payment method filter
+      const matchesPayment =
+        selectedPaymentMethods.length === 0 ||
+        (order.payment_method && selectedPaymentMethods.includes(order.payment_method));
+
+      // Time range filter
+      const timeStart = getTimeRangeStart();
+      const matchesTime = !timeStart || new Date(order.created_at) >= timeStart;
+
+      return matchesSearch && matchesStatus && matchesPayment && matchesTime;
+    })
+    .sort((a, b) => {
+      switch (sortBy) {
+        case "amount-high":
+          return b.amount - a.amount;
+        case "amount-low":
+          return a.amount - b.amount;
+        default:
+          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      }
+    });
+
+  const toggleStatus = (status: string) => {
+    setSelectedStatuses((prev) =>
+      prev.includes(status) ? prev.filter((s) => s !== status) : [...prev, status]
+    );
+  };
+
+  const togglePaymentMethod = (method: string) => {
+    setSelectedPaymentMethods((prev) =>
+      prev.includes(method) ? prev.filter((m) => m !== method) : [...prev, method]
+    );
+  };
+
+  const clearFilters = () => {
+    setSearchQuery("");
+    setSelectedStatuses([]);
+    setSelectedPaymentMethods([]);
+    setSelectedTimeRange("all");
+    setSortBy("recent");
+  };
+
+  const hasActiveFilters =
+    searchQuery ||
+    selectedStatuses.length > 0 ||
+    selectedPaymentMethods.length > 0 ||
+    selectedTimeRange !== "all" ||
+    sortBy !== "recent";
+
   return (
     <div>
-      <h1 className="font-heading font-bold text-3xl text-foreground mb-5">Orders</h1>
+      <h1 className="font-heading font-bold text-3xl text-foreground mb-6">Orders</h1>
 
+      {/* Search Bar */}
+      <div className="relative mb-5">
+        <Search className="absolute left-3 top-3.5 w-5 h-5 text-muted-foreground" />
+        <input
+          type="text"
+          placeholder="Search by name, email, phone, or order ID…"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="w-full pl-10 pr-4 py-3 rounded-xl border border-border bg-card text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+        />
+      </div>
+
+      {/* Filters Row */}
+      <div className="mb-6 space-y-3">
+        {/* Status Filters */}
+        <div>
+          <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2.5">
+            Status
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {ALL_STATUSES.map((status) => (
+              <button
+                key={status}
+                onClick={() => toggleStatus(status)}
+                className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${
+                  selectedStatuses.includes(status)
+                    ? "bg-primary text-primary-foreground border border-primary"
+                    : "bg-muted/50 text-muted-foreground border border-border hover:border-primary/50"
+                }`}
+              >
+                {status}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Payment Method Filters */}
+        <div>
+          <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2.5">
+            Payment Method
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {PAYMENT_METHODS.map((method) => (
+              <button
+                key={method}
+                onClick={() => togglePaymentMethod(method)}
+                className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all capitalize ${
+                  selectedPaymentMethods.includes(method)
+                    ? "bg-primary text-primary-foreground border border-primary"
+                    : "bg-muted/50 text-muted-foreground border border-border hover:border-primary/50"
+                }`}
+              >
+                {method}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Time Range & Sort Row */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2.5 block">
+              Time Range
+            </label>
+            <select
+              value={selectedTimeRange}
+              onChange={(e) => setSelectedTimeRange(e.target.value)}
+              className="w-full px-3 py-2 rounded-lg border border-border bg-card text-foreground text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+            >
+              {TIME_RANGES.map((range) => (
+                <option key={range.id} value={range.id}>
+                  {range.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2.5 block">
+              Sort By
+            </label>
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as any)}
+              className="w-full px-3 py-2 rounded-lg border border-border bg-card text-foreground text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+            >
+              <option value="recent">Most Recent</option>
+              <option value="amount-high">Highest Amount</option>
+              <option value="amount-low">Lowest Amount</option>
+            </select>
+          </div>
+        </div>
+
+        {/* Clear Filters Button */}
+        {hasActiveFilters && (
+          <button
+            onClick={clearFilters}
+            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold text-muted-foreground hover:text-primary hover:bg-muted/50 transition-all border border-border"
+          >
+            <X className="w-3.5 h-3.5" />
+            Clear filters
+          </button>
+        )}
+      </div>
+
+      {/* Results Counter */}
+      <div className="mb-4 text-sm text-muted-foreground">
+        {loading ? (
+          "Loading…"
+        ) : filteredOrders.length === 0 ? (
+          <>
+            {orders.length === 0
+              ? "No orders yet."
+              : `No orders match your filters. ${hasActiveFilters ? "Try adjusting them." : ""}`}
+          </>
+        ) : (
+          <>
+            {filteredOrders.length} of {orders.length} order{filteredOrders.length !== 1 ? "s" : ""}
+          </>
+        )}
+      </div>
+
+      {/* Orders List */}
       <div className="space-y-3">
         {loading ? (
           <div className="text-center text-sm text-muted-foreground py-12">Loading orders…</div>
-        ) : orders.length === 0 ? (
+        ) : filteredOrders.length === 0 ? (
           <div className="text-center text-sm text-muted-foreground py-12 bg-card rounded-xl border border-border">
-            No orders yet.
+            {orders.length === 0 ? "No orders yet." : "No orders match your filters."}
           </div>
         ) : (
-          orders.map((order) => {
+          filteredOrders.map((order) => {
             const isOpen = expanded === order.id;
             const items = itemsList(order);
             return (
@@ -210,7 +447,10 @@ export default function DashboardOrders() {
                         <div className="text-sm text-muted-foreground mt-0.5 truncate">{order.customer_name}</div>
                         <div className="text-sm text-muted-foreground truncate">
                           {items.map((it, i) => (
-                            <span key={i}>{i > 0 && ", "}{it.quantity || 1}x {it.name}</span>
+                            <span key={i}>
+                              {i > 0 && ", "}
+                              {it.quantity || 1}x {it.name}
+                            </span>
                           ))}
                         </div>
                         <div className="flex items-center gap-1.5 mt-1.5 text-xs text-muted-foreground">
@@ -225,8 +465,14 @@ export default function DashboardOrders() {
                         {order.status}
                       </div>
                       <div className="flex items-center gap-1.5 text-foreground">
-                        <span className="font-heading font-bold text-base">৳{Number(order.amount).toLocaleString()}</span>
-                        <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${isOpen ? "rotate-180" : ""}`} />
+                        <span className="font-heading font-bold text-base">
+                          ৳{Number(order.amount).toLocaleString()}
+                        </span>
+                        <ChevronDown
+                          className={`w-4 h-4 text-muted-foreground transition-transform ${
+                            isOpen ? "rotate-180" : ""
+                          }`}
+                        />
                       </div>
                     </div>
                   </div>
@@ -248,7 +494,9 @@ export default function DashboardOrders() {
                           className="text-xs font-semibold px-3 py-1.5 rounded-lg border border-border bg-card cursor-pointer outline-none"
                         >
                           {(order.status === "paid" ? PAID_STATUS_OPTIONS : STATUS_OPTIONS).map((s) => (
-                            <option key={s} value={s}>{s}</option>
+                            <option key={s} value={s}>
+                              {s}
+                            </option>
                           ))}
                         </select>
                       )}
@@ -311,7 +559,11 @@ export default function DashboardOrders() {
                           disabled={resending === order.id}
                           className="inline-flex items-center gap-1.5 h-9 px-4 rounded-lg text-xs font-semibold text-primary bg-primary/10 hover:bg-primary/20 transition-colors disabled:opacity-50"
                         >
-                          {resending === order.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+                          {resending === order.id ? (
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          ) : (
+                            <Send className="w-3.5 h-3.5" />
+                          )}
                           Resend Email
                         </button>
                       )}
@@ -332,11 +584,27 @@ export default function DashboardOrders() {
   );
 }
 
-function Row({ label, value, bold, mono }: { label: string; value: string; bold?: boolean; mono?: boolean }) {
+function Row({
+  label,
+  value,
+  bold,
+  mono,
+}: {
+  label: string;
+  value: string;
+  bold?: boolean;
+  mono?: boolean;
+}) {
   return (
     <div className="flex items-start justify-between gap-3">
-      <span className={`text-muted-foreground ${bold ? "font-semibold text-foreground" : ""}`}>{label}</span>
-      <span className={`text-right text-foreground ${bold ? "font-bold" : ""} ${mono ? "font-mono text-xs" : ""}`}>
+      <span className={`text-muted-foreground ${bold ? "font-semibold text-foreground" : ""}`}>
+        {label}
+      </span>
+      <span
+        className={`text-right text-foreground ${bold ? "font-bold" : ""} ${
+          mono ? "font-mono text-xs" : ""
+        }`}
+      >
         {value}
       </span>
     </div>
