@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
 import type { User } from "@supabase/supabase-js";
@@ -26,7 +26,6 @@ export function useAuth() {
 export default function AuthGuard({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
   const [checking, setChecking] = useState(true);
 
   useEffect(() => {
@@ -37,35 +36,10 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    // Don't run this check while already on /onboarding
-    if (location.pathname.startsWith("/onboarding")) {
-      setChecking(false);
-      return;
-    }
-
-    (async () => {
-      const { data } = await supabase
-        .from("stores")
-        .select("onboarding_completed, onboarding_step")
-        .eq("user_id", user.id)
-        .order("onboarding_completed", { ascending: false })
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      // Accept either onboarding_completed = true OR onboarding_step >= 6
-      const isComplete =
-        (data as any)?.onboarding_completed === true ||
-        Number((data as any)?.onboarding_step) >= 6;
-
-      if (!data || !isComplete) {
-        navigate("/onboarding", { replace: true });
-        return;
-      }
-
-      setChecking(false);
-    })();
-  }, [user, loading, navigate, location.pathname]);
+    // Allow authenticated users to access dashboard directly
+    // No onboarding required - users can set up their store from dashboard
+    setChecking(false);
+  }, [user, loading, navigate]);
 
   if (loading || checking) {
     return (
