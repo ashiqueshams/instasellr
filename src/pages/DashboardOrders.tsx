@@ -24,9 +24,9 @@ interface OrderWithProduct {
   order_items: any;
 }
 
-const STATUS_OPTIONS = ["pending", "approved", "dispatched"];
-const PAID_STATUS_OPTIONS = ["paid", "dispatched"];
-const ALL_STATUSES = ["pending", "approved", "paid", "dispatched"];
+const STATUS_OPTIONS = ["pending", "approved", "dispatched", "cancelled"];
+const PAID_STATUS_OPTIONS = ["paid", "dispatched", "cancelled"];
+const ALL_STATUSES = ["pending", "approved", "paid", "dispatched", "cancelled"];
 const PAYMENT_METHODS = ["cod", "bkash", "nagad", "stripe"];
 const TIME_RANGES = [
   { id: "all", label: "All time" },
@@ -48,6 +48,8 @@ const statusIcon = (status: string) => {
       return <CheckCircle2 className="w-3.5 h-3.5 text-green-600" />;
     case "dispatched":
       return <Truck className="w-3.5 h-3.5 text-purple-600" />;
+    case "cancelled":
+      return <X className="w-3.5 h-3.5 text-red-600" />;
     default:
       return <HelpCircle className="w-3.5 h-3.5 text-amber-500" />;
   }
@@ -59,6 +61,7 @@ export default function DashboardOrders() {
   const [resending, setResending] = useState<string | null>(null);
   const [dispatching, setDispatching] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<string | null>(null);
+  const [statusDropdown, setStatusDropdown] = useState<string | null>(null);
   
   // Search & filter states
   const [searchQuery, setSearchQuery] = useState("");
@@ -114,6 +117,7 @@ export default function DashboardOrders() {
   const handleStatusChange = async (order: OrderWithProduct, newStatus: string) => {
     if (newStatus === "dispatched") {
       await handleDispatch(order);
+      setStatusDropdown(null);
       return;
     }
     const { error } = await supabase.from("orders").update({ status: newStatus }).eq("id", order.id);
@@ -126,6 +130,7 @@ export default function DashboardOrders() {
     } else {
       setOrders((prev) => prev.map((o) => (o.id === order.id ? { ...o, status: newStatus } : o)));
       toast({ title: `Order ${newStatus}` });
+      setStatusDropdown(null);
     }
   };
 
@@ -309,7 +314,7 @@ export default function DashboardOrders() {
         
         <button
           onClick={() => setShowFilters(!showFilters)}
-          className="inline-flex items-center gap-1.5 px-4 py-3 rounded-xl text-xs font-semibold text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all border border-border bg-card whitespace-nowrap"
+          className="inline-flex items-center gap-1.5 px-4 py-3 rounded-xl text-xs font-semibold text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all border border-border"
         >
           {showFilters ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
           Filters
@@ -476,6 +481,8 @@ export default function DashboardOrders() {
           filteredOrders.map((order) => {
             const isOpen = expanded === order.id;
             const items = itemsList(order);
+            const isDropdownOpen = statusDropdown === order.id;
+            const availableStatuses = order.status === "paid" ? PAID_STATUS_OPTIONS : STATUS_OPTIONS;
             return (
               <div
                 key={order.id}
@@ -509,10 +516,40 @@ export default function DashboardOrders() {
                       </div>
                     </div>
                     <div className="flex flex-col items-end gap-2 shrink-0">
-                      <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-border text-xs font-semibold capitalize">
-                        {statusIcon(order.status)}
-                        {order.status}
+                      {/* Status Button with Dropdown */}
+                      <div className="relative">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setStatusDropdown(isDropdownOpen ? null : order.id);
+                          }}
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-border text-xs font-semibold capitalize hover:bg-muted/50 transition-colors"
+                        >
+                          {statusIcon(order.status)}
+                          {order.status}
+                          <ChevronDown className={`w-3 h-3 transition-transform ${isDropdownOpen ? "rotate-180" : ""}`} />
+                        </button>
+                        
+                        {/* Dropdown Menu */}
+                        {isDropdownOpen && (
+                          <div className="absolute top-full right-0 mt-1 bg-card border border-border rounded-lg shadow-lg z-10 min-w-[120px]">
+                            {availableStatuses.map((status) => (
+                              <button
+                                key={status}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleStatusChange(order, status);
+                                }}
+                                disabled={dispatching === order.id}
+                                className="w-full text-left px-3 py-2 text-xs font-medium capitalize hover:bg-muted/50 transition-colors first:rounded-t-lg last:rounded-b-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                              >
+                                {status}
+                              </button>
+                            ))}
+                          </div>
+                        )}
                       </div>
+                      
                       <div className="flex items-center gap-1.5 text-foreground">
                         <span className="font-heading font-bold text-base">
                           ৳{Number(order.amount).toLocaleString()}
@@ -530,27 +567,6 @@ export default function DashboardOrders() {
                 {/* Expanded details */}
                 {isOpen && (
                   <div className="border-t border-border bg-muted/20 px-4 py-4 space-y-4 text-sm">
-                    {/* Status control */}
-                    <div className="flex items-center justify-between gap-3">
-                      <span className="font-semibold text-foreground">Status</span>
-                      {order.status === "dispatched" ? (
-                        <span className="text-xs font-semibold text-purple-700 capitalize">{order.status}</span>
-                      ) : (
-                        <select
-                          value={order.status}
-                          onChange={(e) => handleStatusChange(order, e.target.value)}
-                          disabled={dispatching === order.id}
-                          className="text-xs font-semibold px-3 py-1.5 rounded-lg border border-border bg-card cursor-pointer outline-none"
-                        >
-                          {(order.status === "paid" ? PAID_STATUS_OPTIONS : STATUS_OPTIONS).map((s) => (
-                            <option key={s} value={s}>
-                              {s}
-                            </option>
-                          ))}
-                        </select>
-                      )}
-                    </div>
-
                     {/* Customer */}
                     <div>
                       <div className="font-semibold text-foreground mb-2">Customer</div>
@@ -606,7 +622,7 @@ export default function DashboardOrders() {
                         <button
                           onClick={() => handleResend(order.id)}
                           disabled={resending === order.id}
-                          className="inline-flex items-center gap-1.5 h-9 px-4 rounded-lg text-xs font-semibold text-primary bg-primary/10 hover:bg-primary/20 transition-colors disabled:opacity-50"
+                          className="inline-flex items-center gap-1.5 h-9 px-4 rounded-lg text-xs font-semibold text-primary bg-primary/10 hover:bg-primary/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           {resending === order.id ? (
                             <Loader2 className="w-3.5 h-3.5 animate-spin" />
