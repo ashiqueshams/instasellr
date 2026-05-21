@@ -486,7 +486,7 @@ export default function DashboardOrders() {
             return (
               <div
                 key={order.id}
-                className="bg-card rounded-xl border border-border overflow-hidden transition-all"
+                className="bg-card rounded-xl border border-border overflow-visible transition-all"
               >
                 {/* Card header — always visible */}
                 <button
@@ -530,9 +530,9 @@ export default function DashboardOrders() {
                           <ChevronDown className={`w-3 h-3 transition-transform ${isDropdownOpen ? "rotate-180" : ""}`} />
                         </button>
                         
-                        {/* Dropdown Menu */}
+                        {/* Dropdown Menu - positioned above button */}
                         {isDropdownOpen && (
-                          <div className="absolute top-full right-0 mt-1 bg-card border border-border rounded-lg shadow-lg z-10 min-w-[120px]">
+                          <div className="absolute bottom-full right-0 mb-1 bg-card border border-border rounded-lg shadow-lg z-50 min-w-[120px]">
                             {availableStatuses.map((status) => (
                               <button
                                 key={status}
