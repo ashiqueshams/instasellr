@@ -325,7 +325,7 @@ export default function CheckoutPage({ store, onBack, referral }: CheckoutPagePr
                 <p className="text-xs text-muted-foreground">Qty: {item.quantity}</p>
               </div>
               <span className="font-heading font-bold text-sm" style={{ color: store.text_color || undefined }}>
-                ${(item.product.price * item.quantity).toFixed(2)}
+                ৳{(item.product.price * item.quantity).toFixed(2)}
               </span>
             </div>
           ))}
@@ -353,7 +353,7 @@ export default function CheckoutPage({ store, onBack, referral }: CheckoutPagePr
 
         <div className="border-t border-border mt-3 pt-4 flex items-center justify-between">
           <span className="font-heading font-semibold text-sm" style={{ color: store.text_color || undefined }}>Total</span>
-          <span className="font-heading font-bold text-xl" style={{ color: store.accent_color }}>${grandTotal.toFixed(2)}</span>
+          <span className="font-heading font-bold text-xl" style={{ color: store.accent_color }}>৳{grandTotal.toFixed(2)}</span>
         </div>
       </div>
 
@@ -544,7 +544,7 @@ export default function CheckoutPage({ store, onBack, referral }: CheckoutPagePr
               Processing...
             </>
           ) : (
-            `Place Order — $${grandTotal.toFixed(2)}`
+            `Place Order — ৳${grandTotal.toFixed(2)}`
           )}
         </button>
       </div>

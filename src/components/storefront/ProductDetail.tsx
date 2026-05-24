@@ -73,10 +73,10 @@ export default function ProductDetail({ product, store, onBack }: ProductDetailP
         <p className="text-muted-foreground text-sm mt-1">{product.tagline}</p>
         <div className="flex items-center gap-2 mt-3">
           <p className="font-heading font-bold text-2xl" style={{ color: store.accent_color }}>
-            ${product.price}
+            ৳{product.price}
           </p>
           {product.compare_at_price && product.compare_at_price > product.price && (
-            <p className="text-lg text-muted-foreground line-through">${product.compare_at_price}</p>
+            <p className="text-lg text-muted-foreground line-through">৳{product.compare_at_price}</p>
           )}
           {product.compare_at_price && product.compare_at_price > product.price && (
             <span className="bg-destructive text-destructive-foreground text-xs font-bold px-2 py-0.5 rounded-full">
@@ -162,7 +162,7 @@ export default function ProductDetail({ product, store, onBack }: ProductDetailP
             style={{ backgroundColor: store.accent_color }}
           >
             <ShoppingBag className="w-4 h-4" />
-            Add to Cart — ${product.price}
+            Add to Cart — ৳{product.price}
           </button>
         )}
       </div>
@@ -200,11 +200,11 @@ export default function ProductDetail({ product, store, onBack }: ProductDetailP
             ) : (
               <button
                 onClick={handleAddToCart}
-                className="w-full h-12 rounded-2xl font-heading font-semibold text-sm text-primary-foreground hover:brightness-110 active:scale-[0.98] transition-all flex items-center justify-center gap-2 shadow-lg"
+                className="w-full h-12 rounded-2xl font-heading font-semibold text-sm text-primary-foreground hover:brightness-110 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
                 style={{ backgroundColor: store.accent_color }}
               >
                 <ShoppingBag className="w-4 h-4" />
-                Add to Cart — ${product.price}
+                Add to Cart — ৳{product.price}
               </button>
             )}
           </div>

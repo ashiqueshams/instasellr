@@ -104,10 +104,10 @@ export default function BundleDetail({ bundle, products, store, onBack }: Bundle
           </p>
           <div className="flex items-baseline justify-center gap-2 mt-3">
             <span className="font-heading font-bold text-3xl" style={{ color: "#fff" }}>
-              ${bundlePrice}
+              ৳{bundlePrice}
             </span>
             <span className="text-sm line-through" style={{ color: "rgba(255,255,255,0.4)" }}>
-              ${totalPrice}
+              ৳{totalPrice}
             </span>
           </div>
         </div>
@@ -130,7 +130,7 @@ export default function BundleDetail({ bundle, products, store, onBack }: Bundle
                 <p className="font-heading font-semibold text-sm text-foreground">{p.name}</p>
                 <p className="text-xs text-muted-foreground truncate">{p.tagline}</p>
               </div>
-              <span className="text-sm text-muted-foreground line-through">${p.price}</span>
+              <span className="text-sm text-muted-foreground line-through">৳{p.price}</span>
             </div>
           ))}
         </div>
@@ -165,7 +165,7 @@ export default function BundleDetail({ bundle, products, store, onBack }: Bundle
                 Processing...
               </>
             ) : (
-              `Get the Bundle — $${bundlePrice}`
+              `Get the Bundle — ৳${bundlePrice}`
             )}
           </button>
         </div>
@@ -180,7 +180,7 @@ export default function BundleDetail({ bundle, products, store, onBack }: Bundle
                 <span className="text-lg">{bundle.emoji}</span>
                 <div className="min-w-0">
                   <p className="font-heading font-semibold text-sm text-foreground">{bundle.name}</p>
-                  <p className="font-heading font-bold text-sm text-gold">${bundlePrice}</p>
+                  <p className="font-heading font-bold text-sm text-gold">৳{bundlePrice}</p>
                 </div>
               </div>
               <button
