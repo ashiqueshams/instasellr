@@ -71,7 +71,7 @@ export default function CartDrawer({ store, onCheckout }: CartDrawerProps) {
                       </div>
                       <button
                         onClick={() => removeFromCart(item.product.id)}
-                        className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors opacity-0 group-hover:opacity-100 shrink-0"
+                        className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors opacity-0 group-hover:opacity-100"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
@@ -96,7 +96,7 @@ export default function CartDrawer({ store, onCheckout }: CartDrawerProps) {
                       </div>
 
                       <span className="font-heading font-bold text-sm" style={{ color: store.text_color || undefined }}>
-                        ${(item.product.price * item.quantity).toFixed(2)}
+                        ৳{(item.product.price * item.quantity).toFixed(2)}
                       </span>
                     </div>
                   </div>
@@ -112,7 +112,7 @@ export default function CartDrawer({ store, onCheckout }: CartDrawerProps) {
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">Subtotal</span>
               <span className="font-heading font-bold text-lg" style={{ color: store.text_color || undefined }}>
-                ${totalPrice.toFixed(2)}
+                ৳{totalPrice.toFixed(2)}
               </span>
             </div>
             <button
@@ -123,7 +123,7 @@ export default function CartDrawer({ store, onCheckout }: CartDrawerProps) {
               className="w-full h-12 rounded-xl font-heading font-semibold text-sm text-primary-foreground hover:brightness-110 active:scale-[0.98] transition-all"
               style={{ backgroundColor: store.accent_color }}
             >
-              Checkout — ${totalPrice.toFixed(2)}
+              Checkout — ৳{totalPrice.toFixed(2)}
             </button>
           </div>
         )}

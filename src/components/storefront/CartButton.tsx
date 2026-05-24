@@ -29,7 +29,7 @@ export default function CartButton({ store }: CartButtonProps) {
             </div>
           </div>
           <div className="flex items-center gap-1.5">
-            <span className="font-bold text-sm">${totalPrice.toFixed(2)}</span>
+            <span className="font-bold text-sm">৳{totalPrice.toFixed(2)}</span>
             <ChevronRight className="w-4 h-4 opacity-70" />
           </div>
         </button>

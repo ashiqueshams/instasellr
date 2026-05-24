@@ -89,10 +89,10 @@ export default function ProductList({ products, onSelectProduct, layout = "grid"
             <div className="flex items-center justify-between mt-2.5">
               <div className="flex items-center gap-1.5">
                 <span className="font-heading font-bold text-sm" style={{ color: accentColor }}>
-                  ${product.price}
+                  ৳{product.price}
                 </span>
                 {product.compare_at_price && product.compare_at_price > product.price && (
-                  <span className="text-[11px] text-muted-foreground line-through">${product.compare_at_price}</span>
+                  <span className="text-[11px] text-muted-foreground line-through">৳{product.compare_at_price}</span>
                 )}
               </div>
             </div>
