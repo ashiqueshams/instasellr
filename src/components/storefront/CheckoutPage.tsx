@@ -564,7 +564,7 @@ export default function CheckoutPage({ store, onBack, referral }: CheckoutPagePr
         <button
           onClick={handleCheckout}
           disabled={loading}
-          className="w-full h-13 py-4 rounded-xl font-heading font-semibold text-sm text-primary-foreground hover:brightness-110 active:scale-[0.98] transition-all disabled:opacity-70 flex items-center justify-center gap-2"
+          className="lg:hidden w-full h-13 py-4 rounded-xl font-heading font-semibold text-sm text-primary-foreground hover:brightness-110 active:scale-[0.98] transition-all disabled:opacity-70 flex items-center justify-center gap-2"
           style={{ backgroundColor: store.accent_color }}
         >
           {loading ? (
@@ -577,6 +577,14 @@ export default function CheckoutPage({ store, onBack, referral }: CheckoutPagePr
           )}
         </button>
       </div>
+        </div>
+
+        {/* Desktop: sticky order summary on right */}
+        <aside className="hidden lg:block lg:sticky lg:top-8">
+          {OrderSummaryBlock}
+        </aside>
+      </div>
     </div>
   );
 }
+
