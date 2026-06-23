@@ -1,187 +1,56 @@
+# App Audit — What's Off
 
+## Security / Database
 
-# Bot Vision + Catalog Cards + Customers Tab — Build Plan
+1. **4 permissive RLS policies (WARN)** — newly added INSERT/UPDATE policies use `WITH CHECK (true)`:
+   - `reviews` "Anon submit review" / "Authenticated submit review"
+   - `stores` and `reviews` permissive SELECT-style helpers introduced in the last security pass
+   - Fix: scope each to a real condition (e.g. `EXISTS store`, `auth.uid() = user_id`).
 
-## What you picked
-- **Carousels**: 10 cards + "See more" postback button (paginates next 10)
-- **Out-of-stock fallback**: same category + ±30% price band → suggest 3 alternatives
-- **Customers tab**: searchable list + profile drawer (history + orders)
-- **Test panel**: must support all of the above (multi-image upload, see returned cards, click "See more", trigger fallback)
+2. **Custom domain feature is fake** — `DashboardSettings.tsx` stores the domain in `localStorage` only. No backend record, no DNS verification, no routing. Shipping this misleads users.
 
----
+3. **`pg_net` reinstall side effects** — the recent `DROP EXTENSION pg_net; CREATE EXTENSION ... SCHEMA extensions` would have dropped any `net.http_post` triggers / cron jobs that depended on it. Worth verifying recovery/learn cron is still scheduled.
 
-## 1. Vision: multi-image product recognition
+4. **Service worker exclusion for `/~oauth/`** — memory says it must exist; worth confirming the PWA SW still excludes auth callback paths after recent changes.
 
-**Today**: bot accepts `image_urls[]` but the prompt only nudges "identify the product". No explicit multi-product handling.
+## Functionality / UX
 
-**New behavior**:
-- Accept up to 5 images per message (Messenger sends each attachment; webhook batches them into one call already)
-- Tell the model: "Each image may be a DIFFERENT product. Identify each separately. Match each to catalog by visual similarity (color, pattern, silhouette, category). Low confidence → say so, don't guess."
-- New tool field: `matched_product_ids: string[]` (array, replaces single `matched_product_id`)
-- Per-image confidence in `image_matches: [{image_index, product_id, confidence}]` so dashboard can show what matched what
+5. **Routing oddity** — `dashboard/orders` redirects to `/dashboard` (index = `DashboardOrders`), so the sidebar "Orders" link likely double-navigates or breaks active state.
 
-**Model**: keep `google/gemini-2.5-flash` — it handles multi-image well and is cheap. Catalog already includes `image_url` per product so the model can compare.
+6. **`CheckoutPage.tsx` is 553 lines** — single component handling cart, address, courier, payment, COD/digital/bank, referral. Hard to maintain and a known source of regressions; should be split.
 
----
+7. **No global error boundary** — a thrown render in any storefront page shows a blank screen instead of a fallback.
 
-## 2. Product cards in chat
+8. **Storefront `select("*")` already replaced for stores**, but other storefront reads (`products`, `categories`, `reviews`) still use `select("*")` — fine today but couples client to schema changes.
 
-**Messenger generic template** (carousel of cards with image, title, subtitle, buttons):
+9. **Search page reloads everything** — `StorefrontSearch.tsx` re-fetches store + all products on mount instead of reusing the cached data from the storefront. Slow on mobile.
 
-```json
-{
-  "attachment": {
-    "type": "template",
-    "payload": {
-      "template_type": "generic",
-      "elements": [
-        { "title": "Cotton Kurti", "subtitle": "৳1,200", "image_url": "...",
-          "buttons": [
-            { "type": "postback", "title": "Order this", "payload": "ORDER:<product_id>" },
-            { "type": "web_url", "title": "View", "url": "https://store/p/..." }
-          ]
-        }
-      ]
-    }
-  }
-}
-```
+10. **Random product shuffle on every render** — `useMemo` keyed on `products` reshuffles whenever the array reference changes; jumps positions on refetch.
 
-**When bot sends cards** (new tool field `send_product_cards: string[]` of product IDs):
-- Customer asks "shirt গুলো দেখান" / "show all kurtis" / category / "kichu suggest korun"
-- Bot recognizes products from images
-- Out-of-stock fallback (sends 3 similar)
-- "See more" postback
+## Code Health
 
-**Server logic** (`chatbot-reply` returns):
-```ts
-{
-  reply: "Apu egulo achhe 💕",
-  product_cards: [{ id, name, price, image_url, in_stock }],
-  pagination: { category: "kurti", offset: 10, total: 47, has_more: true } | null
-}
-```
+11. **`src/integrations/supabase/types.ts` is hand-edited** — repeated `as any` casts in pages (`referral_campaigns as any`, `reviews as any`, `chatbot_* as any`) suggest the generated types are stale. Should regenerate.
 
-**Webhook** (`meta-messenger-webhook`) takes `product_cards` and sends:
-1. Text reply (`reply`)
-2. Generic template carousel with up to 10 elements
-3. If `pagination.has_more` → quick-reply button "আরও দেখুন (See more)" with payload `MORE:<category>:<offset>`
+12. **Sample data still imported** (`src/data/sampleData.ts`) in several pages even though stores are live — dead code path, larger bundle.
 
-**Postback handling** (new in webhook):
-- `MORE:kurti:10` → re-call `chatbot-reply` with synthetic context "show next 10 in category kurti, offset 10"
-- `ORDER:<product_id>` → seeds `cart_draft.product_id` and bot asks for name/phone/address naturally
+13. **No tests cover the new flows** — categories, popular toggle, reviews visibility, custom domain UI all untested. `src/test/example.test.ts` is the only test file.
 
----
+14. **Magic numbers / strings** — `185.158.133.1`, `ns1.lovable.app`, `30 * 86400000` (NEW badge), `48 * 3600` (download expiry) repeated across files instead of central constants.
 
-## 3. Out-of-stock fallback
+15. **`OrderNotification` uses `console.error` for audio failures** but no user-facing fallback — sound permission denial is silent.
 
-In `chatbot-reply`, BEFORE calling the model, build a `candidates` array per intent:
-- If model identifies a product that has `stock_quantity <= 0` OR no match found for an explicit ask → server-side query:
-  ```sql
-  SELECT * FROM products
-  WHERE store_id = ? AND is_active AND stock_quantity > 0
-    AND category = ?
-    AND price BETWEEN target * 0.7 AND target * 1.3
-  ORDER BY ABS(price - target) LIMIT 3
-  ```
-- Pass `fallback_suggestions: [...]` into the system prompt
-- Model says: "Apu, ei product ta ekhon out of stock 😔 But same category te egulo achhe — apnar pochhondo hote pare:" and sets `send_product_cards` to the 3 IDs
+## What I'd Tackle First
 
-Done deterministically in code, not left to the model to invent.
+| Priority | Item |
+|----------|------|
+| P0 | Fix the 4 permissive RLS warnings |
+| P0 | Decide custom-domain: build it properly (backend + verification) or remove the UI |
+| P1 | Verify pg_net dependents still work; confirm cron jobs intact |
+| P1 | Split CheckoutPage; add error boundary |
+| P2 | Regenerate Supabase types; remove `as any` |
+| P2 | Stabilize storefront shuffle; reuse store data in search page |
+| P3 | Centralize constants; add tests for new tabs |
 
----
+## Next Step
 
-## 4. Category / collection requests
-
-New intent in tool enum: `browse_category`.
-- Model extracts `requested_category: string` (e.g. "kurti", "saree", "winter")
-- Server queries: `SELECT * FROM products WHERE store_id=? AND is_active AND (category ILIKE %X% OR name ILIKE %X%) ORDER BY stock_quantity DESC, created_at DESC`
-- Returns first 10 as cards + sets `pagination` if total > 10
-- "See more" postback paginates server-side using offset
-
-This stays out of the LLM — pure SQL, fast and reliable.
-
----
-
-## 5. Customers tab in dashboard
-
-New page `src/pages/DashboardCustomers.tsx`, route `/dashboard/customers`:
-
-**List view** (table):
-| Customer | Phone | Lifetime orders | Lifetime value | Last seen | Behavior tags | Last sentiment |
-
-- Search box: name / phone / psid
-- Filter chips: behavior tag (price_sensitive, fast_converter, browser, repeat_buyer…), platform (instagram/messenger), has_order (yes/no)
-- Sort: most recent / highest value / most orders
-- Click row → drawer
-
-**Profile drawer** (right-side `Sheet`):
-- Header: avatar (initial), name, phone, platform badge
-- Stats cards: lifetime orders / value / first-seen / last-seen
-- Behavior tag chips
-- Preferences (size, color, categories, language)
-- AI notes / cart_draft preview if active
-- **Conversation history** tab: full message thread with sentiment chips per message
-- **Orders** tab: list of orders linked by phone or psid (`source = chatbot` gets 🤖 badge)
-- Action: "Open conversation in Inbox" → links to `/dashboard/inbox?conv=<id>`
-
-Sidebar nav: add "Customers" link with `Users` icon between Inbox and Chatbot.
-
----
-
-## 6. Test panel upgrades (`DashboardChatbot` Test tab)
-
-Today's test panel sends one text message. Upgrade to:
-- Multi-image upload (drag/drop up to 5 images, preview thumbnails)
-- Show returned `product_cards` as a mini carousel below the bot reply (same visual as Messenger)
-- "See more" button visible & functional (calls `chatbot-reply` again with offset)
-- Display detected: language / sentiment / intent / matched product IDs / fallback used / pagination state
-- Toggle: "simulate out of stock for this product" so owner can verify fallback without changing inventory
-- Conversation persists in test session (so multi-turn confirm flow can be tested), but `test_mode=true` still skips DB writes & order creation
-
----
-
-## 7. Schema changes (small)
-
-```sql
--- Track pagination context per conversation so "See more" works after async messages
-ALTER TABLE chatbot_conversations
-  ADD COLUMN last_browse_context jsonb DEFAULT '{}'::jsonb;
--- shape: { category: 'kurti', offset: 10, total: 47, last_at: timestamp }
-
--- Optional: image-match audit (helps tune accuracy)
-ALTER TABLE chatbot_messages
-  ADD COLUMN image_matches jsonb DEFAULT '[]'::jsonb;
--- shape: [{ image_index: 0, product_id: 'uuid', confidence: 0.82 }]
-```
-
-No new tables needed.
-
----
-
-## 8. Build order
-
-1. **Migration** — add the 2 columns
-2. **`chatbot-reply` upgrades**:
-   - Multi-image prompt rewrite + `matched_product_ids` + `image_matches`
-   - Server-side category browse query + pagination
-   - Server-side out-of-stock fallback query
-   - New tool fields: `send_product_cards`, `requested_category`, `pagination_request`
-   - Return `product_cards` + `pagination` in response
-3. **`meta-messenger-webhook` upgrades**:
-   - Render generic-template carousel (up to 10)
-   - Send "See more" quick-reply when `has_more`
-   - Handle `MORE:` and `ORDER:` postbacks
-4. **`DashboardCustomers.tsx`** — list + filters + drawer with history & orders
-5. **`DashboardLayout`** sidebar — add Customers link
-6. **`DashboardChatbot` Test tab** — multi-image upload, card preview, "See more" button, simulate-OOS toggle
-
----
-
-## What I will NOT touch
-- Existing storefront, checkout, courier, onboarding wizard
-- Order creation logic (just the seed-from-postback)
-- Discount rules, recovery, learning loop (already shipped)
-
-Approve and I'll ship the migration + all 6 changes in one pass.
-
+Tell me which of these you want fixed and I'll scope a focused build pass. If you want everything, I'll group them into 2–3 sequential PR-sized passes (security → checkout split → polish).
