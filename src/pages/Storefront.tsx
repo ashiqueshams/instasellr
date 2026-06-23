@@ -44,7 +44,7 @@ export default function Storefront() {
     const fetchStore = async () => {
       const { data: storeData, error } = await supabase
         .from("stores")
-        .select("*")
+        .select("id, slug, name, bio, avatar_initials, accent_color, social_links, created_at, font_heading, font_body, layout, logo_url, banner_url, theme, background_color, banner_mode, card_style, social_position, footer_image_url, text_color, social_links_color, preferred_language")
         .eq("slug", slug)
         .maybeSingle();
 
@@ -75,7 +75,7 @@ export default function Storefront() {
         text_color: (storeData as any).text_color || null,
         social_links: (storeData.social_links as Store["social_links"]) || {},
         created_at: storeData.created_at,
-        user_id: storeData.user_id || "",
+        user_id: (storeData as any).user_id || "",
       };
       setStore(storeObj);
 

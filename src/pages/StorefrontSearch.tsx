@@ -25,7 +25,7 @@ export default function StorefrontSearch() {
   useEffect(() => {
     if (!slug) return;
     (async () => {
-      const { data: s } = await supabase.from("stores").select("*").eq("slug", slug).maybeSingle();
+      const { data: s } = await supabase.from("stores").select("id, slug, name, bio, avatar_initials, accent_color, social_links, created_at, font_heading, font_body, layout, logo_url, banner_url, theme, background_color, banner_mode, card_style, social_position, footer_image_url, text_color, social_links_color, preferred_language").eq("slug", slug).maybeSingle();
       if (!s) { setLoading(false); return; }
       setStore({
         id: s.id, slug: s.slug, name: s.name, bio: s.bio || "",
@@ -37,7 +37,7 @@ export default function StorefrontSearch() {
         social_position: (s as any).social_position || "below_products",
         footer_image_url: (s as any).footer_image_url || null,
         text_color: (s as any).text_color || null,
-        social_links: (s.social_links as any) || {}, created_at: s.created_at, user_id: s.user_id || "",
+        social_links: (s.social_links as any) || {}, created_at: s.created_at, user_id: (s as any).user_id || "",
       });
       const { data: ps } = await supabase.from("products").select("*").eq("store_id", s.id).eq("is_active", true).order("created_at", { ascending: false });
       setProducts((ps || []).map(mapProduct));
