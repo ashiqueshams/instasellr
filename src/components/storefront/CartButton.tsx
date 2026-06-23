@@ -13,7 +13,7 @@ export default function CartButton({ store }: CartButtonProps) {
 
   return (
     <div className="fixed bottom-0 inset-x-0 z-40 px-4 pb-4 pt-2 pointer-events-none">
-      <div className="max-w-[480px] mx-auto pointer-events-auto">
+      <div className="max-w-[480px] lg:max-w-md lg:ml-auto lg:mr-8 pointer-events-auto">
         <button
           onClick={() => setIsOpen(true)}
           className="w-full flex items-center justify-between px-5 py-3.5 rounded-2xl text-primary-foreground shadow-xl hover:brightness-105 active:scale-[0.98] transition-all animate-slideUp"
