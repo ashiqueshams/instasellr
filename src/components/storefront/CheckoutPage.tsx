@@ -287,6 +287,83 @@ export default function CheckoutPage({ store, onBack, referral }: CheckoutPagePr
     );
   }
 
+  const OrderSummaryBlock = (
+    <div className="bg-muted/30 rounded-2xl p-5 border border-border/50">
+      <h3 className="font-heading font-semibold text-sm mb-4" style={{ color: store.text_color || undefined }}>
+        Order Summary
+      </h3>
+      <div className="flex flex-col gap-3">
+        {items.map((item) => (
+          <div key={item.product.id} className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-xl overflow-hidden shrink-0 bg-muted">
+              {item.product.image_url ? (
+                <img src={item.product.image_url} alt={item.product.name} className="w-full h-full object-cover" />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-lg" style={{ backgroundColor: item.product.color + "20" }}>
+                  {item.product.emoji}
+                </div>
+              )}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="font-heading font-semibold text-sm truncate" style={{ color: store.text_color || undefined }}>
+                {item.product.name}
+              </p>
+              <p className="text-xs text-muted-foreground">Qty: {item.quantity}</p>
+            </div>
+            <span className="font-heading font-bold text-sm" style={{ color: store.text_color || undefined }}>
+              ৳{(item.product.price * item.quantity).toFixed(2)}
+            </span>
+          </div>
+        ))}
+      </div>
+
+      {referral && discountAmount > 0 && (
+        <div className="flex items-center justify-between mt-3 pt-3 border-t border-border/50">
+          <span className="text-sm" style={{ color: store.accent_color }}>
+            Referral discount ({referral.code} · {discountPct}% off)
+          </span>
+          <span className="font-heading font-semibold text-sm" style={{ color: store.accent_color }}>
+            −৳{discountAmount.toFixed(2)}
+          </span>
+        </div>
+      )}
+
+      {hasPhysical && deliveryOptions.length > 0 && selectedDelivery && (
+        <div className="flex items-center justify-between mt-3 pt-3 border-t border-border/50">
+          <span className="text-sm text-muted-foreground">Delivery</span>
+          <span className="font-heading font-semibold text-sm" style={{ color: store.text_color || undefined }}>
+            {deliveryCost > 0 ? `৳${deliveryCost.toFixed(2)}` : "Free"}
+          </span>
+        </div>
+      )}
+
+      <div className="border-t border-border mt-3 pt-4 flex items-center justify-between">
+        <span className="font-heading font-semibold text-sm" style={{ color: store.text_color || undefined }}>Total</span>
+        <span className="font-heading font-bold text-xl" style={{ color: store.accent_color }}>৳{grandTotal.toFixed(2)}</span>
+      </div>
+
+      <button
+        onClick={handleCheckout}
+        disabled={loading}
+        className="hidden lg:flex w-full h-12 mt-5 rounded-xl font-heading font-semibold text-sm text-primary-foreground hover:brightness-110 active:scale-[0.98] transition-all disabled:opacity-70 items-center justify-center gap-2"
+        style={{ backgroundColor: store.accent_color }}
+      >
+        {loading ? (
+          <>
+            <Loader2 className="w-4 h-4 animate-spin" />
+            Processing...
+          </>
+        ) : (
+          `Place Order — ৳${grandTotal.toFixed(2)}`
+        )}
+      </button>
+
+      <p className="hidden lg:block text-[11px] text-muted-foreground text-center mt-3">
+        Secure checkout · Your information is protected
+      </p>
+    </div>
+  );
+
   return (
     <div className="animate-slideInRight">
       <button
@@ -297,9 +374,15 @@ export default function CheckoutPage({ store, onBack, referral }: CheckoutPagePr
         Back to Store
       </button>
 
-      <h2 className="font-heading font-bold text-xl mb-6" style={{ color: store.text_color || undefined }}>
+      <h2 className="font-heading font-bold text-2xl lg:text-3xl mb-6" style={{ color: store.text_color || undefined }}>
         Checkout
       </h2>
+
+      <div className="lg:grid lg:grid-cols-[1fr_380px] lg:gap-10 lg:items-start">
+        <div className="min-w-0">
+          {/* Mobile: order summary on top */}
+          <div className="lg:hidden mb-6">{OrderSummaryBlock}</div>
+
 
       {/* Order Summary */}
       <div className="bg-muted/30 rounded-2xl p-5 mb-6 border border-border/50">
