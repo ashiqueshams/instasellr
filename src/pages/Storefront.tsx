@@ -382,7 +382,7 @@ function StorefrontContent({
               </div>
               <div className="flex-1 min-w-0">
                 <p className="font-heading font-semibold text-sm" style={{ color: store.text_color || undefined }}>
-                  {referral.discount_percent}% off via {referral.influencer_name}
+                  {referral.discount_percent}% off{referral.influencer_name ? ` via ${referral.influencer_name}` : ""}
                 </p>
                 <p className="text-xs text-muted-foreground">
                   Discount auto-applied at checkout · Code <span className="font-mono">{referral.code}</span>
