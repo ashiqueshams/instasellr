@@ -51,7 +51,7 @@ export default function StorefrontReviews() {
 
   const load = async () => {
     if (!slug) return;
-    const { data: s } = await supabase.from("stores").select("*").eq("slug", slug).maybeSingle();
+    const { data: s } = await supabase.from("stores").select("id, slug, name, bio, avatar_initials, accent_color, social_links, created_at, font_heading, font_body, layout, logo_url, banner_url, theme, background_color, banner_mode, card_style, social_position, footer_image_url, text_color, social_links_color, preferred_language").eq("slug", slug).maybeSingle();
     if (!s) { setLoading(false); return; }
     setStore(s as any);
     const { data } = await (supabase

@@ -44,7 +44,7 @@ export default function Storefront() {
     const fetchStore = async () => {
       const { data: storeData, error } = await supabase
         .from("stores")
-        .select("*")
+        .select("id, slug, name, bio, avatar_initials, accent_color, social_links, created_at, font_heading, font_body, layout, logo_url, banner_url, theme, background_color, banner_mode, card_style, social_position, footer_image_url, text_color, social_links_color, preferred_language")
         .eq("slug", slug)
         .maybeSingle();
 
@@ -75,7 +75,7 @@ export default function Storefront() {
         text_color: (storeData as any).text_color || null,
         social_links: (storeData.social_links as Store["social_links"]) || {},
         created_at: storeData.created_at,
-        user_id: storeData.user_id || "",
+        user_id: (storeData as any).user_id || "",
       };
       setStore(storeObj);
 
@@ -382,7 +382,7 @@ function StorefrontContent({
               </div>
               <div className="flex-1 min-w-0">
                 <p className="font-heading font-semibold text-sm" style={{ color: store.text_color || undefined }}>
-                  {referral.discount_percent}% off via {referral.influencer_name}
+                  {referral.discount_percent}% off{referral.influencer_name ? ` via ${referral.influencer_name}` : ""}
                 </p>
                 <p className="text-xs text-muted-foreground">
                   Discount auto-applied at checkout · Code <span className="font-mono">{referral.code}</span>

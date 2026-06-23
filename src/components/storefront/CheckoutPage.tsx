@@ -20,7 +20,7 @@ interface CityZoneArea {
 interface ReferralLite {
   id: string;
   code: string;
-  influencer_name: string;
+  influencer_name?: string;
   discount_percent: number;
 }
 

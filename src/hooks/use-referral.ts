@@ -13,9 +13,9 @@ interface StoredRef {
 export interface ReferralCampaign {
   id: string;
   code: string;
-  influencer_name: string;
+  influencer_name?: string;
   discount_percent: number;
-  commission_percent: number;
+  commission_percent?: number;
 }
 
 /**
@@ -67,7 +67,7 @@ export function useReferral(storeId: string | undefined) {
       // 2. Validate against DB
       const { data } = await (supabase
         .from("referral_campaigns" as any)
-        .select("id, code, influencer_name, discount_percent, commission_percent")
+        .select("id, store_id, code, discount_percent, is_active")
         .eq("store_id", storeId)
         .eq("code", codeToValidate)
         .eq("is_active", true)
