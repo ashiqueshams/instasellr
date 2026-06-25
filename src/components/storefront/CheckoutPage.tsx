@@ -366,30 +366,9 @@ export default function CheckoutPage({ store, onBack, referral }: CheckoutPagePr
     </div>
   );
 
-  return (
-    <div className="animate-slideInRight">
-      <button
-        onClick={onBack}
-        className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-6"
-      >
-        <ArrowLeft className="w-4 h-4" />
-        Back to Store
-      </button>
+  const formSection = (
+    <div className="space-y-5">
 
-      <h2 className="font-heading font-bold text-2xl lg:text-3xl mb-6" style={{ color: store.text_color || undefined }}>
-        Checkout
-      </h2>
-
-      <div className="lg:grid lg:grid-cols-[1fr_380px] lg:gap-10 lg:items-start">
-        <div className="min-w-0">
-          {/* Mobile: order summary on top */}
-          <div className="lg:hidden mb-6">{OrderSummaryBlock}</div>
-
-
-
-
-      {/* Form */}
-      <div className="space-y-5">
         {/* Contact */}
         <div>
           <h3 className="font-heading font-semibold text-sm mb-3" style={{ color: store.text_color || undefined }}>
