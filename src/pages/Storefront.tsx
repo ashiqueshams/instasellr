@@ -349,12 +349,132 @@ function StorefrontContent({
     );
   }
 
+  const productCounts = products.reduce((acc, p) => {
+    if (p.category_id) acc[p.category_id] = (acc[p.category_id] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+
+  const featuredForHero = popularProducts[0] || products[0] || null;
+
   return (
     <div className="min-h-screen bg-white" style={{ fontFamily: `'${store.font_body}', sans-serif` }}>
-      <div className="max-w-[480px] lg:max-w-6xl mx-auto px-5 lg:px-10 py-8 pb-28">
-        <div className="lg:grid lg:grid-cols-[340px_1fr] lg:gap-10 lg:items-start">
-          {/* Left column — store identity (sticky on desktop) */}
-          <aside className="flex flex-col gap-6 lg:sticky lg:top-8 lg:max-h-[calc(100vh-4rem)] lg:overflow-y-auto lg:pr-2">
+      {/* ============= DESKTOP (lg+) ============= */}
+      <div className="hidden lg:block">
+        <DesktopNav
+          store={store}
+          search={search}
+          onSearchChange={setSearch}
+          onInfoClick={() => setInfoOpen(true)}
+          onRatingClick={() => navigate(`/store/${store.slug}/reviews`)}
+          avgRating={avgRating}
+          reviewCount={reviewCount}
+        />
+
+        <div className="max-w-7xl mx-auto px-8 py-8 flex flex-col gap-10">
+          <DesktopHero
+            store={store}
+            productCount={products.length}
+            hasPhysical={products.some((p) => p.product_type === "physical")}
+            avgRating={avgRating}
+            reviewCount={reviewCount}
+            featured={featuredForHero}
+            onFeaturedClick={setSelectedProduct}
+            onRatingClick={() => navigate(`/store/${store.slug}/reviews`)}
+            referral={referral}
+          />
+
+          {categories.length > 0 && (
+            <CategoryCards
+              categories={categories}
+              productCounts={productCounts}
+              store={store}
+              selectedCategoryId={selectedCategoryId}
+              onSelectCategory={setSelectedCategoryId}
+            />
+          )}
+
+          {!selectedCategoryId && popularProducts.length >= 3 && (
+            <HorizontalProductScroll
+              title="Most Popular"
+              products={popularProducts}
+              onSelectProduct={setSelectedProduct}
+              store={store}
+            />
+          )}
+
+          {bundles.length > 0 && (
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
+              {bundles.map((bundle) => (
+                <BundleCard
+                  key={bundle.id}
+                  bundle={bundle}
+                  products={bundle.products}
+                  accentColor={store.accent_color}
+                  onBuyBundle={() => setSelectedBundle(bundle)}
+                />
+              ))}
+            </div>
+          )}
+
+          <section>
+            <div className="flex items-end justify-between mb-5 gap-4 flex-wrap">
+              <div>
+                <h2 className="font-heading font-bold text-2xl" style={{ color: store.text_color || undefined }}>
+                  {selectedCategoryId
+                    ? categories.find((c) => c.id === selectedCategoryId)?.name
+                    : "All products"}
+                </h2>
+                <p className="text-sm text-muted-foreground mt-1">{filteredProducts.length} items</p>
+              </div>
+              {categories.length > 0 && (
+                <div className="flex items-center gap-2 flex-wrap">
+                  <CategoryChip
+                    label="All"
+                    active={!selectedCategoryId}
+                    onClick={() => setSelectedCategoryId(null)}
+                    accent={store.accent_color}
+                  />
+                  {categories.map((c) => (
+                    <CategoryChip
+                      key={c.id}
+                      label={c.name}
+                      active={selectedCategoryId === c.id}
+                      onClick={() => setSelectedCategoryId(c.id)}
+                      accent={store.accent_color}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <ProductList
+              products={selectedCategoryId ? filteredProducts : shuffledProducts}
+              onSelectProduct={setSelectedProduct}
+              layout={store.layout}
+              cardStyle={store.card_style}
+              store={store}
+              isNew={isNew}
+            />
+          </section>
+
+          {storeLinks.length > 0 && (
+            <div className="rounded-2xl border border-border/60 p-6">
+              <StorefrontLinks links={storeLinks} store={store} />
+            </div>
+          )}
+
+          {store.footer_image_url && (
+            <div className="w-full rounded-2xl overflow-hidden">
+              <img src={store.footer_image_url} alt="Footer" className="w-full h-64 object-cover" />
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* ============= MOBILE (<lg) ============= */}
+      <div className="lg:hidden">
+        <div className="max-w-[480px] mx-auto px-5 py-8 pb-28">
+          <div className="flex flex-col gap-6">
             <StoreHeader
               store={enrichedStore}
               onInfoClick={() => setInfoOpen(true)}
@@ -376,10 +496,7 @@ function StorefrontContent({
                 className="rounded-2xl px-4 py-3 flex items-center gap-3 animate-fadeUp"
                 style={{ backgroundColor: store.accent_color + "12", border: `1px solid ${store.accent_color}30` }}
               >
-                <div
-                  className="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
-                  style={{ backgroundColor: store.accent_color + "20" }}
-                >
+                <div className="w-9 h-9 rounded-full flex items-center justify-center shrink-0" style={{ backgroundColor: store.accent_color + "20" }}>
                   <Tag className="w-4 h-4" style={{ color: store.accent_color }} />
                 </div>
                 <div className="flex-1 min-w-0">
@@ -394,10 +511,7 @@ function StorefrontContent({
             )}
 
             {storeLinks.length > 0 && <StorefrontLinks links={storeLinks} store={store} />}
-          </aside>
 
-          {/* Right column — shopping content */}
-          <main className="flex flex-col gap-6 mt-6 lg:mt-0 min-w-0">
             {bundles.map((bundle) => (
               <BundleCard key={bundle.id} bundle={bundle} products={bundle.products} accentColor={store.accent_color} onBuyBundle={() => setSelectedBundle(bundle)} />
             ))}
@@ -405,10 +519,7 @@ function StorefrontContent({
             {categories.length > 0 && (
               <CategoryCards
                 categories={categories}
-                productCounts={products.reduce((acc, p) => {
-                  if (p.category_id) acc[p.category_id] = (acc[p.category_id] || 0) + 1;
-                  return acc;
-                }, {} as Record<string, number>)}
+                productCounts={productCounts}
                 store={store}
                 selectedCategoryId={selectedCategoryId}
                 onSelectCategory={setSelectedCategoryId}
@@ -416,12 +527,7 @@ function StorefrontContent({
             )}
 
             {!selectedCategoryId && popularProducts.length >= 3 && (
-              <HorizontalProductScroll
-                title="Most Popular"
-                products={popularProducts}
-                onSelectProduct={setSelectedProduct}
-                store={store}
-              />
+              <HorizontalProductScroll title="Most Popular" products={popularProducts} onSelectProduct={setSelectedProduct} store={store} />
             )}
 
             {selectedCategoryId && (
@@ -445,10 +551,10 @@ function StorefrontContent({
 
             {store.footer_image_url && (
               <div className="w-full rounded-2xl overflow-hidden">
-                <img src={store.footer_image_url} alt="Footer" className="w-full h-48 lg:h-64 object-cover" />
+                <img src={store.footer_image_url} alt="Footer" className="w-full h-48 object-cover" />
               </div>
             )}
-          </main>
+          </div>
         </div>
       </div>
 
@@ -463,3 +569,20 @@ function StorefrontContent({
     </div>
   );
 }
+
+function CategoryChip({ label, active, onClick, accent }: { label: string; active: boolean; onClick: () => void; accent: string }) {
+  return (
+    <button
+      onClick={onClick}
+      className="h-8 px-3.5 rounded-full text-xs font-semibold transition-all"
+      style={
+        active
+          ? { backgroundColor: accent, color: "#fff" }
+          : { backgroundColor: "hsl(var(--muted))", color: "hsl(var(--muted-foreground))" }
+      }
+    >
+      {label}
+    </button>
+  );
+}
+
