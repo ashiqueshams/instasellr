@@ -15,6 +15,8 @@ import CartDrawer from "@/components/storefront/CartDrawer";
 import CartButton from "@/components/storefront/CartButton";
 import CheckoutPage from "@/components/storefront/CheckoutPage";
 import HorizontalProductScroll from "@/components/storefront/HorizontalProductScroll";
+import DesktopNav from "@/components/storefront/DesktopNav";
+import DesktopHero from "@/components/storefront/DesktopHero";
 import SellerInfo from "@/components/storefront/SellerInfo";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import TrackingScripts from "@/components/storefront/TrackingScripts";
