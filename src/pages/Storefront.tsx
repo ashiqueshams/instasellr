@@ -285,13 +285,18 @@ function StorefrontContent({
   if (showCheckout) {
     return (
       <div className="min-h-screen bg-white">
-        <div className="max-w-[480px] lg:max-w-6xl mx-auto px-5 lg:px-10 py-8 pb-28">
+        {/* Mobile: padded column. Desktop: edge-to-edge for split screen. */}
+        <div className="lg:hidden max-w-[480px] mx-auto px-5 py-8 pb-28">
+          <CheckoutPage store={store} onBack={() => setShowCheckout(false)} referral={referral} />
+        </div>
+        <div className="hidden lg:block">
           <CheckoutPage store={store} onBack={() => setShowCheckout(false)} referral={referral} />
         </div>
         <CartDrawer store={store} onCheckout={() => setShowCheckout(true)} />
       </div>
     );
   }
+
 
   if (selectedBundle) {
     return (
