@@ -5,6 +5,8 @@ import { useCart } from "@/contexts/CartContext";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { trackInitiateCheckout, trackPurchase, getClickIds } from "@/lib/tracking";
+import CheckoutSummaryPanel from "./CheckoutSummaryPanel";
+
 
 interface DeliveryOption {
   id: string;
@@ -364,30 +366,9 @@ export default function CheckoutPage({ store, onBack, referral }: CheckoutPagePr
     </div>
   );
 
-  return (
-    <div className="animate-slideInRight">
-      <button
-        onClick={onBack}
-        className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-6"
-      >
-        <ArrowLeft className="w-4 h-4" />
-        Back to Store
-      </button>
+  const formSection = (
+    <div className="space-y-5">
 
-      <h2 className="font-heading font-bold text-2xl lg:text-3xl mb-6" style={{ color: store.text_color || undefined }}>
-        Checkout
-      </h2>
-
-      <div className="lg:grid lg:grid-cols-[1fr_380px] lg:gap-10 lg:items-start">
-        <div className="min-w-0">
-          {/* Mobile: order summary on top */}
-          <div className="lg:hidden mb-6">{OrderSummaryBlock}</div>
-
-
-
-
-      {/* Form */}
-      <div className="space-y-5">
         {/* Contact */}
         <div>
           <h3 className="font-heading font-semibold text-sm mb-3" style={{ color: store.text_color || undefined }}>
@@ -564,7 +545,7 @@ export default function CheckoutPage({ store, onBack, referral }: CheckoutPagePr
         <button
           onClick={handleCheckout}
           disabled={loading}
-          className="lg:hidden w-full h-13 py-4 rounded-xl font-heading font-semibold text-sm text-primary-foreground hover:brightness-110 active:scale-[0.98] transition-all disabled:opacity-70 flex items-center justify-center gap-2"
+          className="w-full h-13 py-4 rounded-xl font-heading font-semibold text-sm text-primary-foreground hover:brightness-110 active:scale-[0.98] transition-all disabled:opacity-70 flex items-center justify-center gap-2"
           style={{ backgroundColor: store.accent_color }}
         >
           {loading ? (
@@ -576,15 +557,62 @@ export default function CheckoutPage({ store, onBack, referral }: CheckoutPagePr
             `Place Order — ৳${grandTotal.toFixed(2)}`
           )}
         </button>
-      </div>
-        </div>
 
-        {/* Desktop: sticky order summary on right */}
-        <aside className="hidden lg:block lg:sticky lg:top-8">
-          {OrderSummaryBlock}
-        </aside>
+        <p className="text-[11px] text-muted-foreground text-center">
+          By placing this order you agree to {store.name}'s terms.
+        </p>
       </div>
-    </div>
+  );
+
+  const summaryProps = {
+    store,
+    grandTotal,
+    discountAmount,
+    discountLabel: referral && discountAmount > 0
+      ? `Referral discount (${referral.code} · ${discountPct}% off)`
+      : null,
+    deliveryCost,
+    showDelivery: hasPhysical && deliveryOptions.length > 0 && !!selectedDelivery,
+    onBack,
+  };
+
+  return (
+    <>
+      {/* ===== MOBILE ===== */}
+      <div className="lg:hidden animate-slideInRight">
+        <button
+          onClick={onBack}
+          className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-6"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Back to Store
+        </button>
+        <h2 className="font-heading font-bold text-2xl mb-6" style={{ color: store.text_color || undefined }}>
+          Checkout
+        </h2>
+        <div className="mb-6">{OrderSummaryBlock}</div>
+        {formSection}
+      </div>
+
+      {/* ===== DESKTOP — Stripe-style split screen ===== */}
+      <div className="hidden lg:grid lg:grid-cols-[minmax(0,44%)_minmax(0,56%)] min-h-screen">
+        <aside className="sticky top-0 h-screen overflow-hidden">
+          <CheckoutSummaryPanel {...summaryProps} />
+        </aside>
+        <main className="overflow-y-auto">
+          <div className="max-w-[560px] mx-auto px-10 py-12">
+            <h2 className="font-heading font-bold text-3xl mb-2" style={{ color: store.text_color || undefined }}>
+              Checkout
+            </h2>
+            <p className="text-sm text-muted-foreground mb-8">
+              Complete your order below. We'll email a confirmation right after.
+            </p>
+            {formSection}
+          </div>
+        </main>
+      </div>
+    </>
   );
 }
+
 

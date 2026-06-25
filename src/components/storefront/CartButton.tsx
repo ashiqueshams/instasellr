@@ -12,7 +12,7 @@ export default function CartButton({ store }: CartButtonProps) {
   if (totalItems === 0) return null;
 
   return (
-    <div className="fixed bottom-0 inset-x-0 z-40 px-4 pb-4 pt-2 pointer-events-none">
+    <div className="lg:hidden fixed bottom-0 inset-x-0 z-40 px-4 pb-4 pt-2 pointer-events-none">
       <div className="max-w-[480px] lg:max-w-md lg:ml-auto lg:mr-8 pointer-events-auto">
         <button
           onClick={() => setIsOpen(true)}

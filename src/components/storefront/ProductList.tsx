@@ -15,7 +15,7 @@ export default function ProductList({ products, onSelectProduct, layout = "grid"
   const accentColor = store?.accent_color || "#ff4545";
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-3 lg:gap-5">
+    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 lg:gap-5">
       {products.map((product, index) => (
         <div
           key={product.id}
